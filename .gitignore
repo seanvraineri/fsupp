@@ -1,0 +1,18 @@
+# Node modules
+node_modules/
+
+# Supabase generated folders
+supabase/.temp/
+.supabase/functions/**/dist/
+
+# Environment variables
+.env*
+
+# Next.js build
+.next/
+
+# Logs
+*.log
+
+# Mac OS
+.DS_Store 

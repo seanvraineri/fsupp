@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+  html {
+    @apply scroll-smooth;
+}
+
+body {
+    @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors;
+    font-family: var(--font-inter);
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/[0.07] dark:bg-white/[0.07] backdrop-blur-lg border border-white/10;
+}
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-from to-primary-to;
+  }
+}

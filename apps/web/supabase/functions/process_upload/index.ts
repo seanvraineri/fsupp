@@ -46,7 +46,7 @@ serve(async (req) => {
   // Admin Supabase client (service role key)
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    Deno.env.get('SERVICE_ROLE_KEY')!,
   );
 
   // Fetch the matching uploaded_files row

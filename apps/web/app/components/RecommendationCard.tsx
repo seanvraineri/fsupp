@@ -12,6 +12,7 @@ export interface RecWithProduct {
   recommendation_reason: string;
   evidence_quality: string;
   contraindications: string[] | null;
+  citations?: string[] | null;
   product_links?: {
     product_url: string | null;
     image_url: string | null;
@@ -19,7 +20,7 @@ export interface RecWithProduct {
   }[];
 }
 
-export default function RecommendationCard({ rec }: { rec: RecWithProduct }) {
+export default function RecommendationCard({ rec, onDetails }: { rec: RecWithProduct; onDetails: () => void }) {
   const product = rec.product_links?.[0];
 
   return (
@@ -45,15 +46,18 @@ export default function RecommendationCard({ rec }: { rec: RecWithProduct }) {
           Caution: {rec.contraindications.join(', ')}
         </p>
       )}
-      {product?.product_url && (
-        <Link
-          href={product.product_url}
-          target="_blank"
-          className="mt-auto inline-block text-center w-full py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-primary-from to-primary-to text-white hover:opacity-90"
-        >
-          Buy • {product.price ? `$${product.price}` : 'Shop'}
-        </Link>
-      )}
+      <div className="mt-auto flex gap-2">
+        <button onClick={onDetails} className="flex-1 inline-block text-center py-2 text-sm font-medium rounded-lg border border-primary-from text-primary-from hover:bg-primary-from/10">Details</button>
+        {product?.product_url && (
+          <Link
+            href={product.product_url}
+            target="_blank"
+            className="inline-block text-center w-full py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-primary-from to-primary-to text-white hover:opacity-90"
+          >
+            Buy • {product.price ? `$${product.price}` : 'Shop'}
+          </Link>
+        )}
+      </div>
     </div>
   );
 } 

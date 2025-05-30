@@ -4,6 +4,9 @@ import DashboardShell from '../../components/DashboardShell';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AlertTriangle } from 'lucide-react';
 import RecommendationCard, { RecWithProduct } from '../../components/RecommendationCard';
+import FilterBar from '../../components/FilterBar';
+import useSWR from 'swr';
+import RecommendationModal from '../../components/RecommendationModal';
 
 interface Recommendation {
   id: string;
@@ -18,51 +21,51 @@ interface Recommendation {
 
 export default function RecommendationsPage() {
   const supabase = createClientComponentClient();
-  const [recs, setRecs] = useState<RecWithProduct[]>([]);
+  const [filter, setFilter] = useState('all');
+  const [selected, setSelected] = useState<RecWithProduct | null>(null);
+
+  const fetcher = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { recs: [], warnings: [] };
+    const { data: analysis } = await supabase
+      .from('ai_analyses')
+      .select('id, interaction_warnings')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: recommendations } = await supabase
+      .from('supplement_recommendations')
+      .select('*, product_links(*)')
+      .eq('user_id', user.id)
+      .eq('analysis_id', analysis?.id || '')
+      .eq('is_active', true)
+      .order('priority_score');
+
+    return { recs: recommendations ?? [], warnings: analysis?.interaction_warnings ?? [] };
+  };
+
+  const { data, isLoading, mutate } = useSWR('recommendations', fetcher);
   const [warnings, setWarnings] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const recsFiltered = (data?.recs ?? []).filter((r: any) => {
+    if (filter === 'all') return true;
+    if (filter === 'core') return r.priority_score <= 3;
+    if (filter === 'optional') return r.priority_score > 3 && r.priority_score <= 6;
+    return r.priority_score > 6; // experimental
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      // Latest analysis id & warnings
-      const { data: analysis } = await supabase
-        .from('ai_analyses')
-        .select('id, interaction_warnings')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (analysis?.interaction_warnings) {
-        setWarnings(analysis.interaction_warnings);
-      }
-
-      const { data: recommendations } = await supabase
-        .from('supplement_recommendations')
-        .select('*, product_links(*)')
-        .eq('user_id', user.id)
-        .eq('analysis_id', analysis?.id || '')
-        .eq('is_active', true)
-        .order('priority_score', { ascending: false });
-
-      setRecs(recommendations ?? []);
-      setLoading(false);
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (isLoading) return <div className="p-8">Loading...</div>;
 
   return (
     <DashboardShell>
       <div className="max-w-5xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold">Your Supplement Plan</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Your Supplement Plan</h1>
+          <button onClick={() => mutate()} className="px-3 py-1 rounded-md border text-sm">Refresh Plan</button>
+        </div>
+
+        <FilterBar value={filter} onChange={setFilter} />
 
         {warnings.length > 0 && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
@@ -79,15 +82,18 @@ export default function RecommendationsPage() {
         )}
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recs.map((rec) => (
-            <RecommendationCard key={rec.id} rec={rec} />
+          {recsFiltered.map((rec) => (
+            <RecommendationCard key={rec.id} rec={rec} onDetails={() => setSelected(rec)} />
           ))}
 
-          {recs.length === 0 && (
+          {recsFiltered.length === 0 && (
             <p className="text-gray-600 dark:text-gray-400">No recommendations yet. Complete your health assessment and upload data to generate personalized supplements.</p>
           )}
         </div>
       </div>
+      {selected && (
+        <RecommendationModal rec={selected} open={!!selected} onOpenChange={() => setSelected(null)} />
+      )}
     </DashboardShell>
   );
 } 

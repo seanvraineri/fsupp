@@ -1,0 +1,59 @@
+"use client";
+import Image from 'next/image';
+import Link from 'next/link';
+import { Pill } from 'lucide-react';
+
+export interface RecWithProduct {
+  id: string;
+  supplement_name: string;
+  dosage_amount: number;
+  dosage_unit: string;
+  frequency: string;
+  recommendation_reason: string;
+  evidence_quality: string;
+  contraindications: string[] | null;
+  product_links?: {
+    product_url: string | null;
+    image_url: string | null;
+    price: number | null;
+  }[];
+}
+
+export default function RecommendationCard({ rec }: { rec: RecWithProduct }) {
+  const product = rec.product_links?.[0];
+
+  return (
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col h-full">
+      {product?.image_url ? (
+        <div className="relative w-full h-40 mb-4">
+          <Image src={product.image_url} alt={rec.supplement_name} fill className="object-contain" />
+        </div>
+      ) : (
+        <div className="flex items-center justify-center h-40 mb-4 bg-gray-100 dark:bg-gray-700 rounded">
+          <Pill className="w-8 h-8 text-primary-from" />
+        </div>
+      )}
+      <h3 className="text-lg font-semibold mb-1 flex-1">{rec.supplement_name}</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+        {rec.dosage_amount} {rec.dosage_unit} • {rec.frequency}
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">
+        {rec.recommendation_reason}
+      </p>
+      {rec.contraindications && (
+        <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-2">
+          Caution: {rec.contraindications.join(', ')}
+        </p>
+      )}
+      {product?.product_url && (
+        <Link
+          href={product.product_url}
+          target="_blank"
+          className="mt-auto inline-block text-center w-full py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-primary-from to-primary-to text-white hover:opacity-90"
+        >
+          Buy • {product.price ? `$${product.price}` : 'Shop'}
+        </Link>
+      )}
+    </div>
+  );
+} 

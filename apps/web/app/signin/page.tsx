@@ -5,8 +5,8 @@ export default function SignInPage() {
   return (
     <Layout>
       <div className="min-h-screen flex items-center justify-center px-4">
-        <AuthForm variant="signin" />
+        <AuthForm mode="signin" />
       </div>
     </Layout>
   );
-} 
+}

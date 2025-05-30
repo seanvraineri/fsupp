@@ -18,15 +18,19 @@ function parseGeneticText(content: string) {
   // Highlighted markers (add more as needed)
   const mthfr_c677t = snpData['rs1801133'] ?? null; // C677T
   const mthfr_a1298c = snpData['rs1801131'] ?? null; // A1298C
+  const apoe_variant = snpData['rs429358'] && snpData['rs7412'] ? `${snpData['rs429358']}/${snpData['rs7412']}` : null;
+  const vdr_variants = {
+    rs2228570: snpData['rs2228570'] ?? null,
+    rs1544410: snpData['rs1544410'] ?? null,
+  };
 
   return {
     snpData,
     mthfr_c677t,
     mthfr_a1298c,
-    // Place-holders for future variants
-    vdr_variants: null,
+    vdr_variants,
     comt_variants: null,
-    apoe_variant: null,
+    apoe_variant,
   } as const;
 }
 

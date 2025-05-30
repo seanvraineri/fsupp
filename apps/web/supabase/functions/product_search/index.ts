@@ -25,6 +25,9 @@ serve(async (req) => {
   // Call xAI search API (pseudo endpoint)
   const query = `${rec.supplement_name} ${rec.dosage_amount} ${rec.dosage_unit}`;
   const xaiKey = Deno.env.get('XAI_API_KEY');
+  if (!xaiKey) {
+    return new Response('XAI_API_KEY not set', { status: 500 });
+  }
   let product;
   try {
     const resp = await fetch('https://api.xai.io/v1/search', {

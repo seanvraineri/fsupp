@@ -16,14 +16,13 @@ export default function DNAAnimation() {
 
     // Function to resize canvas
     const resizeCanvas = () => {
-      // Set canvas size
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
       canvas.style.width = window.innerWidth + 'px';
       canvas.style.height = window.innerHeight + 'px';
       
-      // Scale for DPR
-      ctx.scale(dpr, dpr);
+      // Reset transform and scale for DPR
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     // Initial resize
@@ -132,8 +131,7 @@ export default function DNAAnimation() {
         ctx.stroke();
       });
 
-      animationFrame++;
-      requestAnimationFrame(animate);
+      animationFrame = requestAnimationFrame(animate);
     };
 
     // Start animation
@@ -148,6 +146,7 @@ export default function DNAAnimation() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (animationFrame) cancelAnimationFrame(animationFrame);
     };
   }, []);
 

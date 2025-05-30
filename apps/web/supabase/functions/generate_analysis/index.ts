@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 import OpenAI from "npm:openai@4.18.0";
 // Import gene reference list (bundler will inline)
 import { geneReferences } from "../../../utils/genetics/reference.ts";
+import { allergyConflicts, drugConflicts } from "../../../utils/interactions.ts";
 
 interface AnalysisRequest {
   user_id: string;
@@ -106,7 +107,33 @@ interface AnalysisResponse {
     return new Response('Failed to parse AI JSON', { status: 500 });
   }
 
-  const { analysis_summary, interaction_warnings = [], supplements } = result;
+  let { analysis_summary, interaction_warnings = [], supplements } = result;
+
+  // Build lowercase sets for quick lookup
+  const allergies = new Set((assessment.allergies ?? []).map((a: string) => a.toLowerCase()));
+  const meds = new Set((assessment.current_medications ?? []).map((m: string) => m.toLowerCase()));
+
+  // Filter supplements against conflicts
+  supplements = supplements.filter((s: any) => {
+    const nameLower = s.supplement_name.toLowerCase();
+    // Allergy
+    for (const [allergy, badSupps] of Object.entries(allergyConflicts)) {
+      if (allergies.has(allergy) && badSupps.some((b) => b.toLowerCase() === nameLower)) {
+        interaction_warnings.push(`Avoid ${s.supplement_name} due to ${allergy} allergy.`);
+        return false;
+      }
+    }
+    // Drug conflicts
+    for (const [drug, badSupps] of Object.entries(drugConflicts)) {
+      if (Array.from(meds).some((m) => m.includes(drug))) {
+        if (badSupps.some((b) => b.toLowerCase() === nameLower)) {
+          interaction_warnings.push(`${s.supplement_name} may interact with ${drug}.`);
+          return false;
+        }
+      }
+    }
+    return true;
+  });
 
   // 4. Insert ai_analyses
   const { data: analysisRow, error: aiErr } = await supabase

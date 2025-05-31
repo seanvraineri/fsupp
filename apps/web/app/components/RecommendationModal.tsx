@@ -3,9 +3,11 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { RecWithProduct } from './RecommendationCard';
 import { X } from 'lucide-react';
+import { useCitations } from '../../utils/useCitations';
 
 export default function RecommendationModal({ rec, open, onOpenChange }: { rec: RecWithProduct; open: boolean; onOpenChange: (o: boolean) => void }) {
   const product = rec.product_links?.[0];
+  const { citations, isLoading } = useCitations(rec.id);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -37,8 +39,15 @@ export default function RecommendationModal({ rec, open, onOpenChange }: { rec: 
             <Tabs.Content value="interactions" className="space-y-2 text-sm">
               {rec.contraindications?.length ? rec.contraindications.map((c) => <p key={c}>• {c}</p>) : <p>No specific contraindications.</p>}
             </Tabs.Content>
-            <Tabs.Content value="citations" className="space-y-2 text-sm">
-              {rec.citations?.length ? rec.citations.map((c: string) => <p key={c}><a href={`https://pubmed.ncbi.nlm.nih.gov/${c}`} target="_blank" className="underline text-primary-from">PubMed {c}</a></p>) : <p>No citations.</p>}
+            <Tabs.Content value="citations" className="space-y-3 text-sm">
+              {isLoading && <p>Loading citations...</p>}
+              {!isLoading && citations.length === 0 && <p>No citations found.</p>}
+              {citations.map((c) => (
+                <div key={c.id}>
+                  <a href={`https://pubmed.ncbi.nlm.nih.gov/${c.pmid}`} target="_blank" className="underline text-primary-from font-medium">{c.title || `PubMed ${c.pmid}`}</a>
+                  {c.summary && <p className="mt-1 text-gray-600 dark:text-gray-300">{c.summary}</p>}
+                </div>
+              ))}
             </Tabs.Content>
           </Tabs.Root>
         </Dialog.Content>

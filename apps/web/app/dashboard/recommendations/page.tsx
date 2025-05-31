@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import DashboardShell from '../../components/DashboardShell';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AlertTriangle } from 'lucide-react';
@@ -7,6 +7,8 @@ import RecommendationCard, { RecWithProduct } from '../../components/Recommendat
 import FilterBar from '../../components/FilterBar';
 import useSWR from 'swr';
 import RecommendationModal from '../../components/RecommendationModal';
+import { useAdherence } from '../../../utils/useAdherence';
+import AdherenceRing from '../../components/AdherenceRing';
 
 interface Recommendation {
   id: string;
@@ -23,6 +25,8 @@ export default function RecommendationsPage() {
   const supabase = createClientComponentClient();
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState<RecWithProduct | null>(null);
+
+  const { percent } = useAdherence();
 
   const fetcher = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -47,7 +51,7 @@ export default function RecommendationsPage() {
   };
 
   const { data, isLoading, mutate } = useSWR('recommendations', fetcher);
-  const [warnings, setWarnings] = useState<string[]>([]);
+  const warnings = data?.warnings ?? [];
   const recsFiltered = (data?.recs ?? []).filter((r: any) => {
     if (filter === 'all') return true;
     if (filter === 'core') return r.priority_score <= 3;
@@ -61,7 +65,10 @@ export default function RecommendationsPage() {
     <DashboardShell>
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Your Supplement Plan</h1>
+          <div className="flex items-center gap-4">
+            <AdherenceRing percent={percent} size={56} />
+            <h1 className="text-3xl font-bold">Your Supplement Plan</h1>
+          </div>
           <button onClick={() => mutate()} className="px-3 py-1 rounded-md border text-sm">Refresh Plan</button>
         </div>
 
@@ -74,7 +81,7 @@ export default function RecommendationsPage() {
               <div>
                 <h2 className="font-semibold text-red-700 dark:text-red-300 mb-1">Interaction Warnings</h2>
                 <ul className="list-disc list-inside text-red-700 dark:text-red-300 space-y-1 text-sm">
-                  {warnings.map((w) => <li key={w}>{w}</li>)}
+                  {warnings.map((w: string) => <li key={w}>{w}</li>)}
                 </ul>
               </div>
             </div>

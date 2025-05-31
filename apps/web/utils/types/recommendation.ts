@@ -10,7 +10,7 @@ export const RecommendationSchema = z.object({
   category: z.string().optional(),
   rationale: z.string(),
   interactions: z.array(z.string()).nullable(),
-  citations: z.array(z.string()).nullable(),
+  pubmed_ids: z.array(z.string()).nullable(),
   product_url: z.string().url().nullable(),
   image_url: z.string().url().nullable(),
   last_updated: z.string(),

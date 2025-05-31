@@ -186,6 +186,13 @@ interface AnalysisResponse {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ recommendation_id: r.id }),
         });
+        // Trigger PubMed citation enrichment (fire and forget)
+        const citationsFn = `${Deno.env.get('SUPABASE_URL')}/functions/v1/pubmed_citations`;
+        await fetch(citationsFn, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recommendation_id: r.id }),
+        });
       } catch (_) {}
     });
   }

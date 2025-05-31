@@ -13,7 +13,6 @@ export interface RecWithProduct {
   recommendation_reason: string;
   evidence_quality: string;
   contraindications: string[] | null;
-  citations?: string[] | null;
   product_links?: {
     product_url: string | null;
     image_url: string | null;

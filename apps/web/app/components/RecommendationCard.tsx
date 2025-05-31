@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Pill } from 'lucide-react';
+import { useIntake } from '../../utils/useIntake';
 
 export interface RecWithProduct {
   id: string;
@@ -22,6 +23,7 @@ export interface RecWithProduct {
 
 export default function RecommendationCard({ rec, onDetails }: { rec: RecWithProduct; onDetails: () => void }) {
   const product = rec.product_links?.[0];
+  const { count, mutate } = useIntake(rec.id);
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col h-full">
@@ -46,7 +48,17 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
           Caution: {rec.contraindications.join(', ')}
         </p>
       )}
+      <p className="text-xs text-gray-500 mb-2">This week: {count} taken</p>
       <div className="mt-auto flex gap-2">
+        <button
+          onClick={async () => {
+            await fetch('/api/intake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recommendation_id: rec.id }) });
+            mutate();
+          }}
+          className="flex-1 inline-block text-center py-2 text-sm font-medium rounded-lg border border-primary-from text-primary-from hover:bg-primary-from/10"
+        >
+          Taken
+        </button>
         <button onClick={onDetails} className="flex-1 inline-block text-center py-2 text-sm font-medium rounded-lg border border-primary-from text-primary-from hover:bg-primary-from/10">Details</button>
         {product?.product_url && (
           <Link

@@ -39,6 +39,9 @@ export default function RecommendationsPage() {
       .limit(1)
       .maybeSingle();
 
+    const { count: markersCount } = await supabase.from('genetic_markers').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+    const { count: labsCount } = await supabase.from('lab_biomarkers').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+
     const { data: recommendations } = await supabase
       .from('supplement_recommendations')
       .select('*, product_links(*)')
@@ -47,7 +50,7 @@ export default function RecommendationsPage() {
       .eq('is_active', true)
       .order('priority_score');
 
-    return { recs: recommendations ?? [], warnings: analysis?.interaction_warnings ?? [] };
+    return { recs: recommendations ?? [], warnings: analysis?.interaction_warnings ?? [], markers_count: markersCount ?? 0, labs_count: labsCount ?? 0 };
   };
 
   const { data, isLoading, mutate } = useSWR('recommendations', fetcher);
@@ -59,7 +62,34 @@ export default function RecommendationsPage() {
     return r.priority_score > 6; // experimental
   });
 
+  // banners helpers
+  const noRecs = (data?.recs ?? []).length === 0;
+  const noUploads = (data?.markers_count ?? 0) === 0 && (data?.labs_count ?? 0) === 0;
+
   if (isLoading) return <div className="p-8">Loading...</div>;
+
+  // Show CTA if user finished assessment but has no plan yet
+  if (noRecs) {
+    return (
+      <DashboardShell>
+        <div className="max-w-md mx-auto text-center py-20">
+          <h1 className="text-3xl font-bold mb-4">Get your starter supplement plan</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">You can always upload labs or genetics later to refine accuracy.</p>
+          <button
+            onClick={async () => {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) return;
+              await supabase.functions.invoke('generate_analysis', { body: { user_id: user.id } });
+              mutate();
+            }}
+            className="px-6 py-3 rounded-lg bg-gradient-to-r from-primary-from to-primary-to text-white font-medium"
+          >
+            Generate My Plan
+          </button>
+        </div>
+      </DashboardShell>
+    );
+  }
 
   return (
     <DashboardShell>
@@ -85,6 +115,13 @@ export default function RecommendationsPage() {
                 </ul>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* accuracy banner */}
+        {noUploads && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+            <p className="text-blue-800 dark:text-blue-200 text-sm">Upload your genetics or recent labs to upgrade plan accuracy and get genotype-specific dosing.</p>
           </div>
         )}
 

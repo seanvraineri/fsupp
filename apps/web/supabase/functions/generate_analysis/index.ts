@@ -63,6 +63,7 @@ serve(async (req) => {
   const openai = new OpenAI();
   const promptSystem = `You are SupplementScribe, a medical-grade supplement–planning engine.
 Rules:
+• If genetics or labs are missing, base decisions on demographics, lifestyle and goals only. Use conservative dosing and mark evidence as moderate.
 • Read all patient data (demographics, lifestyle, meds, allergies, genes, labs, goals).
 • Respect allergies and drug–nutrient interactions; note them in interaction_warnings.
 • Use geneReferences for genotype-specific support.

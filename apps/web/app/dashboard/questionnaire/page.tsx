@@ -691,7 +691,7 @@ export default function QuestionnairePage() {
                     logo: '/logos/nebula.svg',
                     title: 'Nebula Genomics — 30× WGS',
                     desc: 'Whole-genome sequencing; we interpret nutrition SNPs.',
-                    link: 'https://nebula.org/wgs/',
+                    link: 'https://dnacomplete.com/tier-selection/',
                   },
                 ].map((t) => (
                   <TestCard key={t.title} logoSrc={t.logo} title={t.title} description={t.desc} href={t.link} />

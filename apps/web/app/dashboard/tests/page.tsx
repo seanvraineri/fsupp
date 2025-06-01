@@ -14,7 +14,7 @@ const geneticTests = [
     logo: '/logos/nebula.svg',
     title: 'Nebula Genomics — 30× WGS',
     desc: 'CLIA-grade whole genome. VCF/CRAM download → we slice nutrition SNPs.',
-    link: 'https://nebula.org/wgs/',
+    link: 'https://dnacomplete.com/tier-selection/',
     price: '$299',
   },
 ];

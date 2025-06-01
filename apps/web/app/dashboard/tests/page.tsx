@@ -101,20 +101,30 @@ export default function TestsPage() {
 
       {/* Why testing matters */}
       <details className="mt-6 rounded-lg border dark:border-gray-700 p-4" open>
-        <summary className="font-medium cursor-pointer">�� Why do these tests matter?</summary>
+        <summary className="font-medium cursor-pointer">Why do these tests matter?</summary>
         <div className="mt-4 space-y-4 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
           <p>
-            Supplements aren't one-size-fits-all.  Your genes dictate how you methylate folate, absorb vitamin&nbsp;D, handle caffeine, metabolize fats and more.  Meanwhile your current blood chemistry tells us where you're actually deficient <em>today.</em>  When we combine the two, we can:
+            Functional medicine starts with <strong>root-cause data</strong>.  Genes reveal the "software" you were born with—how you convert B-vitamins, clear histamine, transport minerals, detoxify hormones and drugs.  Labs reveal the real-time "hardware status": chronic inflammation, depleted antioxidants, sluggish thyroid, sub-optimal lipids.
+          </p>
+          <p>
+            When these two data streams are merged, we can answer questions like:
           </p>
           <ul className="list-disc list-inside ml-4 space-y-1">
-            <li>Calculate <strong>gene-guided dosages</strong> (e.g., higher 5-MTHF for MTHFR variants, lower fish-oil if APOE-ε4).</li>
-            <li>Avoid nutrients that may backfire given your SNPs or medications.</li>
-            <li>Correct real-world deficiencies faster and skip nutrients you're already replete in—saving you money.</li>
-            <li>Track progress: re-test the same biomarkers in 3-6 months and watch the Adherence Ring turn green.</li>
+            <li><em>"Why do I get sick every winter even though I take vitamin C?"</em> → Your VDR variants plus a chronically low 25-OH Vit-D level mean your immune signaling is underpowered.</li>
+            <li><em>"Why do statins wreck my joints?"</em> → SLCO1B1 and CYP3A5 genotypes slow statin clearance; CoQ10 is tanked on your labs.  We lower the dose and add ubiquinol.</li>
+            <li><em>"Why can't I tolerate B-complex pills?"</em> → MTHFR &amp; MTRR SNPs + high homocysteine signal that you need methyl-folate, not folic acid.</li>
+            <li><em>"Why am I still exhausted on thyroid meds?"</em> → Selenium, zinc and ferritin are sub-optimal; we correct the co-factors so T4 can convert to active T3.</li>
           </ul>
-          <p>
-            In short, good data lets SupplementScribe move from a "best-guess starter stack" to a <strong>medical-grade protocol</strong> dialed to your biochemistry.
+          <p className="pt-2">
+            In short, precise data lets SupplementScribe move you from generic internet advice to a <strong>clinically-defensible protocol</strong>—targeted nutrients, right doses, timed re-testing, and fewer "try-this" drug experiments.
           </p>
+          <h3 className="font-semibold text-primary-from mt-4">What SupplementScribe does with the data</h3>
+          <ul className="list-disc list-inside ml-4 space-y-1">
+            <li>Auto-calculate <strong>genotype-specific doses</strong> (e.g., up-titrate methyl-folate, restrict iron for HFE variants).</li>
+            <li>Flag <strong>drug–nutrient interactions</strong> based on liver-enzyme SNPs and your medication list.</li>
+            <li>Prioritize nutrients that move lab markers into optimal—not just "normal"—ranges.</li>
+            <li>Create a re-test calendar so you can objectively track progress every 3-6 months.</li>
+          </ul>
         </div>
       </details>
     </DashboardShell>

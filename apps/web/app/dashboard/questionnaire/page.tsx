@@ -688,22 +688,10 @@ export default function QuestionnairePage() {
                     link: 'https://www.23andme.com/compare/',
                   },
                   {
-                    logo: '/logos/imaware.svg',
-                    title: 'Essential Blood Panel (imaware)',
-                    desc: 'Vitamin D, B-12, ferritin, HbA1c, hs-CRP.',
-                    link: 'https://www.imaware.health/products/essential-wellness',
-                  },
-                  {
-                    logo: '/logos/thorne.svg',
-                    title: 'Baseline Panel (Thorne)',
-                    desc: 'CBC, CMP, lipid panel, Vit D. Raw numbers only.',
-                    link: 'https://www.thorne.com/products/dp/baseline-health',
-                  },
-                  {
-                    logo: '/logos/ulta.svg',
-                    title: 'Comprehensive Panel (Ulta Lab)',
-                    desc: 'Pick 50+ biomarkers à-la-carte. Data only.',
-                    link: 'https://www.ultalabtests.com/',
+                    logo: '/logos/nebula.svg',
+                    title: 'Nebula Genomics — 30× WGS',
+                    desc: 'Whole-genome sequencing; we interpret nutrition SNPs.',
+                    link: 'https://nebula.org/wgs/',
                   },
                 ].map((t) => (
                   <TestCard key={t.title} logoSrc={t.logo} title={t.title} description={t.desc} href={t.link} />

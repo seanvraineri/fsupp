@@ -68,6 +68,36 @@ export default function TestsPage() {
           </div>
         </div>
       </details>
+
+      {/* How to buy a kit section */}
+      <details className="mt-6 rounded-lg border dark:border-gray-700 p-4">
+        <summary className="font-medium cursor-pointer">🛒 Haven't bought a kit yet? Read this first</summary>
+        <div className="mt-4 space-y-4 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+          <p>
+            There are hundreds of DNA and blood-test companies.  Here's what matters if you plan to use SupplementScribe:
+          </p>
+
+          <h3 className="font-semibold text-primary-from">For Genetic Tests</h3>
+          <ul className="list-disc list-inside ml-4 space-y-1">
+            <li>
+              <strong>Raw-data download</strong> – the vendor must let you export a
+              <code className="ml-1">.txt</code> or <code>.vcf</code> file. Dashboard-only views won't work.
+            </li>
+            <li><strong>CLIA or CAP certified</strong> – guarantees clinical-grade accuracy.</li>
+            <li><strong>SNP coverage &gt; 600 k</strong> – ensures all nutrition SNPs (MTHFR, VDR, COMT, APOE...) are present. Whole-genome sequencing is even better.</li>
+            <li><em>Value add from SS:</em> we translate those variants into doses, interactions and deficiency fixes.</li>
+          </ul>
+
+          <h3 className="font-semibold text-primary-from mt-4">For Blood Panels</h3>
+          <ul className="list-disc list-inside ml-4 space-y-1">
+            <li><strong>Numeric PDF results</strong> – look for labs that email a downloadable report (not screenshots).</li>
+            <li><strong>Include micronutrients</strong> – Vitamin D, Ferritin, Homocysteine, hs-CRP, HbA1c at minimum.</li>
+            <li><em>Value add from SS:</em> we convert raw numbers into correction protocols and track adherence.</li>
+          </ul>
+
+          <p className="text-xs text-gray-500">Tip: if a vendor claims "personalized supplement recommendations," make sure they still give raw downloads—otherwise you can't import the data anywhere else.</p>
+        </div>
+      </details>
     </DashboardShell>
   );
 } 

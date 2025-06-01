@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import DashboardShell from '../../components/DashboardShell';
 import { ChevronRight, ChevronLeft, Check, Upload, FileText, AlertCircle } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import TestCard from '../../components/TestCard';
 
 // AI-friendly structured data format
 interface HealthAssessmentData {
@@ -672,6 +673,41 @@ export default function QuestionnairePage() {
                   </label>
                   <p className="text-xs text-gray-500 mt-2">Supports PDF, PNG, JPG formats</p>
                 </div>
+              </div>
+
+              {/* Test ordering section */}
+              <h3 className="text-lg font-semibold mt-10">Need a test?</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Order an at-home kit below, then upload the raw data to unlock deeper personalization.</p>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {[
+                  {
+                    logo: '/logos/23andme.svg',
+                    title: 'Genetic Starter Kit (23andMe)',
+                    desc: 'Raw SNP file (~650k markers). No supplement advice included.',
+                    link: 'https://www.23andme.com/compare/',
+                  },
+                  {
+                    logo: '/logos/imaware.svg',
+                    title: 'Essential Blood Panel (imaware)',
+                    desc: 'Vitamin D, B-12, ferritin, HbA1c, hs-CRP.',
+                    link: 'https://www.imaware.health/products/essential-wellness',
+                  },
+                  {
+                    logo: '/logos/thorne.svg',
+                    title: 'Baseline Panel (Thorne)',
+                    desc: 'CBC, CMP, lipid panel, Vit D. Raw numbers only.',
+                    link: 'https://www.thorne.com/products/dp/baseline-health',
+                  },
+                  {
+                    logo: '/logos/ulta.svg',
+                    title: 'Comprehensive Panel (Ulta Lab)',
+                    desc: 'Pick 50+ biomarkers à-la-carte. Data only.',
+                    link: 'https://www.ultalabtests.com/',
+                  },
+                ].map((t) => (
+                  <TestCard key={t.title} logoSrc={t.logo} title={t.title} description={t.desc} href={t.link} />
+                ))}
               </div>
             </div>
           )}

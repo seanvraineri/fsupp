@@ -35,6 +35,7 @@ export default function TestsPage() {
       <details className="mt-8 rounded-lg border dark:border-gray-700 p-4">
         <summary className="font-medium cursor-pointer">🔎 Bringing Your Own Data? – Compatibility Checklist</summary>
         <div className="mt-4 space-y-4 text-sm text-gray-700 dark:text-gray-300">
+          <p className="mb-2">If you already have genetic raw data or recent lab results, you can upload them instead of buying a new kit.  Below is a quick checklist so you know whether your file will work with SupplementScribe and, if not, what to look for when choosing a test provider.</p>
           <div>
             <p className="font-semibold mb-1">✅ Must-haves for genetic files</p>
             <ul className="list-disc list-inside space-y-1">
@@ -53,6 +54,10 @@ export default function TestsPage() {
             </ul>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">Our uploader runs a quick schema check and will flag missing critical markers before processing.</p>
+          <div className="pt-2 text-xs text-gray-500 dark:text-gray-400">
+            <p className="font-semibold mb-1">Why these markers?</p>
+            <p>We use the genomic SNPs above for dose-adjustment of folate, vitamin D, omega-3s, detox cofactors and lipid support.  The ten lab biomarkers let our algorithm correct deficiencies and avoid oversupplementation.  Files missing these essentials will still upload, but the plan quality drops markedly.</p>
+          </div>
         </div>
       </details>
     </DashboardShell>

@@ -98,6 +98,25 @@ export default function TestsPage() {
           <p className="text-xs text-gray-500">Tip: if a vendor claims "personalized supplement recommendations," make sure they still give raw downloads—otherwise you can't import the data anywhere else.</p>
         </div>
       </details>
+
+      {/* Why testing matters */}
+      <details className="mt-6 rounded-lg border dark:border-gray-700 p-4" open>
+        <summary className="font-medium cursor-pointer">�� Why do these tests matter?</summary>
+        <div className="mt-4 space-y-4 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+          <p>
+            Supplements aren't one-size-fits-all.  Your genes dictate how you methylate folate, absorb vitamin&nbsp;D, handle caffeine, metabolize fats and more.  Meanwhile your current blood chemistry tells us where you're actually deficient <em>today.</em>  When we combine the two, we can:
+          </p>
+          <ul className="list-disc list-inside ml-4 space-y-1">
+            <li>Calculate <strong>gene-guided dosages</strong> (e.g., higher 5-MTHF for MTHFR variants, lower fish-oil if APOE-ε4).</li>
+            <li>Avoid nutrients that may backfire given your SNPs or medications.</li>
+            <li>Correct real-world deficiencies faster and skip nutrients you're already replete in—saving you money.</li>
+            <li>Track progress: re-test the same biomarkers in 3-6 months and watch the Adherence Ring turn green.</li>
+          </ul>
+          <p>
+            In short, good data lets SupplementScribe move from a "best-guess starter stack" to a <strong>medical-grade protocol</strong> dialed to your biochemistry.
+          </p>
+        </div>
+      </details>
     </DashboardShell>
   );
 } 

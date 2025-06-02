@@ -9,8 +9,13 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleOAuth = async () => {
-      await supabase.auth.exchangeCodeForSession(window.location.href);
-      router.replace('/dashboard');
+      const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+      if (error) {
+        console.error('OAuth callback error', error);
+        router.replace(`/signin?error=${encodeURIComponent(error.message)}`);
+      } else {
+        router.replace('/dashboard');
+      }
     };
     handleOAuth();
   }, []);

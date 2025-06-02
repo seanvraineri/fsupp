@@ -1,13 +1,15 @@
 "use client";
 import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function AuthForm({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const search = useSearchParams();
+  const initialError = search.get('error');
+  const [error, setError] = useState<string | null>(initialError);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -18,16 +20,30 @@ export default function AuthForm({ mode = 'signin' }: { mode?: 'signin' | 'signu
 
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
-        if (error) throw error;
-        // Note: User will need to confirm email before signing in
-        setError('Check your email to confirm your account before signing in.');
+        if (error) {
+          if (error.message && error.message.toLowerCase().includes('registered')) {
+            // User exists – try sign-in instead
+            const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+            if (signInError) throw signInError;
+            router.push('/dashboard');
+            return;
+          }
+          throw error;
+        }
+        if (data?.session) {
+          // email confirmations disabled; user already signed in
+          router.push('/dashboard');
+        } else {
+          // confirmations still enabled
+          setError('Check your email to confirm your account before signing in.');
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,

@@ -3,12 +3,12 @@
 import { motion } from 'framer-motion';
 
 const starters = [
-  "Summarize my plan",
-  "Is magnesium safe?", 
-  "What does my MTHFR mean?",
-  "Explain my supplement interactions",
-  "How should I time my supplements?",
-  "What are the side effects?"
+  "Sleep supplements?",
+  "Vitamin D dosage?",
+  "Drug interactions?",
+  "Energy & focus?",
+  "B12 deficiency signs?",
+  "Best time for magnesium?"
 ];
 
 type QuickPromptBarProps = {
@@ -17,19 +17,22 @@ type QuickPromptBarProps = {
 
 export default function QuickPromptBar({ onPromptClick }: QuickPromptBarProps) {
   return (
-    <div className="flex flex-wrap justify-center gap-3 mb-6">
-      {starters.map((prompt, index) => (
-        <motion.button
-          key={prompt}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05, duration: 0.25 }}
-          onClick={() => onPromptClick(prompt)}
-          className="px-4 py-1.5 text-sm font-medium bg-white/60 dark:bg-white/10 border border-border rounded-full shadow-sm hover:bg-white/80 dark:hover:bg-white/20 backdrop-blur disabled:opacity-50 transition-colors text-foreground"
-        >
-          {prompt}
-        </motion.button>
-      ))}
+    <div className="mb-4">
+      <p className="text-xs text-gray-500 mb-3 text-center">Quick topics:</p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {starters.map((prompt, index) => (
+          <motion.button
+            key={prompt}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.03, duration: 0.2 }}
+            onClick={() => onPromptClick(prompt)}
+            className="px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-150 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+          >
+            {prompt}
+          </motion.button>
+        ))}
+      </div>
     </div>
   );
 } 

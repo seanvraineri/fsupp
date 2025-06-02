@@ -1,0 +1,28 @@
+#!/bin/bash
+
+echo "🔧 Add OpenAI API Key to Supabase"
+echo "================================="
+echo ""
+echo "Steps to add your OpenAI API key:"
+echo ""
+echo "1. Go to your Supabase Dashboard:"
+echo "   https://supabase.com/dashboard/project/tcptynohlpggtufqanqg/settings/functions"
+echo ""
+echo "2. Click on 'Edge Functions' in the left sidebar"
+echo ""
+echo "3. Click on 'Secrets' or 'Environment Variables'"
+echo ""
+echo "4. Add a new secret:"
+echo "   - Name: OPENAI_API_KEY"
+echo "   - Value: Your OpenAI API key (starts with sk-...)"
+echo ""
+echo "5. Save the secret"
+echo ""
+echo "Your AI chat will then use OpenAI instead of XAI!"
+echo ""
+echo "Press Enter when you've added the key to continue..."
+read
+
+echo "✅ Great! The chat should now work with OpenAI."
+echo ""
+echo "Try sending a message in the chat to test it!" 

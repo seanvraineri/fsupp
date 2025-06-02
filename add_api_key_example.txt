@@ -1,0 +1,12 @@
+# Example commands to add API keys to Supabase Edge Functions
+
+# For OpenAI API Key:
+supabase secrets set OPENAI_API_KEY="sk-proj-xxxxxxxxxxxxxxxxxxxxx" --project-ref tcptynohlpggtufqanqg
+
+# For Anthropic/Claude API Key:
+supabase secrets set ANTHROPIC_API_KEY="sk-ant-xxxxxxxxxxxxxxxxxxxxx" --project-ref tcptynohlpggtufqanqg
+
+# To verify secrets are set:
+supabase secrets list --project-ref tcptynohlpggtufqanqg
+
+# Note: Replace the xxx's with your actual API key 

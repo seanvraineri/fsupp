@@ -15,4 +15,8 @@ supabase/.temp/
 *.log
 
 # Mac OS
-.DS_Store 
+.DS_Store
+
+# Ignore Supabase CLI temp artifacts
+supabase/**/.temp/
+apps/**/supabase/.temp/ 

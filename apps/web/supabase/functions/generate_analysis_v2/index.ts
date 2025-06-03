@@ -7,6 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 import { fetchUserContext } from "./lib/dataFetch.ts";
 import { generatePlan } from "./lib/planGenerator.ts";
 import { logMetric, logCost } from "../ai_chat_v4/lib/telemetry.ts";
+import { runModeration } from "../ai_chat_v4/lib/moderate.ts";
 
 interface AnalysisRequest { user_id: string; }
 
@@ -26,8 +27,14 @@ Deno.serve(async (req:Request)=>{
 
   const context = await fetchUserContext(sb, body.user_id);
 
+  // Moderate input (fail closed)
+  const safe = await runModeration(JSON.stringify(context));
+  if(!safe){
+    return new Response(JSON.stringify({error:"Content blocked by moderation"}),{status:400});
+  }
+
   const t0 = performance.now();
-  const planInfo = await generatePlan(context);
+  const planInfo = await generatePlan(context, sb);
   const latency = Math.round(performance.now() - t0);
   await logMetric(sb, { latency_ms: latency, tokens: planInfo.tokens });
   await logCost(sb, planInfo.costUsd);

@@ -13,5 +13,7 @@ export async function fetchUserContext(sb:SupabaseClient, userId:string):Promise
   // Phase-1: minimal implementation – just returns profile row.
   const { data:profile, error } = await sb.from('profiles').select().eq('id', userId).single();
   if(error) throw error;
-  return { profile, labs:[], genes:[] };
+  const { data:labs } = await sb.from('lab_results').select().eq('user_id', userId).order('collected_at',{ascending:false}).limit(50);
+  const { data:genes } = await sb.from('gene_variants').select().eq('user_id', userId);
+  return { profile, labs: labs ?? [], genes: genes ?? [] };
 } 

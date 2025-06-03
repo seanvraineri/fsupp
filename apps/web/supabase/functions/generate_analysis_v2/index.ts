@@ -5,6 +5,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 import { fetchUserContext } from "./lib/dataFetch.ts";
+import { generatePlan } from "./lib/planGenerator.ts";
+import { logMetric, logCost } from "../ai_chat_v4/lib/telemetry.ts";
 
 interface AnalysisRequest { user_id: string; }
 
@@ -23,7 +25,13 @@ Deno.serve(async (req:Request)=>{
   if(!body.user_id) return new Response(JSON.stringify({error:"user_id required"}),{status:400});
 
   const context = await fetchUserContext(sb, body.user_id);
-  // Phase-1: return empty plan, no DB insert yet
-  const result:AnalysisResult = { status:"ok", user_id: body.user_id, plan:[], blocked_recommendations:[] };
+
+  const t0 = performance.now();
+  const planInfo = await generatePlan(context);
+  const latency = Math.round(performance.now() - t0);
+  await logMetric(sb, { latency_ms: latency, tokens: planInfo.tokens });
+  await logCost(sb, planInfo.costUsd);
+
+  const result:AnalysisResult = { status:"ok", user_id: body.user_id, plan: planInfo.plan, blocked_recommendations:[] };
   return new Response(JSON.stringify(result),{status:200,headers:{"Content-Type":"application/json"}});
 }); 

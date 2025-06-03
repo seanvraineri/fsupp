@@ -6,8 +6,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 import { fetchUserContext } from "./lib/dataFetch.ts";
 import { generatePlan } from "./lib/planGenerator.ts";
-import { logMetric, logCost } from "../ai_chat_v4/lib/telemetry.ts";
-import { runModeration } from "../ai_chat_v4/lib/moderate.ts";
+import { logMetric, logCost } from "./lib/telemetry.ts";
+import { runModeration } from "./lib/moderate.ts";
 
 interface AnalysisRequest { user_id: string; }
 

@@ -28,15 +28,15 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col h-full">
       {product?.image_url ? (
         <div className="relative w-full h-40 mb-4">
-          <Image src={product.image_url} alt={rec.supplement_name} fill className="object-contain" />
+          <img src={product.image_url} alt={rec.supplement_name} className="object-contain w-full h-full" loading="lazy" />
         </div>
       ) : (
-        <div className="flex items-center justify-center h-40 mb-4 bg-gray-50 dark:bg-gray-700 rounded">
+        <div className="flex items-center justify-center w-full h-40 mb-4 bg-gray-50 dark:bg-gray-700 rounded">
           {/* Fallback floating supplement graphic */}
           <img
-            src="https://images.unsplash.com/photo-1604589058255-9c1583a0f10e?auto=format&fit=crop&w=320&q=80"
+            src="https://images.unsplash.com/photo-1587395760939-fa9d1df9bc36?auto=format&fit=crop&w=320&q=80"
             alt="Floating supplement"
-            className="object-contain h-full"
+            className="object-contain w-full h-full"
             loading="lazy"
           />
         </div>

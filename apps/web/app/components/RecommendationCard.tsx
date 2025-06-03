@@ -59,8 +59,6 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
         </p>
       )}
       <p className="text-xs text-gray-500 mb-2">This week: {count} taken</p>
-      {/* Debug info */}
-      <p className="text-xs text-gray-400 mb-2">Links: {rec.product_links?.length || 0}</p>
       <div className="mt-auto flex gap-2">
         <button
           onClick={async () => {

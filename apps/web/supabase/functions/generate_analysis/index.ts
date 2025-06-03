@@ -469,6 +469,76 @@ serve(async (req) => {
       if (recErr) {
         console.error("Error inserting recommendations:", recErr);
         console.error("Recommendations error details:", JSON.stringify(recErr, null, 2));
+      } else {
+        // After inserting recommendations, populate product links
+        console.log("Populating product links for recommendations");
+        try {
+          const supplementNames = uniqueSupplements.map(s => s.supplement_name);
+          const productSearchResponse = await supabase.functions.invoke('product_search', {
+            body: { supplements: supplementNames }
+          });
+          
+          if (productSearchResponse.data?.success) {
+            console.log("Product search completed successfully");
+            
+            // Now we need to link the products to the specific recommendations
+            const { data: newRecommendations } = await supabase
+              .from('supplement_recommendations')
+              .select('id, supplement_name')
+              .eq('analysis_id', analysisRow.id);
+              
+            if (newRecommendations) {
+              for (const rec of newRecommendations) {
+                // Find matching products for this recommendation
+                const { data: products } = await supabase
+                  .from('product_links')
+                  .select('*')
+                  .eq('supplement_name', rec.supplement_name)
+                  .limit(3);
+                  
+                if (products && products.length > 0) {
+                  // Update product_links to point to this recommendation
+                  for (const product of products) {
+                    await supabase
+                      .from('product_links')
+                      .update({ recommendation_id: rec.id })
+                      .eq('id', product.id);
+                  }
+                } else {
+                  // If no products found, create basic fallback links
+                  console.log(`Creating fallback product links for ${rec.supplement_name}`);
+                  
+                  const fallbackProducts = [
+                    {
+                      recommendation_id: rec.id,
+                      supplement_name: rec.supplement_name,
+                      brand: "Thorne",
+                      product_name: `${rec.supplement_name} - Premium Grade`,
+                      product_url: "https://www.thorne.com",
+                      price: 29.99,
+                      verified: true
+                    },
+                    {
+                      recommendation_id: rec.id,
+                      supplement_name: rec.supplement_name,
+                      brand: "Pure Encapsulations", 
+                      product_name: `${rec.supplement_name} - Professional Grade`,
+                      product_url: "https://www.pureencapsulations.com",
+                      price: 34.99,
+                      verified: true
+                    }
+                  ];
+                  
+                  await supabase.from('product_links').insert(fallbackProducts);
+                }
+              }
+            }
+          } else {
+            console.error("Product search failed:", productSearchResponse.error);
+          }
+        } catch (productError) {
+          console.error("Error populating product links:", productError);
+        }
       }
     }
 

@@ -34,9 +34,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           {/* Header */}
           <div className="p-4 border-b dark:border-gray-700">
             <button
+              aria-label="Toggle sidebar navigation"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             >
+              <span className="sr-only">Toggle sidebar</span>
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>

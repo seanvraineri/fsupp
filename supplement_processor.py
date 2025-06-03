@@ -12,7 +12,14 @@ import json
 from typing import List, Dict, Any
 from datetime import datetime
 
-from product_fetcher import fetch_shopping_links, upsert_product_links
+try:
+    from product_fetcher import fetch_shopping_links, upsert_product_links
+except ImportError:
+    # Fallback to fixed fetcher when Supabase client or original fetcher unavailable (e.g. scraping-only mode)
+    from product_fetcher_fixed import fetch_shopping_links  # type: ignore
+
+    def upsert_product_links(*_args, **_kwargs):
+        return None
 
 # Setup logging
 logging.basicConfig(

@@ -31,7 +31,7 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
     setIsSearching(true);
     try {
       // Call Supabase edge function for intelligent product search
-      const { data, error } = await supabase.functions.invoke('intelligent_product_search', {
+      const { data, error } = await supabase.functions.invoke('product_search', {
         body: { supplement_name: rec.supplement_name }
       });
       

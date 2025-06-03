@@ -5,9 +5,11 @@ Test Enhanced AI with specific supplement question
 import json
 import urllib.request
 import uuid
+import os
 
-SUPABASE_URL = "https://tcptynohlpggtufqanqg.supabase.co"
-ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjcHR5bm9obHBnZ3R1ZnFhbnFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxOTgyMDUsImV4cCI6MjA2Mzc3NDIwNX0.q9MsmKQAoIUUtyFNE86U9mBupzBboDJO6T1oChtV2E0"
+# Expect these to be set in the environment. Use dummy values for CI if needed.
+SUPABASE_URL = os.getenv("SUPABASE_URL", "http://localhost")
+ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "test_anon_key")
 
 print("🧬 Testing Dr. SupplementScribe with Specific Question")
 print("=" * 60)

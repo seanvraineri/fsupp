@@ -169,7 +169,7 @@ export default function ChatPage() {
 
   // Format message content with proper links and formatting
   const formatMessageContent = (content: string) => {
-    // Convert PMID references to links
+    // Convert PMID references to links and basic sanitization helpers
     content = content.replace(/PMID:\s*(\d+)/gi, '<a href="https://pubmed.ncbi.nlm.nih.gov/$1" target="_blank" rel="noopener" class="text-blue-500 hover:text-blue-600 underline">PMID: $1</a>');
     
     // Convert markdown-style formatting
@@ -188,6 +188,11 @@ export default function ChatPage() {
 
   // Combine all messages
   const allMessages = [...(data?.messages || []), ...optimisticMessages];
+
+  const sanitize = (html: string) => {
+    // very basic sanitization: strip <script> tags
+    return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
+  };
 
   const quickPrompts = [
     "What's the best magnesium for sleep?",
@@ -309,9 +314,11 @@ export default function ChatPage() {
                       )}
                       <div className={`prose prose-sm ${message.role === 'user' ? 'prose-invert' : 'dark:prose-invert'} max-w-none`}>
                         {message.content ? (
-                          <div dangerouslySetInnerHTML={{ 
-                            __html: formatMessageContent(message.content)
-                          }} />
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: sanitize(formatMessageContent(message.content)),
+                            }}
+                          />
                         ) : (
                           <span className="opacity-50">Thinking...</span>
                         )}

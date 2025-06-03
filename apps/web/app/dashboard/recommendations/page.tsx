@@ -99,26 +99,7 @@ export default function RecommendationsPage() {
             <AdherenceRing percent={percent} size={56} />
             <h1 className="text-3xl font-bold">Your Supplement Plan</h1>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => mutate()} className="px-3 py-1 rounded-md border text-sm">Refresh Plan</button>
-            <button 
-              onClick={async () => {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) return;
-                try {
-                  await supabase.functions.invoke('populate_existing_links', { 
-                    body: { user_id: user.id } 
-                  });
-                  mutate(); // Refresh to show new links
-                } catch (error) {
-                  console.error('Error populating links:', error);
-                }
-              }}
-              className="px-3 py-1 rounded-md border text-sm bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-            >
-              Fix Links
-            </button>
-          </div>
+          <button onClick={() => mutate()} className="px-3 py-1 rounded-md border text-sm">Refresh Plan</button>
         </div>
 
         <FilterBar value={filter} onChange={setFilter} />

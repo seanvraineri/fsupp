@@ -1,8 +1,8 @@
 "use client";
 import Image from 'next/image';
-import Link from 'next/link';
 import { Pill } from 'lucide-react';
 import { useIntake } from '../../utils/useIntake';
+import { useState } from 'react';
 
 export interface RecWithProduct {
   id: string;
@@ -23,6 +23,35 @@ export interface RecWithProduct {
 export default function RecommendationCard({ rec, onDetails }: { rec: RecWithProduct; onDetails: () => void }) {
   const product = rec.product_links?.[0];
   const { count, mutate } = useIntake(rec.id);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleBuyClick = async () => {
+    setIsSearching(true);
+    try {
+      // Call intelligent product search function
+      const response = await fetch('/api/intelligent-product-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ supplement_name: rec.supplement_name })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.product_url) {
+        // Open the best product link found
+        window.open(data.product_url, '_blank');
+      } else {
+        // Fallback to generic search
+        window.open(`https://www.vitacost.com/search?t=${encodeURIComponent(rec.supplement_name)}`, '_blank');
+      }
+    } catch (error) {
+      console.error('Product search error:', error);
+      // Fallback to generic search
+      window.open(`https://www.vitacost.com/search?t=${encodeURIComponent(rec.supplement_name)}`, '_blank');
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col h-full">
@@ -71,18 +100,16 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
         </button>
         <button onClick={onDetails} className="flex-1 inline-block text-center py-2 text-sm font-medium rounded-lg border border-primary-from text-primary-from hover:bg-primary-from/10">Details</button>
       </div>
-      {/* Always show buy button if we have any product links */}
-      {(product?.product_url || (rec.product_links && rec.product_links.length > 0)) && (
-        <div className="mt-2">
-          <Link
-            href={product?.product_url || '#'}
-            target="_blank"
-            className="inline-block text-center w-full py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-primary-from to-primary-to text-white hover:opacity-90"
-          >
-            Buy • {product?.price ? `$${product.price}` : 'Shop'}
-          </Link>
-        </div>
-      )}
+      {/* Always show intelligent buy button */}
+      <div className="mt-2">
+        <button
+          onClick={handleBuyClick}
+          disabled={isSearching}
+          className="inline-block text-center w-full py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-primary-from to-primary-to text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {isSearching ? 'Finding Best Price...' : 'Buy Now'}
+        </button>
+      </div>
     </div>
   );
 } 

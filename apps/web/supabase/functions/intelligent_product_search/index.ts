@@ -1,19 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { serve } from "https://deno.land/std@0.201.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 
-export async function POST(request: NextRequest) {
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+serve(async (req: Request) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
-    const { supplement_name } = await request.json();
+    const { supplement_name } = await req.json();
     
     if (!supplement_name) {
-      return NextResponse.json({ success: false, error: 'Supplement name required' }, { status: 400 });
+      throw new Error('supplement_name is required');
     }
 
-    const supabase = createServerComponentClient({ cookies });
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     // First try xAI API for intelligent search
-    const xaiApiKey = process.env.XAI_API_KEY;
+    const xaiApiKey = Deno.env.get('XAI_API_KEY');
     
     if (xaiApiKey) {
       try {
@@ -51,12 +62,15 @@ export async function POST(request: NextRequest) {
               const result = JSON.parse(content);
               if (result.product_url && result.product_url.startsWith('http')) {
                 console.log(`xAI found: ${result.brand} - ${result.product_url}`);
-                return NextResponse.json({
+                return new Response(JSON.stringify({
                   success: true,
                   product_url: result.product_url,
                   brand: result.brand,
                   price: result.price,
                   source: 'xai'
+                }), {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  status: 200
                 });
               }
             } catch (parseError) {
@@ -83,12 +97,15 @@ export async function POST(request: NextRequest) {
     if (products && products.length > 0) {
       const product = products[0];
       console.log(`Reference table found: ${product.brand} - ${product.product_url}`);
-      return NextResponse.json({
+      return new Response(JSON.stringify({
         success: true,
         product_url: product.product_url,
         brand: product.brand,
         price: product.price,
         source: 'reference_table'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
       });
     }
 
@@ -101,15 +118,24 @@ export async function POST(request: NextRequest) {
     
     const fallbackUrl = fallbackUrls[Math.floor(Math.random() * fallbackUrls.length)];
     
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       product_url: fallbackUrl,
       brand: 'Multiple Options',
       source: 'fallback_search'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
     });
 
   } catch (error) {
     console.error('Intelligent product search error:', error);
-    return NextResponse.json({ success: false, error: 'Search failed' }, { status: 500 });
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400
+    });
   }
-} 
+}); 

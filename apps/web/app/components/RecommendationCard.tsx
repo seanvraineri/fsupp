@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { Pill } from 'lucide-react';
 import { useIntake } from '../../utils/useIntake';
 import { useState } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export interface RecWithProduct {
   id: string;
@@ -24,20 +25,17 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
   const product = rec.product_links?.[0];
   const { count, mutate } = useIntake(rec.id);
   const [isSearching, setIsSearching] = useState(false);
+  const supabase = createClientComponentClient();
 
   const handleBuyClick = async () => {
     setIsSearching(true);
     try {
-      // Call intelligent product search function
-      const response = await fetch('/api/intelligent-product-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ supplement_name: rec.supplement_name })
+      // Call Supabase edge function for intelligent product search
+      const { data, error } = await supabase.functions.invoke('intelligent_product_search', {
+        body: { supplement_name: rec.supplement_name }
       });
       
-      const data = await response.json();
-      
-      if (data.success && data.product_url) {
+      if (!error && data?.success && data?.product_url) {
         // Open the best product link found
         window.open(data.product_url, '_blank');
       } else {

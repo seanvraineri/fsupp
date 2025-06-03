@@ -31,14 +31,19 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
           <img src={product.image_url} alt={rec.supplement_name} className="object-contain w-full h-full" loading="lazy" />
         </div>
       ) : (
-        <div className="flex items-center justify-center w-full h-40 mb-4 bg-gray-50 dark:bg-gray-700 rounded">
-          {/* Fallback floating supplement graphic */}
-          <img
-            src="https://images.unsplash.com/photo-1587395760939-fa9d1df9bc36?auto=format&fit=crop&w=320&q=80"
-            alt="Floating supplement"
-            className="object-contain w-full h-full"
-            loading="lazy"
-          />
+        <div className="flex items-center justify-center w-full h-40 mb-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg">
+          {/* Supplement emoji based on type */}
+          <div className="text-6xl">
+            {rec.supplement_name.toLowerCase().includes('vitamin d') ? '☀️' :
+             rec.supplement_name.toLowerCase().includes('magnesium') ? '🧲' :
+             rec.supplement_name.toLowerCase().includes('omega') || rec.supplement_name.toLowerCase().includes('fish') ? '🐟' :
+             rec.supplement_name.toLowerCase().includes('b12') || rec.supplement_name.toLowerCase().includes('b-12') ? '🔋' :
+             rec.supplement_name.toLowerCase().includes('iron') ? '⚡' :
+             rec.supplement_name.toLowerCase().includes('calcium') ? '🦴' :
+             rec.supplement_name.toLowerCase().includes('zinc') ? '✨' :
+             rec.supplement_name.toLowerCase().includes('vitamin c') ? '🍊' :
+             '💊'}
+          </div>
         </div>
       )}
       <h3 className="text-lg font-semibold mb-1 flex-1">{rec.supplement_name}</h3>
@@ -54,6 +59,8 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
         </p>
       )}
       <p className="text-xs text-gray-500 mb-2">This week: {count} taken</p>
+      {/* Debug info */}
+      <p className="text-xs text-gray-400 mb-2">Links: {rec.product_links?.length || 0}</p>
       <div className="mt-auto flex gap-2">
         <button
           onClick={async () => {
@@ -65,16 +72,19 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
           Taken
         </button>
         <button onClick={onDetails} className="flex-1 inline-block text-center py-2 text-sm font-medium rounded-lg border border-primary-from text-primary-from hover:bg-primary-from/10">Details</button>
-        {product?.product_url && (
+      </div>
+      {/* Always show buy button if we have any product links */}
+      {(product?.product_url || (rec.product_links && rec.product_links.length > 0)) && (
+        <div className="mt-2">
           <Link
-            href={product.product_url}
+            href={product?.product_url || '#'}
             target="_blank"
             className="inline-block text-center w-full py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-primary-from to-primary-to text-white hover:opacity-90"
           >
-            Buy • {product.price ? `$${product.price}` : 'Shop'}
+            Buy • {product?.price ? `$${product.price}` : 'Shop'}
           </Link>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 } 

@@ -1,6 +1,6 @@
 // deno-lint-ignore-file
 // @ts-nocheck
-import { createHash } from "https://deno.land/std@0.208.0/hash/mod.ts";
+import { createHash } from "https://deno.land/std@0.177.0/hash/mod.ts";
 
 export interface RagSummary { pmid: string; title: string; summary: string; }
 

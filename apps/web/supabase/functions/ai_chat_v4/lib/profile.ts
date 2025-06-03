@@ -5,7 +5,7 @@ export async function buildUserProfile(supabase:any,userId?:string|null){return 
 // lib/profile.ts – buildUserProfile helper
 // Fetches consolidated user context via RPC and prepares a trimmed profile object.
 
-import { createHash } from "https://deno.land/std@0.208.0/hash/mod.ts";
+import { createHash } from "https://deno.land/std@0.177.0/hash/mod.ts";
 
 export interface UserProfile {
   userId: string | null;

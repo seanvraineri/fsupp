@@ -114,7 +114,7 @@ export default function AuthForm({ mode = 'signin' }: { mode?: 'signin' | 'signu
 
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          {mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}
+          {mode === 'signup' ? 'Already have an account?' : "Don&apos;t have an account?"}
           {' '}
           <a
             href={mode === 'signup' ? '/auth' : '/auth?mode=signup'}
@@ -128,7 +128,7 @@ export default function AuthForm({ mode = 'signin' }: { mode?: 'signin' | 'signu
       {mode === 'signup' && (
         <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-            By signing up, you agree to our subscription terms. You'll be charged $20/month after sign up.
+            By signing up, you agree to our subscription terms. You&apos;ll be charged $20/month after sign up.
             You can cancel anytime from your dashboard.
           </p>
         </div>

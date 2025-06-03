@@ -35,7 +35,7 @@ export default function WhyImportantPage() {
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
               <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Cost of Ineffective Supplements</h3>
               <p className="text-3xl font-bold text-red-600 mb-2">$421/year</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Average wasted on supplements that don't work for your body</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Average wasted on supplements that don&apos;t work for your body</p>
             </div>
             
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
@@ -90,7 +90,7 @@ export default function WhyImportantPage() {
             </p>
             <p className="text-gray-700 dark:text-gray-300">
               With continuous optimization based on your latest lab results and real-world feedback, your supplement plan evolves with you. 
-              No more guesswork, no more wasted money on supplements that don't work for your unique biology.
+              No more guesswork, no more wasted money on supplements that don&apos;t work for your unique biology.
             </p>
           </div>
 
@@ -136,7 +136,7 @@ export default function WhyImportantPage() {
             </h2>
             <p className="mb-6 text-gray-300">
               We take your privacy seriously. All health data is encrypted at rest and in transit using bank-level security protocols. 
-              We're fully HIPAA compliant and undergo regular security audits.
+              We&apos;re fully HIPAA compliant and undergo regular security audits.
             </p>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">

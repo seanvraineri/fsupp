@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import ScrollAnimation from "./ScrollAnimation";
+import { motion } from "framer-motion";
+import ScrollAnimation from "./components/ScrollAnimation";
 
 export default function FAQComponent() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);

@@ -44,7 +44,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 How it Works
               </Link>
               <Link href="/why-important" className="text-gray-700 dark:text-gray-300 hover:text-primary-from transition">
-                Why It's Important
+                Why It&apos;s Important
               </Link>
             </div>
 

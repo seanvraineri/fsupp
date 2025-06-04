@@ -7,6 +7,14 @@ export default function HealthScoreCard(){
   const { data } = useSWR("/api/health-score", fetcher, { refreshInterval: 60000 });
   const score = data?.score ?? 50;
   const trend:number[] = data?.trend ?? [];
+  const components = data?.components ?? {};
+
+  // naive improvement suggestions
+  const suggestions: string[] = [];
+  if (components.symptoms < 60) suggestions.push("Track symptoms daily to improve consistency");
+  if (components.adherence < 70) suggestions.push("Log supplement intake to boost adherence");
+  if (components.biomarkers < 70) suggestions.push("Upload recent lab work to refine biomarkers");
+
   const pct = score;
   const color = pct>70?"text-green-600":pct>50?"text-yellow-500":"text-red-500";
   return (
@@ -21,6 +29,24 @@ export default function HealthScoreCard(){
           <div className={`absolute inset-0 flex items-center justify-center text-2xl font-semibold ${color}`}>{score}</div>
         </div>
       </div>
+      {/* Breakdown */}
+      <div className="mt-4 text-xs text-gray-600 dark:text-gray-400 space-y-1">
+        <p className="font-medium text-gray-800 dark:text-gray-200">Breakdown</p>
+        {(Object.entries(components) as [string,number][]).map(([k,v])=> (
+          <div key={k} className="flex justify-between">
+            <span className="capitalize">{k}</span>
+            <span>{v}</span>
+          </div>
+        ))}
+      </div>
+      {suggestions.length>0 && (
+        <div className="mt-4 text-xs">
+          <p className="font-medium mb-1">How to improve</p>
+          <ul className="list-disc pl-4 space-y-0.5">
+            {suggestions.map((s,i)=>(<li key={i}>{s}</li>))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 } 

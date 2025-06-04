@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import { Plus, Sparkles, Trash2, Send, User, Bot, Paperclip, X, FileText } from 'lucide-react';
 import DashboardShell from '../../components/DashboardShell';
+import DOMPurify from 'dompurify';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ChatPage() {
   const [input, setInput] = useState('');
@@ -189,10 +192,7 @@ export default function ChatPage() {
   // Combine all messages
   const allMessages = [...(data?.messages || []), ...optimisticMessages];
 
-  const sanitize = (html: string) => {
-    // very basic sanitization: strip <script> tags
-    return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-  };
+  const sanitizeMarkdown = (md: string) => DOMPurify.sanitize(md);
 
   const quickPrompts = [
     "What's the best magnesium for sleep?",
@@ -314,11 +314,14 @@ export default function ChatPage() {
                       )}
                       <div className={`prose prose-sm ${message.role === 'user' ? 'prose-invert' : 'dark:prose-invert'} max-w-none`}>
                         {message.content ? (
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: sanitize(formatMessageContent(message.content)),
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 underline" />
                             }}
-                          />
+                          >
+                            {sanitizeMarkdown(formatMessageContent(message.content))}
+                          </ReactMarkdown>
                         ) : (
                           <span className="opacity-50">Thinking...</span>
                         )}

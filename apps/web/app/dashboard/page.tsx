@@ -2,6 +2,8 @@
 import DashboardShell from '../components/DashboardShell';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
+import dynamic from 'next/dynamic';
+const HealthScoreCard = dynamic(()=>import('../components/HealthScoreCard'),{ ssr:false });
 
 export default function DashboardPage() {
   return (
@@ -24,6 +26,11 @@ export default function DashboardPage() {
               Active
             </span>
           </div>
+        </div>
+
+        {/* Health Score */}
+        <div className="mb-8 max-w-xs">
+          <HealthScoreCard />
         </div>
 
         {/* Quick Stats */}

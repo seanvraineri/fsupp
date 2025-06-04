@@ -32,12 +32,16 @@ export default function HealthScoreCard(){
       {/* Breakdown */}
       <div className="mt-4 text-xs text-gray-600 dark:text-gray-400 space-y-1">
         <p className="font-medium text-gray-800 dark:text-gray-200">Breakdown</p>
-        {(Object.entries(components) as [string,number][]).map(([k,v])=> (
-          <div key={k} className="flex justify-between">
-            <span className="capitalize">{k}</span>
-            <span>{v}</span>
-          </div>
-        ))}
+        {Object.keys(components).length===0 ? (
+          <p className="italic text-gray-500">Complete your health assessment to generate a breakdown.</p>
+        ) : (
+          (Object.entries(components) as [string,number][]).map(([k,v])=> (
+            <div key={k} className="flex justify-between">
+              <span className="capitalize">{k}</span>
+              <span>{v}</span>
+            </div>
+          ))
+        )}
       </div>
       {suggestions.length>0 && (
         <div className="mt-4 text-xs">

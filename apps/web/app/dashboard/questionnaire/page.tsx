@@ -62,6 +62,11 @@ interface HealthAssessmentData {
     assessmentVersion: string;
     completionTime: number; // minutes
   };
+
+  // Extra information
+  extra: {
+    currentSupplements: string[]; // Array of supplement names
+  };
 }
 
 export default function QuestionnairePage() {
@@ -87,6 +92,7 @@ export default function QuestionnairePage() {
     dietType: '',
     restrictions: '',
     goals: '',
+    currentSupplements: '',
     geneticFile: null as File | null,
     labFile: null as File | null,
   });
@@ -208,6 +214,12 @@ export default function QuestionnairePage() {
         assessmentDate: new Date().toISOString(),
         assessmentVersion: '1.0',
         completionTime,
+      },
+      extra: {
+        currentSupplements: formData.currentSupplements
+          .split(/[,\n]/)
+          .map(s => s.trim())
+          .filter(Boolean),
       },
     };
   };
@@ -487,16 +499,20 @@ export default function QuestionnairePage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Average Sleep (hours per night)
                 </label>
-                <input
-                  type="number"
-                  value={formData.sleepHours}
-                  onChange={(e) => updateFormData('sleepHours', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="e.g., 7"
-                  min="0"
-                  max="24"
-                  step="0.5"
-                />
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min="4"
+                    max="12"
+                    step="0.5"
+                    value={formData.sleepHours || 7}
+                    onChange={(e) => updateFormData('sleepHours', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-gray-600 dark:text-gray-400 w-16 text-right">
+                    {formData.sleepHours || 7} h
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -697,6 +713,32 @@ export default function QuestionnairePage() {
                   <TestCard key={t.title} logoSrc={t.logo} title={t.title} description={t.desc} href={t.link} />
                 ))}
               </div>
+
+              {/* Current Supplements */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Current Supplements
+                </label>
+                <textarea
+                  value={formData.currentSupplements}
+                  onChange={(e) => updateFormData('currentSupplements', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="List supplements separated by commas (e.g., Vitamin D3, Omega-3, Creatine)"
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500 mt-1">Separate multiple supplements with commas</p>
+              </div>
+
+              {/* Upload step skip link */}
+              <p className="text-xs text-gray-500 text-center mt-6">
+                <button
+                  type="button"
+                  onClick={() => router.push('/dashboard')}
+                  className="underline hover:text-primary-from"
+                >
+                  Skip for now → you can upload anytime from Dashboard
+                </button>
+              </p>
             </div>
           )}
 
@@ -728,7 +770,7 @@ export default function QuestionnairePage() {
                 onClick={handleSubmit}
                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-from to-primary-to text-white rounded-lg font-medium hover:shadow-lg transition-all"
               >
-                Complete Assessment
+                See my plan
                 <Check size={20} />
               </button>
             )}

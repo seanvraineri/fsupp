@@ -1,6 +1,5 @@
 // deno-lint-ignore-file
 // @ts-nocheck
-import { createHash } from "https://deno.land/std@0.177.0/hash/mod.ts";
 
 export interface RagSummary { pmid: string; title: string; summary: string; }
 
@@ -15,7 +14,7 @@ const TTL_MS = 24 * 60 * 60 * 1000; // 24h
 export async function getRagContext(profile: any, query: string, supabase?: any): Promise<RagContext> {
   if (!supabase) return { summaries: [], textBlock: "" };
 
-  const hash = sha256(query);
+  const hash = await sha256(query);
   const cachePath = `${hash}.json`;
 
   try {
@@ -61,8 +60,8 @@ function formatSummaries(summaries: RagSummary[]): string {
   return block;
 }
 
-function sha256(str: string): string {
-  const h = createHash("sha256");
-  h.update(str);
-  return h.toString();
+async function sha256(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 } 

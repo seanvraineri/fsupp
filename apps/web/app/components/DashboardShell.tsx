@@ -16,6 +16,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     { name: 'Recommendations', href: '/dashboard/recommendations', icon: Zap },
     { name: 'Order Tests', href: '/dashboard/tests', icon: Upload },
     { name: 'AI Chat', href: '/dashboard/chat', icon: MessageSquare },
+    { name: 'Symptom Tracker', href: '/dashboard/symptoms', icon: User },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 

@@ -10,7 +10,6 @@ const COMMON_SYMPTOMS=["Fatigue","Headache","Brain fog","Digestive upset","Joint
 export default function SymptomPage(){
   const { data, mutate } = useSWR("/api/symptom-log", fetcher);
   const [selected,setSelected]=useState<string|null>(null);
-  const [severity,setSeverity]=useState(3);
   const [date,setDate]=useState<string>(()=>new Date().toISOString().substring(0,10));
   const [custom,setCustom]=useState("");
 
@@ -20,7 +19,7 @@ export default function SymptomPage(){
     await fetch("/api/symptom-log",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({name:symptomName,severity,date})
+      body:JSON.stringify({name:symptomName,date})
     });
     setSelected(null);
     setCustom("");
@@ -57,13 +56,15 @@ export default function SymptomPage(){
           {/* Date & severity show only when a symptom entered */}
           {(selected || custom.trim()) && (
             <div className="space-y-3">
-              <label className="block text-sm">Date:
-                <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="ml-2 border rounded px-2 py-1" />
-              </label>
-              <label className="block text-sm" htmlFor="severityRange">Severity: {severity}
-                <input id="severityRange" aria-label="Symptom severity 1 to 5" type="range" min={1} max={5} value={severity} onChange={e=>setSeverity(parseInt(e.target.value))} className="w-full" />
-              </label>
-              <button onClick={submit} className="px-4 py-2 bg-purple-600 text-white rounded-lg">Save</button>
+              <label className="block text-xs mb-2 font-medium" htmlFor="dateInput">Date</label>
+              <input
+                id="dateInput"
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                className="mb-4 w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-purple-500"
+              />
+              <button onClick={submit} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">Save</button>
             </div>
           )}
         </div>

@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import { Plus, Sparkles, Trash2, Send, User, Bot, Paperclip, X, FileText } from 'lucide-react';
 import DashboardShell from '../../components/DashboardShell';
+import DOMPurify from 'dompurify';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ChatPage() {
   const [input, setInput] = useState('');
@@ -189,10 +192,7 @@ export default function ChatPage() {
   // Combine all messages
   const allMessages = [...(data?.messages || []), ...optimisticMessages];
 
-  const sanitize = (html: string) => {
-    // very basic sanitization: strip <script> tags
-    return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-  };
+  const sanitizeMarkdown = (md: string) => DOMPurify.sanitize(md);
 
   const quickPrompts = [
     "What's the best magnesium for sleep?",
@@ -314,11 +314,14 @@ export default function ChatPage() {
                       )}
                       <div className={`prose prose-sm ${message.role === 'user' ? 'prose-invert' : 'dark:prose-invert'} max-w-none`}>
                         {message.content ? (
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: sanitize(formatMessageContent(message.content)),
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 underline" />
                             }}
-                          />
+                          >
+                            {sanitizeMarkdown(formatMessageContent(message.content))}
+                          </ReactMarkdown>
                         ) : (
                           <span className="opacity-50">Thinking...</span>
                         )}
@@ -394,19 +397,23 @@ export default function ChatPage() {
                   />
                   
                   <button
+                    aria-label="Attach file"
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading}
                     className="w-8 h-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50 flex items-center justify-center"
                   >
+                    <span className="sr-only">Attach file</span>
                     <Paperclip className="w-4 h-4" />
                   </button>
                   
                   <button
+                    aria-label="Send message"
                     type="submit"
                     disabled={(!input.trim() && !attachedFile) || isLoading}
                     className="w-8 h-8 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg flex items-center justify-center transition-colors"
                   >
+                    <span className="sr-only">Send</span>
                     <Send className="w-4 h-4" />
                   </button>
                 </div>

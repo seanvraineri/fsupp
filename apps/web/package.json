@@ -21,16 +21,18 @@
     "next": "15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-markdown": "^10.1.0",
+    "react-markdown": "^9.0.1",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
     "swr": "^2.3.3",
-    "zod": "^3.25.41"
+    "zod": "^3.25.41",
+    "dompurify": "^3.0.2"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/dompurify": "^3.0.0",
     "autoprefixer": "^10.4.21",
     "eslint": "9.27.0",
     "eslint-config-next": "15.3.2",

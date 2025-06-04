@@ -24,36 +24,47 @@ function parseGeneticText(content: string) {
 }
 
 serve(async (req) => {
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
-  }
-
-  let body: { path: string; bucket?: string; file_type: 'genetic' | 'lab_results' };
   try {
-    body = await req.json();
-  } catch (_) {
-    return new Response('Invalid JSON', { status: 400 });
-  }
-  const { path, bucket = 'uploads', file_type } = body;
-  if (!path || !file_type) return new Response('Missing path or file_type', { status: 400 });
+    if (req.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
+    }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+    // Validate environment variables
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    
+    if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+      console.error('Missing required environment variables', { 
+        SUPABASE_URL: !!SUPABASE_URL, 
+        SERVICE_ROLE_KEY: !!SERVICE_ROLE_KEY 
+      });
+      return new Response('Server configuration error', { status: 500 });
+    }
 
-  const { data: fileRow, error: frErr } = await supabase
-    .from('uploaded_files')
-    .select('*')
-    .eq('storage_path', path)
-    .single();
-  if (frErr || !fileRow) return new Response('upload row not found', { status: 404 });
+    let body: { path: string; bucket?: string; file_type: 'genetic' | 'lab_results' };
+    try {
+      body = await req.json();
+    } catch (_) {
+      return new Response('Invalid JSON', { status: 400 });
+    }
+    const { path, bucket = 'uploads', file_type } = body;
+    if (!path || !file_type) return new Response('Missing path or file_type', { status: 400 });
 
-  const { data: download, error: dlErr } = await supabase.storage.from(bucket).download(path);
-  if (dlErr || !download) return new Response('download failed', { status: 500 });
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-  const arrayBuf = await download.arrayBuffer();
-  try {
+    const { data: fileRow, error: frErr } = await supabase
+      .from('uploaded_files')
+      .select('*')
+      .eq('storage_path', path)
+      .single();
+    if (frErr || !fileRow) return new Response('upload row not found', { status: 404 });
+
+    const { data: download, error: dlErr } = await supabase.storage.from(bucket).download(path);
+    if (dlErr || !download) return new Response('download failed', { status: 500 });
+
+    const arrayBuf = await download.arrayBuffer();
+    
     if (file_type === 'genetic') {
       const parsed = parseGeneticText(new TextDecoder().decode(arrayBuf));
       await supabase.from('genetic_markers').insert({
@@ -66,7 +77,17 @@ serve(async (req) => {
         vdr_variants: parsed.vdr_variants,
       });
     } else {
-      const openai = new OpenAI();
+      // Lab results require OpenAI
+      if (!OPENAI_API_KEY) {
+        console.error('Missing OPENAI_API_KEY for lab parsing');
+        await supabase.from('uploaded_files').update({ 
+          processing_status: 'failed', 
+          processing_error: 'OpenAI API key not configured' 
+        }).eq('id', fileRow.id);
+        return new Response('OpenAI API key required for lab parsing', { status: 500 });
+      }
+      
+      const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuf)));
       const resp = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -91,7 +112,11 @@ serve(async (req) => {
     await supabase.from('uploaded_files').update({ processing_status: 'completed' }).eq('id', fileRow.id);
     return new Response('Processed', { status: 200 });
   } catch (err) {
-    await supabase.from('uploaded_files').update({ processing_status: 'failed', processing_error: String(err) }).eq('id', fileRow.id);
-    return new Response('Failed', { status: 500 });
+    console.error('Error in parse_upload:', err);
+    await supabase.from('uploaded_files').update({ 
+      processing_status: 'failed', 
+      processing_error: String(err) 
+    }).eq('id', fileRow.id);
+    return new Response('Processing failed', { status: 500 });
   }
 }); 

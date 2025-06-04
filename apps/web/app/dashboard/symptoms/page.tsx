@@ -2,84 +2,127 @@
 import { useState } from "react";
 import useSWR from "swr";
 import DashboardShell from "../../components/DashboardShell";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/Calendar";
+import { Slider } from "@/components/ui/Slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
+import { Textarea } from "@/components/ui/Textarea";
+import { Button } from "@/components/ui/Button";
+import { BadgeCheck } from "lucide-react";
 
 const fetcher = (url:string)=>fetch(url).then(r=>r.json());
 
-const NEG_SYMPTOMS=["Fatigue","Headache","Brain fog","Digestive upset","Joint pain","Anxiety"];
-const POS_SYMPTOMS=["High energy","Clear mind","Good mood","Rested","No pain"];
+const PRESETS=["Fatigue","Brain fog","Headache","Digestive upset","Joint pain","Anxiety","Sleep quality","Mood","Focus"] as const;
 
 export default function SymptomPage(){
   const { data, mutate } = useSWR("/api/symptom-log", fetcher);
-  const [selected,setSelected]=useState<string|null>(null);
-  const [positive,setPositive]=useState(false);
-  const [date,setDate]=useState<string>(()=>new Date().toISOString().substring(0,10));
-  const [custom,setCustom]=useState("");
+  const [logDate,setLogDate]=useState<Date>(new Date());
+  const [selected,setSelected]=useState<Record<string,number>>({});
+  const [note,setNote]=useState("");
+  const [addingCustom,setAddingCustom]=useState(false);
+  const [customName,setCustomName]=useState("");
 
-  const submit=async()=>{
-    const symptomName = selected || custom.trim();
-    if(!symptomName) return;
+  const disabled = Object.keys(selected).length===0;
+  const save = async()=>{
+    if(disabled) return;
     await fetch("/api/symptom-log",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({name:symptomName,date,positive})
+      body:JSON.stringify({
+        date: logDate.toISOString(),
+        symptoms: selected,
+        note
+      })
     });
-    setSelected(null);
-    setCustom("");
+    setSelected({});
+    setNote("");
     mutate();
   };
 
   return (
     <DashboardShell>
-      <h1 className="text-2xl font-semibold mb-4">Symptom Tracker</h1>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <h2 className="font-medium mb-2">Log today's symptom</h2>
-          <div className="flex items-center gap-3 mb-4">
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={positive} onChange={e=>setPositive(e.target.checked)} /> Positive</label>
+      <div className="container mx-auto lg:grid lg:grid-cols-[1fr_320px] gap-10 pb-16">
+        {/* left */}
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm space-y-6 mt-8">
+          <h1 className="text-2xl font-semibold">Symptom Tracker</h1>
+          <div className="flex items-center gap-4 mb-4">
+            {/* date popover */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">{format(logDate,"PP")} ▾</Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0" align="start">
+                <Calendar mode="single" selected={logDate} onSelect={(d:Date)=>d&&setLogDate(d)} />
+              </PopoverContent>
+            </Popover>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-4">
-            {(positive?POS_SYMPTOMS:NEG_SYMPTOMS).map(s=> (
+          <div className="flex flex-wrap gap-2">
+            {/* custom add */}
+            {addingCustom ? (
+              <div className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  value={customName}
+                  onChange={e=>setCustomName(e.target.value)}
+                  onKeyDown={e=>{
+                    if(e.key==="Enter" && customName.trim()){
+                      setSelected(p=>({...p,[customName.trim()]:3}));
+                      setCustomName("");
+                      setAddingCustom(false);
+                    } else if(e.key==="Escape"){setAddingCustom(false);setCustomName("");}
+                  }}
+                  placeholder="Symptom name"
+                  className="px-3 py-1 rounded-full text-sm border focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+                <button onClick={()=>{
+                  if(customName.trim()){
+                    setSelected(p=>({...p,[customName.trim()]:3}));
+                    setCustomName("");
+                  }
+                  setAddingCustom(false);
+                }} className="text-purple-600 hover:text-purple-800 text-sm font-medium">Add</button>
+                <button onClick={()=>{setAddingCustom(false);setCustomName("");}} className="text-gray-400 hover:text-gray-600 text-sm">Cancel</button>
+              </div>
+            ) : (
               <button
-                key={s}
-                aria-pressed={selected===s}
-                onClick={()=>setSelected(selected===s?null:s)}
-                className={`px-3 py-1.5 rounded-full text-sm border focus:outline-none focus:ring-2 focus:ring-purple-500 ${selected===s?"bg-purple-600 text-white border-purple-600":"border-gray-300"}`}
-              >{s}</button>
-            ))}
+                onClick={()=>setAddingCustom(true)}
+                className="px-3 py-1 rounded-full text-sm border border-dashed hover:border-purple-500 hover:text-purple-600 transition-colors"
+              >+ Custom</button>
+            )}
+            {/* preset chips */}
+            {PRESETS.map(label=>{
+              const active=label in selected;
+              return <button key={label} aria-pressed={active} onClick={()=>{
+                setSelected(prev=>{
+                  const copy={...prev};
+                  active?delete copy[label]:copy[label]=3;
+                  return copy;
+                });
+              }} className={`px-3 py-1 rounded-full text-sm border transition ${active?"bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-transparent shadow":"hover:bg-gray-100"}`}>{label}</button>
+            })}
           </div>
 
-          {/* Custom symptom */}
-          <input
-            type="text"
-            value={custom}
-            onChange={e=>{setCustom(e.target.value);setSelected(null);}}
-            placeholder="Other symptom..."
-            aria-label="Custom symptom name"
-            className="w-full mb-3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-          />
-
-          {/* Date & severity show only when a symptom entered */}
-          {(selected || custom.trim()) && (
-            <div className="space-y-3">
-              <label className="block text-xs mb-2 font-medium" htmlFor="dateInput">Date</label>
-              <input
-                id="dateInput"
-                type="date"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                className="mb-4 w-full px-4 py-3 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-purple-500"
-              />
-              <button onClick={submit} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">Save</button>
+          {Object.entries(selected).map(([label,val])=> (
+            <div key={label} className="flex items-center gap-4">
+              <span className="w-32 text-sm text-gray-500">{label}</span>
+              <Slider min={1} max={5} step={1} value={[val]} onValueChange={(v:number[])=>setSelected(p=>({...p,[label]:v[0]}))} />
+              <span className="w-5 text-xs">{val}</span>
             </div>
-          )}
+          ))}
+
+          <Textarea placeholder="Other notes…" value={note} onChange={e=>setNote(e.target.value)} />
+
+          <Button disabled={disabled} onClick={save} className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white"><BadgeCheck size={16} className="mr-2"/>Save log</Button>
         </div>
-        <div className="md:border-l md:pl-6">
-          <h2 className="font-medium mb-2">Recent logs</h2>
+
+        {/* right */}
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm mt-8 lg:mt-8 lg:ml-0">
+          <h2 className="text-lg font-semibold mb-4">Recent logs</h2>
           <ul className="space-y-2 text-sm">
-            {data?.logs?.map((l:any)=>(
-              <li key={l.id} className="flex justify-between border-b pb-1"><span className={`${l.positive?"text-green-600":"text-red-600"}`}>{l.name}</span><span className="text-xs">{new Date(l.logged_at).toLocaleDateString()}</span></li>
-            )) || <p className="text-gray-500">No logs yet.</p>}
+            {data?.logs?.map((l:any)=> (
+              <li key={l.id} className="flex justify-between border-b pb-1"><span className={`${l.positive?"text-green-600":"text-red-600"}`}>{l.name} {l.severity&&`(${l.severity}/5)`}</span><span className="text-xs">{new Date(l.logged_at).toLocaleDateString()}</span></li>
+            )) || <p className="text-gray-500 text-xs">No logs yet.</p>}
           </ul>
         </div>
       </div>

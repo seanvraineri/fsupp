@@ -1,11 +1,7 @@
 // deno-lint-ignore-file
 // @ts-nocheck
-export async function buildUserProfile(supabase:any,userId?:string|null){return {userId,health_goals:[],health_conditions:[]};} 
-
 // lib/profile.ts – buildUserProfile helper
 // Fetches consolidated user context via RPC and prepares a trimmed profile object.
-
-import { createHash } from "https://deno.land/std@0.177.0/hash/mod.ts";
 
 export interface UserProfile {
   userId: string | null;
@@ -26,7 +22,7 @@ export async function buildUserProfile(supabase: any, userId?: string | null): P
       raw: {},
       text: "General user without profile.",
       biomarkerAlerts: [],
-      hash: sha256("General user without profile.")
+      hash: await sha256("General user without profile.")
     };
   }
 
@@ -65,12 +61,12 @@ export async function buildUserProfile(supabase: any, userId?: string | null): P
     raw: context,
     text: summary,
     biomarkerAlerts,
-    hash: sha256(summary)
+    hash: await sha256(summary)
   };
 }
 
-function sha256(str: string): string {
-  const hash = createHash("sha256");
-  hash.update(str);
-  return hash.toString();
+async function sha256(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 } 

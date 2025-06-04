@@ -1,11 +1,11 @@
 "use client";
 import Layout from './components/Layout';
-import Hero from './components/Hero';
 import DNAAnimation from './components/DNAAnimation';
 import KeyBenefits from './components/KeyBenefits';
 import ScrollAnimation from './components/ScrollAnimation';
 import { useState } from 'react';
 import { ChevronDown, Dna, Brain, Shield, FileText, Lock, Microscope, Check } from 'lucide-react';
+import Hero from './components/Hero';
 
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);

@@ -51,10 +51,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-label={item.name}
                   className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition mb-2"
                 >
                   <Icon size={20} />
-                  {sidebarOpen && <span>{item.name}</span>}
+                  {sidebarOpen ? <span>{item.name}</span> : <span className="sr-only">{item.name}</span>}
                 </Link>
               );
             })}

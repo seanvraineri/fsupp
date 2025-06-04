@@ -397,19 +397,23 @@ export default function ChatPage() {
                   />
                   
                   <button
+                    aria-label="Attach file"
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading}
                     className="w-8 h-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50 flex items-center justify-center"
                   >
+                    <span className="sr-only">Attach file</span>
                     <Paperclip className="w-4 h-4" />
                   </button>
                   
                   <button
+                    aria-label="Send message"
                     type="submit"
                     disabled={(!input.trim() && !attachedFile) || isLoading}
                     className="w-8 h-8 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg flex items-center justify-center transition-colors"
                   >
+                    <span className="sr-only">Send</span>
                     <Send className="w-4 h-4" />
                   </button>
                 </div>

@@ -16,7 +16,8 @@ export default function HealthScoreCard(){
   if (components.biomarkers < 70) suggestions.push("Upload recent lab work to refine biomarkers");
 
   const pct = score;
-  const color = pct>70?"text-green-600":pct>50?"text-yellow-500":"text-red-500";
+  const brandStroke = "#7c3aed"; // Tailwind purple-600 (primary-from)
+
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm w-full">
       <h3 className="text-sm font-medium mb-2">Health Score</h3>
@@ -24,9 +25,9 @@ export default function HealthScoreCard(){
         <div className="relative w-32 h-32">
           <svg viewBox="0 0 36 36" className="w-full h-full rotate-[-90deg]">
             <path d="M18 2 a16 16 0 1 1 0 32 a16 16 0 1 1 0 -32" fill="none" stroke="#e5e7eb" strokeWidth="4" />
-            <path d="M18 2 a16 16 0 1 1 0 32 a16 16 0 1 1 0 -32" fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray={`${pct},100`} />
+            <path d="M18 2 a16 16 0 1 1 0 32 a16 16 0 1 1 0 -32" fill="none" stroke={brandStroke} strokeWidth="4" strokeDasharray={`${pct},100`} />
           </svg>
-          <div className={`absolute inset-0 flex items-center justify-center text-2xl font-semibold ${color}`}>{score}</div>
+          <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-purple-600 dark:text-purple-400">{score}</div>
         </div>
       </div>
       {/* Breakdown */}
@@ -49,6 +50,19 @@ export default function HealthScoreCard(){
           <ul className="list-disc pl-4 space-y-0.5">
             {suggestions.map((s,i)=>(<li key={i}>{s}</li>))}
           </ul>
+        </div>
+      )}
+
+      {/* Sparkline */}
+      {trend.length>1 && (
+        <div className="mt-4">
+          <svg viewBox="0 0 100 40" className="w-full h-10 text-purple-600 dark:text-purple-400">
+            <polyline
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              points={trend.map((v,i)=>`${(i/(trend.length-1))*100},${40-(v/100)*40}`).join(" ")} />
+          </svg>
         </div>
       )}
     </div>

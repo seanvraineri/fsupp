@@ -3,6 +3,6 @@ export function combineScore(science:number, personal:number):number{
 }
 export function emojiFor(s:number){
   if(s>=80) return "😊";
-  if(s>=60) return "��";
+  if(s>=60) return "🙂";
   return "😟";
-} 
+}

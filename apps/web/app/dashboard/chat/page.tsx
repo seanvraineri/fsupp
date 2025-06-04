@@ -177,6 +177,11 @@ export default function ChatPage() {
     content = content.replace(/PMID:\s*(\d+)/gi, '<a href="https://pubmed.ncbi.nlm.nih.gov/$1" target="_blank" rel="noopener" class="text-blue-500 hover:text-blue-600 underline">PMID: $1</a>');
     // Convert dosage frequency notation "x N" to "× N/day"
     content = content.replace(/\s+x\s+(\d+)\b/g, ' × $1/day');
+    // Add total when two amounts with same unit are summed with '+' (e.g., 800 µg + 400 µg → 800 µg + 400 µg (total 1200 µg))
+    content = content.replace(/(\d+(?:\.\d+)?)\s*(µg|mg|g|IU)\s*\+\s*(\d+(?:\.\d+)?)\s*\2/g, (_, a, unit, b) => {
+      const total = (parseFloat(a) + parseFloat(b)).toString();
+      return `${a} ${unit} + ${b} ${unit} (total ${total} ${unit})`;
+    });
     
     // Convert markdown-style formatting
     content = content

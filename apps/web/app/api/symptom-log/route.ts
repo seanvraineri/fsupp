@@ -14,11 +14,11 @@ export async function GET(){
 
 export async function POST(req:Request){
   const body = await req.json();
-  const { name, severity } = body;
+  const { name, severity, date } = body;
   const supabase = createRouteHandlerClient({ cookies });
   const { data: { user } } = await supabase.auth.getUser();
   if(!user) return NextResponse.json({error:"unauthorized"},{status:401});
-  const { error } = await supabase.from("symptom_logs").insert({user_id:user.id,name,severity});
+  const { error } = await supabase.from("symptom_logs").insert({user_id:user.id,name,severity,logged_at:date??new Date().toISOString()});
   if(error) return NextResponse.json({error:error.message},{status:500});
   return NextResponse.json({ok:true});
 } 

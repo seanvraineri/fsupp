@@ -11,9 +11,9 @@ export default function HealthScoreCard(){
 
   // naive improvement suggestions
   const suggestions: string[] = [];
-  if (components.symptoms < 60) suggestions.push("Track symptoms daily to improve consistency");
+  if (components.inflam_lipids < 60) suggestions.push("Improve anti-inflammatory diet and essential fatty acids");
   if (components.adherence < 70) suggestions.push("Log supplement intake to boost adherence");
-  if (components.biomarkers < 70) suggestions.push("Upload recent lab work to refine biomarkers");
+  if (components.micronutrients < 60) suggestions.push("Upload recent labs to refine micronutrient status");
 
   const pct = score;
   const brandStroke = "#7c3aed"; // Tailwind purple-600 (primary-from)

@@ -5,11 +5,13 @@ import DashboardShell from "../../components/DashboardShell";
 
 const fetcher = (url:string)=>fetch(url).then(r=>r.json());
 
-const COMMON_SYMPTOMS=["Fatigue","Headache","Brain fog","Digestive upset","Joint pain","Anxiety"];
+const NEG_SYMPTOMS=["Fatigue","Headache","Brain fog","Digestive upset","Joint pain","Anxiety"];
+const POS_SYMPTOMS=["High energy","Clear mind","Good mood","Rested","No pain"];
 
 export default function SymptomPage(){
   const { data, mutate } = useSWR("/api/symptom-log", fetcher);
   const [selected,setSelected]=useState<string|null>(null);
+  const [positive,setPositive]=useState(false);
   const [date,setDate]=useState<string>(()=>new Date().toISOString().substring(0,10));
   const [custom,setCustom]=useState("");
 
@@ -19,7 +21,7 @@ export default function SymptomPage(){
     await fetch("/api/symptom-log",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({name:symptomName,date})
+      body:JSON.stringify({name:symptomName,date,positive})
     });
     setSelected(null);
     setCustom("");
@@ -32,8 +34,12 @@ export default function SymptomPage(){
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <h2 className="font-medium mb-2">Log today's symptom</h2>
+          <div className="flex items-center gap-3 mb-4">
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={positive} onChange={e=>setPositive(e.target.checked)} /> Positive</label>
+          </div>
+
           <div className="flex flex-wrap gap-2 mb-4">
-            {COMMON_SYMPTOMS.map(s=> (
+            {(positive?POS_SYMPTOMS:NEG_SYMPTOMS).map(s=> (
               <button
                 key={s}
                 aria-pressed={selected===s}
@@ -62,7 +68,7 @@ export default function SymptomPage(){
                 type="date"
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                className="mb-4 w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-purple-500"
+                className="mb-4 w-full px-4 py-3 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-purple-500"
               />
               <button onClick={submit} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">Save</button>
             </div>
@@ -72,7 +78,7 @@ export default function SymptomPage(){
           <h2 className="font-medium mb-2">Recent logs</h2>
           <ul className="space-y-2 text-sm">
             {data?.logs?.map((l:any)=>(
-              <li key={l.id} className="flex justify-between border-b pb-1"><span>{l.name} ({l.severity}/10)</span><span>{new Date(l.logged_at).toLocaleDateString()}</span></li>
+              <li key={l.id} className="flex justify-between border-b pb-1"><span className={`${l.positive?"text-green-600":"text-red-600"}`}>{l.name}</span><span className="text-xs">{new Date(l.logged_at).toLocaleDateString()}</span></li>
             )) || <p className="text-gray-500">No logs yet.</p>}
           </ul>
         </div>

@@ -21,12 +21,17 @@ const OPENAI_KEY = Deno.env.get("OPENAI_KEY");
 
 async function searchDSLD(query: string): Promise<ResolvedProduct | null> {
   const url = `${DSLD_ENDPOINT}/json.jsp?search=${encodeURIComponent(query)}&max=1`;
-  const r = await fetch(url);
-  if (!r.ok) return null;
-  const j: any = await r.json();
-  if (!j?.products?.length) return null;
-  const p = j.products[0];
-  return { id: p.ndbno, name: p.prodname, brand: p.company };
+  try{
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const j: any = await r.json();
+    if (!j?.products?.length) return null;
+    const p = j.products[0];
+    return { id: p.ndbno, name: p.prodname, brand: p.company };
+  }catch(err){
+    console.error("searchDSLD error",err);
+    return null;
+  }
 }
 
 async function searchByUPC(upc: string) {
@@ -36,9 +41,14 @@ async function searchByUPC(upc: string) {
 
 async function scrapeHtml(rawUrl: string) {
   const proxied = PROXY_URL ? `${PROXY_URL}?url=${encodeURIComponent(rawUrl)}` : rawUrl;
-  const r = await fetch(proxied);
-  if (!r.ok) throw new Error("scrape failed");
-  return await r.text();
+  try{
+    const r = await fetch(proxied);
+    if (!r.ok) throw new Error("scrape failed");
+    return await r.text();
+  }catch(err){
+    console.error("scrapeHtml error",err);
+    throw new Error("Failed to scrape URL");
+  }
 }
 
 function extractUPC(html: string): string | null {
@@ -81,12 +91,16 @@ async function resolveImage(img64: string) {
     },
     body: JSON.stringify(body)
   });
-
-  const j: any = await r.json();
-  const txt = j.choices?.[0]?.message?.content ?? "{}";
-  try {
-    return JSON.parse(txt);
-  } catch {
+  try{
+    const j: any = await r.json();
+    const txt = j.choices?.[0]?.message?.content ?? "{}";
+    try {
+      return JSON.parse(txt);
+    } catch {
+      return { upc: null, title: null };
+    }
+  }catch(err){
+    console.error("resolveImage fetch error",err);
     return { upc: null, title: null };
   }
 }

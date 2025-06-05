@@ -11,7 +11,9 @@ export function Tabs({defaultValue,children,className=""}:{defaultValue:string;c
   </TabsContext.Provider>;
 }
 
-export function TabsList({children}:{children:ReactNode}){return <div className="flex gap-2 mb-4">{children}</div>;}
+export function TabsList({children, className=""}:{children:ReactNode; className?:string}){
+  return <div className={`flex gap-2 mb-4 ${className}`}>{children}</div>;
+}
 
 export function TabsTrigger({value,children}:{value:string;children:ReactNode}){
   const ctx=useContext(TabsContext)!;

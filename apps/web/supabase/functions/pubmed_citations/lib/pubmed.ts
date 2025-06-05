@@ -17,6 +17,10 @@ export interface SearchOptions {
 
 const PUBMED_API_KEY = Deno.env.get('PUBMED_API_KEY');
 const BASE_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+const CACHE_BUCKET = 'pubmed_cache';
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.5';
 
 /**
  * Search PubMed and fetch abstracts with retry logic and caching
@@ -175,12 +179,23 @@ async function fetchWithRetry(url: string, maxAttempts: number): Promise<Respons
  */
 async function getCachedAbstract(cacheKey: string): Promise<string | null> {
   try {
-    // This would require Supabase client - simplified for now
-    // In practice, we'd inject the Supabase client or use a global
-    return null; // TODO: Implement with actual Supabase Storage
-  } catch {
-    return null;
+    const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = Deno.env.toObject();
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const path = `${cacheKey}.txt`;
+    const { data, error } = await supabase.storage.from(CACHE_BUCKET).download(path);
+    if (data && !error) {
+      const meta = await supabase.storage.from(CACHE_BUCKET).getMetadata(path);
+      const updated = meta?.data?.updated_at ? Date.parse(meta.data.updated_at) : 0;
+      if (Date.now() - updated < CACHE_TTL_MS) {
+        return await data.text();
+      }
+    }
+  } catch (error) {
+    console.warn('Cache read error', error);
   }
+  return null;
 }
 
 /**
@@ -188,10 +203,14 @@ async function getCachedAbstract(cacheKey: string): Promise<string | null> {
  */
 async function cacheAbstract(cacheKey: string, abstract: string): Promise<void> {
   try {
-    // This would require Supabase client - simplified for now
-    // In practice, we'd inject the Supabase client or use a global
-    // TODO: Implement with actual Supabase Storage
+    const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = Deno.env.toObject();
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const path = `${cacheKey}.txt`;
+    await supabase.storage.from(CACHE_BUCKET)
+      .upload(path, abstract, { upsert: true, contentType: 'text/plain' });
   } catch (error) {
     console.warn('Failed to cache abstract:', error);
   }
-} 
+}

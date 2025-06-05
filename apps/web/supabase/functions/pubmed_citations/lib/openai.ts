@@ -91,4 +91,3 @@ function buildPersonalizedPrompt(request: SummaryRequest): string {
   return `You are a medical research summarizer. Given a research abstract about ${supplementName}, provide a 1-3 sentence summary explaining the relevance to this specific patient. ${userContext} Focus on practical implications and be concise.`;
 }
 
-export async function summarizeAbstract({abstract}:{abstract:string}){return abstract.slice(0,200);} 

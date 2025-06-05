@@ -61,8 +61,12 @@ serve(async (req)=>{
 
     return new Response(JSON.stringify(verdict),{headers:{"Content-Type":"application/json"}});
   }catch(err:any){
-    console.error(err);
-    await logRun({user_id,product_id,ms:Math.round(performance.now()-started),tokens_used:tokens,cache_hit,err:err.message?.slice(0,200)});
-    return new Response("internal",{status:500});
+    console.error("product_checker error", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    await logRun({user_id,product_id,ms:Math.round(performance.now()-started),tokens_used:tokens,cache_hit,err:msg.slice(0,200)});
+    if(msg.includes("Product not found") || msg.includes("Unable to resolve")){
+      return new Response(JSON.stringify({ error:"not_found", details: msg }),{status:404,headers:{"Content-Type":"application/json"}});
+    }
+    return new Response(JSON.stringify({ error:"internal", details: msg }),{status:500,headers:{"Content-Type":"application/json"}});
   }
-}); 
+});

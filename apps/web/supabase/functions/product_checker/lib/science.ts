@@ -12,27 +12,37 @@ const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SE
 
 async function pubmedSearch(term:string):Promise<string[]>{
   const url = `${PUBMED_BASE}/esearch.fcgi?db=pubmed&retmode=json&retmax=3&term=${encodeURIComponent(term)}`;
-  const r = await fetch(url);
-  if(!r.ok) return [];
-  const j:any = await r.json();
-  return j.esearchresult?.idlist ?? [];
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return [];
+    const j:any = await r.json();
+    return j.esearchresult?.idlist ?? [];
+  }catch(err){
+    console.error("pubmedSearch error",err);
+    return [];
+  }
 }
 
 async function fetchDetails(ids:string[]):Promise<{pmid:string;title:string;abstract:string}[]>{
   if(!ids.length) return [];
   const url = `${PUBMED_BASE}/efetch.fcgi?db=pubmed&retmode=text&rettype=abstract&id=${ids.join(",")}`;
-  const txt = await (await fetch(url)).text();
-  const parts = txt.split(/\n\nPMID: /).map((p,i)=> i?"PMID: "+p:p).filter(Boolean);
-  return parts.map(raw=>{
-    const pmatch = raw.match(/PMID: (\d+)/);
-    const tmatch = raw.match(/Title: (.+)/);
-    const amatch = raw.match(/Abstract\s*[\n\r]+([\s\S]+)/);
-    return {
-      pmid: pmatch?.[1]||"",
-      title: tmatch?.[1]||"",
-      abstract: amatch?.[1]||""
-    };
-  });
+  try{
+    const txt = await (await fetch(url)).text();
+    const parts = txt.split(/\n\nPMID: /).map((p,i)=> i?"PMID: "+p:p).filter(Boolean);
+    return parts.map(raw=>{
+      const pmatch = raw.match(/PMID: (\d+)/);
+      const tmatch = raw.match(/Title: (.+)/);
+      const amatch = raw.match(/Abstract\s*[\n\r]+([\s\S]+)/);
+      return {
+        pmid: pmatch?.[1]||"",
+        title: tmatch?.[1]||"",
+        abstract: amatch?.[1]||""
+      };
+    });
+  }catch(err){
+    console.error("pubmed fetchDetails error",err);
+    return [];
+  }
 }
 
 function judge(abstracts:string[]):"supported"|"weak"|"contradicted"{

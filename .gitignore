@@ -1,5 +1,56 @@
-# Node modules
+# Python
+__pycache__/
+*.py[cod]
+*.env
+
+# Output files in root (can be made more specific if needed)
+/*.json
+/*.txt
+
+# Deno
+# deno.lock is usually committed, so not adding it here unless specified
+
+# Next.js
+.next/
+out/
+
+# Node
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editor directories and files
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Log files
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Other
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# If you have a venv directory for virtual environments
+venv/
+.venv/
 
 # Supabase generated folders
 supabase/.temp/
@@ -7,9 +58,6 @@ supabase/.temp/
 
 # Environment variables
 .env*
-
-# Next.js build
-.next/
 
 # Logs
 *.log

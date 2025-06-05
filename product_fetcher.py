@@ -12,8 +12,8 @@ from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
 
-import requests
-from serpapi import GoogleSearch
+import requests # type: ignore
+from serpapi import GoogleSearch # type: ignore
 
 # Supabase Python client (@supabase/supabase-py)
 from supabase import create_client, Client  # pip install supabase_py
@@ -89,16 +89,14 @@ class ProductFetcher:
         return value
     
     def _extract_domain(self, url: str) -> Optional[str]:
-        """Extract domain from URL and check if it's in whitelist."""
-        try:
-            parsed = urlparse(url)
-            domain = parsed.netloc.lower()
-            # Remove www. prefix if present
-            if domain.startswith('www.'):
-                domain = domain[4:]
-            return domain
-        except Exception:
+        """Extract domain from URL. Returns None if parsing fails."""
+        if '://' not in url:
             return None
+        parsed = urlparse(url)
+        domain = parsed.netloc.lower()
+        if domain.startswith('www.'):
+            domain = domain[4:]
+        return domain or None
     
     def _is_approved_domain(self, url: str) -> bool:
         """Check if URL is from an approved domain."""
@@ -207,13 +205,8 @@ class ProductFetcher:
         Returns:
             List of ProductLink objects from approved domains
         """
-        # Multiple query variations for better specificity
-        queries = [
-            f'"{brand}" {supplement}',  # Exact brand match
-            f'{brand} {supplement} supplement',  # Add supplement keyword
-            f'{brand} {supplement} capsules',  # Common form
-            f'{brand} {supplement} tablets',   # Alternative form
-        ]
+        # Legacy behaviour: single query "Brand Supplement"
+        queries = [f"{brand} {supplement}"]
         
         all_product_links = []
         seen_urls = set()
@@ -305,8 +298,21 @@ class ProductFetcher:
                 logging.warning(f"Failed to search {brand} for {supplement}: {e}")
                 continue
         
+        # If still not enough links, fallback to general search once to fill
+        if len(all_links) < n_links:
+            try:
+                extra = self._search_general_supplement(supplement)
+                for link in extra:
+                    if link.url not in seen_urls:
+                        all_links.append(link)
+                        seen_urls.add(link.url)
+                        if len(all_links) >= n_links:
+                            break
+            except Exception as e:
+                logging.warning(f"Fallback general search failed: {e}")
+
         if not all_links:
-            raise ValueError(f"No specific shopping links found for '{supplement}' from approved brands")
+            raise ValueError(f"No shopping links found for '{supplement}'")
         
         # Return up to n_links results
         result_links = all_links[:n_links]
@@ -347,6 +353,27 @@ class ProductFetcher:
             
         except Exception as e:
             raise ValueError(f"Failed to store product links in database: {e}")
+
+    def _search_general_supplement(self, supplement: str) -> List[ProductLink]:
+        """General supplement search (legacy). Converts raw results to ProductLink objects."""
+        query = f"{supplement} supplement" if not supplement.lower().endswith("supplement") else supplement
+        raw_results = self._search_with_retry(query)
+        links: List[ProductLink] = []
+        for result in raw_results:
+            link = result.get('link','')
+            if not self._is_approved_domain(link):
+                continue
+            links.append(ProductLink(
+                url=link,
+                price=self._extract_price(result),
+                rating=self._extract_rating(result),
+                brand=self._get_brand_from_url(link)
+            ))
+        return links
+
+    def _search_brand_supplement(self, brand:str, supplement:str) -> List[ProductLink]:
+        """Compatibility wrapper for tests—delegates to specific search."""
+        return self._search_specific_supplement(brand, supplement)
 
 
 # Public API functions

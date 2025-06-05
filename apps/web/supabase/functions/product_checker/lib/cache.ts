@@ -13,6 +13,7 @@ export async function getCache(uid:string, pid:string){
 }
 export async function setCache(uid:string,pid:string,verdict:any){
   await sb.from("product_verdict_cache").upsert({user_id:uid,product_id:pid,verdict});
+  await sb.from("product_scans").insert({user_id:uid,product_id:pid,verdict}).select();
 }
 export async function logRun(fields:{user_id:string;product_id:string;ms:number;tokens_used:number;cache_hit:boolean;err?:string}){
   await sb.from("product_checker_logs").insert(fields);

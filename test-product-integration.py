@@ -3,6 +3,11 @@
 import requests
 import json
 import time
+import os
+
+if os.getenv("CI_SKIP_NETWORK_TESTS", "1") == "1" and __name__ != "__main__":
+    import pytest
+    pytest.skip("Skipping network test (CI_SKIP_NETWORK_TESTS enabled)", allow_module_level=True)
 
 # Test configuration
 SUPABASE_URL = "https://tcptynohlpggtufqanqg.supabase.co"

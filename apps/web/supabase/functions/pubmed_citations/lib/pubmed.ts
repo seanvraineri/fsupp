@@ -15,8 +15,12 @@ export interface SearchOptions {
   cacheEnabled?: boolean;
 }
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
+
 const PUBMED_API_KEY = Deno.env.get('PUBMED_API_KEY');
 const BASE_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+const STORAGE_BUCKET = "pubmed_cache";
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 /**
  * Search PubMed and fetch abstracts with retry logic and caching
@@ -175,9 +179,26 @@ async function fetchWithRetry(url: string, maxAttempts: number): Promise<Respons
  */
 async function getCachedAbstract(cacheKey: string): Promise<string | null> {
   try {
-    // This would require Supabase client - simplified for now
-    // In practice, we'd inject the Supabase client or use a global
-    return null; // TODO: Implement with actual Supabase Storage
+    const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = Deno.env.toObject();
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const path = `${cacheKey}.json`;
+    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).download(path);
+    if (error || !data) return null;
+
+    // Check TTL using metadata timestamp
+    const metaRes = await supabase.storage.from(STORAGE_BUCKET).getMetadata(path);
+    const lastModified = metaRes?.data?.updated_at ? Date.parse(metaRes.data.updated_at) : 0;
+    if (Date.now() - lastModified > CACHE_TTL_MS) return null;
+
+    const text = await data.text();
+    try {
+      const parsed = JSON.parse(text);
+      return parsed.abstract || null;
+    } catch {
+      return text;
+    }
   } catch {
     return null;
   }
@@ -188,10 +209,17 @@ async function getCachedAbstract(cacheKey: string): Promise<string | null> {
  */
 async function cacheAbstract(cacheKey: string, abstract: string): Promise<void> {
   try {
-    // This would require Supabase client - simplified for now
-    // In practice, we'd inject the Supabase client or use a global
-    // TODO: Implement with actual Supabase Storage
+    const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = Deno.env.toObject();
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const path = `${cacheKey}.json`;
+    const payload = JSON.stringify({ timestamp: Date.now(), abstract });
+    await supabase.storage.from(STORAGE_BUCKET).upload(path, payload, {
+      upsert: true,
+      contentType: "application/json",
+    });
   } catch (error) {
     console.warn('Failed to cache abstract:', error);
   }
-} 
+}

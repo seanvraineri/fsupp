@@ -7,6 +7,10 @@ import urllib.request
 import uuid
 import os
 
+if os.getenv("CI_SKIP_NETWORK_TESTS", "1") == "1" and __name__ != "__main__":
+    import pytest
+    pytest.skip("Skipping network test (CI_SKIP_NETWORK_TESTS enabled)", allow_module_level=True)
+
 # Expect these to be set in the environment. Use dummy values for CI if needed.
 SUPABASE_URL = os.getenv("SUPABASE_URL", "http://localhost")
 ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "test_anon_key")

@@ -6,7 +6,7 @@ Fetch and store PubMed citations for supplement recommendations with personalize
 
 - **PubMed Integration**: Search using eSearch → eSummary → eFetch pipeline
 - **Exponential Backoff**: Retry logic for API rate limits and failures
-- **24h Caching**: Supabase Storage bucket caching for abstracts (TODO: implement)
+- **24h Caching**: Supabase Storage bucket caching for abstracts
 - **Relevance Scoring**: Cosine similarity against user health profile
 - **AI Summarization**: Optional OpenAI-powered personalized summaries
 - **Database-Safe**: Column introspection and type-safe upserts

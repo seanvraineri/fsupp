@@ -7,6 +7,10 @@ import urllib.request
 import os
 import sys
 
+if os.getenv("CI_SKIP_NETWORK_TESTS", "1") == "1" and __name__ != "__main__":
+    import pytest
+    pytest.skip("Skipping network test (CI_SKIP_NETWORK_TESTS enabled)", allow_module_level=True)
+
 # Configuration
 SUPABASE_URL = "https://tcptynohlpggtufqanqg.supabase.co"
 ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjcHR5bm9obHBnZ3R1ZnFhbnFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxOTgyMDUsImV4cCI6MjA2Mzc3NDIwNX0.q9MsmKQAoIUUtyFNE86U9mBupzBboDJO6T1oChtV2E0"

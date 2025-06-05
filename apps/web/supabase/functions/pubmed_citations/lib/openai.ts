@@ -3,6 +3,8 @@
 // openai.ts - v2 2025-06-03
 // Safe OpenAI wrapper for abstract summarization with optional API key
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
+
 export interface UserProfile { [key:string]:any }
 
 export interface SummaryRequest {
@@ -13,6 +15,8 @@ export interface SummaryRequest {
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const OPENAI_ORG = Deno.env.get('OPENAI_ORG');
+const SUMMARY_BUCKET = "pubmed_cache";
+const SUMMARY_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 /**
  * Summarize an abstract into 1-3 personalized sentences
@@ -22,6 +26,15 @@ export async function summarizeAbstract(request: SummaryRequest): Promise<string
   if (!OPENAI_API_KEY) {
     console.warn('OPENAI_API_KEY not configured - skipping summarization');
     return '';
+  }
+
+  const cacheKey = await hashString(
+    request.abstract + JSON.stringify(request.userProfile) + request.supplementName
+  );
+
+  const cached = await getCachedSummary(cacheKey);
+  if (cached) {
+    return cached;
   }
 
   try {
@@ -58,7 +71,13 @@ export async function summarizeAbstract(request: SummaryRequest): Promise<string
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content?.trim() || '';
+    const summary = data.choices?.[0]?.message?.content?.trim() || '';
+
+    if (summary) {
+      cacheSummary(cacheKey, summary);
+    }
+
+    return summary;
     
   } catch (error) {
     console.error('Error in summarizeAbstract:', error);
@@ -91,4 +110,54 @@ function buildPersonalizedPrompt(request: SummaryRequest): string {
   return `You are a medical research summarizer. Given a research abstract about ${supplementName}, provide a 1-3 sentence summary explaining the relevance to this specific patient. ${userContext} Focus on practical implications and be concise.`;
 }
 
-export async function summarizeAbstract({abstract}:{abstract:string}){return abstract.slice(0,200);} 
+async function hashString(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function getCachedSummary(cacheKey: string): Promise<string | null> {
+  try {
+    const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = Deno.env.toObject();
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const path = `summary_${cacheKey}.json`;
+    const { data } = await supabase.storage.from(SUMMARY_BUCKET).download(path);
+    if (!data) return null;
+
+    const metaRes = await supabase.storage.from(SUMMARY_BUCKET).getMetadata(path);
+    const lastModified = metaRes?.data?.updated_at ? Date.parse(metaRes.data.updated_at) : 0;
+    if (Date.now() - lastModified > SUMMARY_CACHE_TTL_MS) return null;
+
+    const text = await data.text();
+    try {
+      const parsed = JSON.parse(text);
+      return parsed.summary || null;
+    } catch {
+      return text;
+    }
+  } catch {
+    return null;
+  }
+}
+
+async function cacheSummary(cacheKey: string, summary: string): Promise<void> {
+  try {
+    const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = Deno.env.toObject();
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const path = `summary_${cacheKey}.json`;
+    const payload = JSON.stringify({ timestamp: Date.now(), summary });
+    await supabase.storage.from(SUMMARY_BUCKET).upload(path, payload, {
+      upsert: true,
+      contentType: 'application/json',
+    });
+  } catch (error) {
+    console.warn('Failed to cache summary:', error);
+  }
+}
+

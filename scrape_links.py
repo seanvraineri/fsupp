@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Fast scraper that gathers up to 5 purchase links per supplement using the
-already-working `product_fetcher_fixed.fetch_shopping_links` helper.  Results are
+`product_fetcher.fetch_shopping_links` helper. Results are
 written to `product_links.txt` as TAB-separated values:
 
 supplement \t brand \t price \t url
@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 from supplement_processor import SUPPLEMENTS  # 200-item list
-from product_fetcher_fixed import fetch_shopping_links
+from product_fetcher import fetch_shopping_links
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 

@@ -19,15 +19,14 @@ serve(async (req) => {
       return new Response('Method not allowed', { status: 405 });
     }
 
-    // Validate environment variables
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // Use hardcoded values since environment variables aren't working correctly
+    const SUPABASE_URL = "https://tcptynohlpggtufqanqg.supabase.co";
+    const SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjcHR5bm9obHBnZ3R1ZnFhbnFnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODE5ODIwNSwiZXhwIjoyMDYzNzc0MjA1fQ.DZzvM9eC_4sDcTjndvdPEKVPJgJBg8-rB9M9Ax_DzCI";
+    
+    console.log('Using hardcoded connection values');
     
     if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-      console.error('Missing required environment variables', { 
-        SUPABASE_URL: !!SUPABASE_URL, 
-        SERVICE_ROLE_KEY: !!SERVICE_ROLE_KEY 
-      });
+      console.error('Missing required connection values');
       return new Response('Server configuration error', { status: 500 });
     }
 
@@ -39,6 +38,7 @@ serve(async (req) => {
     }
     
     const { path, file_id, bucket = 'uploads', file_type } = body;
+    console.log('Request body:', { path, file_id, bucket, file_type });
     
     // Support both path and file_id parameters
     if (!path && !file_id) {
@@ -46,12 +46,14 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    console.log('Supabase client created');
     
     // Get file row - either by path or by file_id
     let fileRow: any;
     let storagePath: string;
     
     if (file_id) {
+      console.log('Looking up file by ID:', file_id);
       // Look up by file_id
       const { data: fileData, error: frErr } = await supabase
         .from('uploaded_files')
@@ -59,13 +61,17 @@ serve(async (req) => {
         .eq('id', file_id)
         .single();
       
+      console.log('File lookup result:', { fileData, frErr });
+      
       if (frErr || !fileData) {
-        return new Response('File not found by file_id', { status: 404 });
+        console.error('File not found by file_id:', frErr);
+        return new Response(`File not found by file_id: ${frErr?.message || 'No data'}`, { status: 404 });
       }
       
       fileRow = fileData;
       storagePath = fileRow.storage_path;
     } else {
+      console.log('Looking up file by path:', path);
       // Look up by path (legacy behavior)
       const { data: fileData, error: frErr } = await supabase
         .from('uploaded_files')
@@ -73,13 +79,18 @@ serve(async (req) => {
         .eq('storage_path', path)
         .single();
       
+      console.log('File lookup result:', { fileData, frErr });
+      
       if (frErr || !fileData) {
-        return new Response('File not found by path', { status: 404 });
+        console.error('File not found by path:', frErr);
+        return new Response(`File not found by path: ${frErr?.message || 'No data'}`, { status: 404 });
       }
       
       fileRow = fileData;
       storagePath = path!;
     }
+    
+    console.log('File found:', { id: fileRow.id, storage_path: storagePath });
     
     // Determine file_type if not provided
     const determinedFileType = file_type || fileRow.file_type;
@@ -137,8 +148,8 @@ serve(async (req) => {
     // Try to update the file status if we have the identifier
     try {
       const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        "https://tcptynohlpggtufqanqg.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjcHR5bm9obHBnZ3R1ZnFhbnFnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODE5ODIwNSwiZXhwIjoyMDYzNzc0MjA1fQ.DZzvM9eC_4sDcTjndvdPEKVPJgJBg8-rB9M9Ax_DzCI"
       );
       
       const body = await req.json();

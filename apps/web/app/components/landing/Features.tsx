@@ -1,5 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import {
   DatabaseZap,
   Fingerprint,
@@ -107,7 +108,7 @@ export const Features = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <img
+            <Image
               src="https://placehold.co/600x600/000000/FFFFFF?text=App+Screenshot"
               alt="Product screenshot"
               className="w-[30rem] max-w-none rounded-xl shadow-xl ring-1 ring-gray-400/10 sm:w-[40rem] md:-ml-4 lg:-ml-0"

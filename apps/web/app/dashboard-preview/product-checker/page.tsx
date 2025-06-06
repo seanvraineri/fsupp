@@ -61,7 +61,7 @@ export default function ProductCheckerPreviewPage() {
       const mapped = data.map(d => verdictToResult(d.verdict, d.updated_at));
       setArchive(mapped);
     })();
-  }, []);
+  }, [supabase]);
 
   async function runCheck(q: string) {
     if (!userId) return;

@@ -18,6 +18,6 @@ export default function AuthCallback() {
       }
     };
     handleOAuth();
-  }, []);
+  }, [router, supabase.auth]);
   return <p className="p-8">Signing you in...</p>;
 } 

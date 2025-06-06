@@ -266,10 +266,26 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(20);
 
-      // Get uploaded lab data and genetic information
+      // Get genetic markers data
+      const { data: geneticData } = await supabase
+        .from("genetic_markers")
+        .select("mthfr_c677t, mthfr_a1298c, apoe_variant, vdr_variants, comt_variants, snp_data, source_company, chip_version, created_at")
+        .eq("user_id", db_user_id)
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      // Get lab biomarkers data
+      const { data: labData } = await supabase
+        .from("lab_biomarkers")
+        .select("vitamin_d, vitamin_b12, iron, ferritin, magnesium, cholesterol_total, hdl, ldl, triglycerides, glucose, hba1c, tsh, biomarker_data, test_date, lab_name, created_at")
+        .eq("user_id", db_user_id)
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      // Get uploaded file status for context
       const { data: uploads } = await supabase
-        .from("user_uploads")
-        .select("file_type, parsed_data, created_at")
+        .from("uploaded_files")
+        .select("file_type, file_name, processing_status, created_at")
         .eq("user_id", db_user_id)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -319,17 +335,60 @@ serve(async (req) => {
         });
       }
 
+      if (geneticData && geneticData.length > 0) {
+        personalizedContext += `\n\n### YOUR GENETIC MARKERS:`;
+        geneticData.forEach(genetic => {
+          const testDate = new Date(genetic.created_at).toLocaleDateString();
+          personalizedContext += `\n**Genetic Test from ${genetic.source_company || 'Unknown'} (${testDate}):**`;
+          
+          if (genetic.mthfr_c677t) {
+            personalizedContext += `\n- MTHFR C677T: ${genetic.mthfr_c677t}`;
+          }
+          if (genetic.mthfr_a1298c) {
+            personalizedContext += `\n- MTHFR A1298C: ${genetic.mthfr_a1298c}`;
+          }
+          if (genetic.apoe_variant) {
+            personalizedContext += `\n- APOE Variant: ${genetic.apoe_variant}`;
+          }
+          if (genetic.comt_variants && typeof genetic.comt_variants === 'object') {
+            personalizedContext += `\n- COMT Variants: ${JSON.stringify(genetic.comt_variants)}`;
+          }
+          if (genetic.vdr_variants && typeof genetic.vdr_variants === 'object') {
+            personalizedContext += `\n- VDR Variants: ${JSON.stringify(genetic.vdr_variants)}`;
+          }
+          if (genetic.chip_version) {
+            personalizedContext += `\n- Chip Version: ${genetic.chip_version}`;
+          }
+        });
+      }
+
+      if (labData && labData.length > 0) {
+        personalizedContext += `\n\n### YOUR LAB RESULTS:`;
+        labData.forEach(lab => {
+          const testDate = lab.test_date || new Date(lab.created_at).toLocaleDateString();
+          personalizedContext += `\n**Lab Results from ${lab.lab_name || 'Unknown'} (${testDate}):**`;
+          
+          if (lab.vitamin_d) personalizedContext += `\n- Vitamin D: ${lab.vitamin_d} ng/mL`;
+          if (lab.vitamin_b12) personalizedContext += `\n- Vitamin B12: ${lab.vitamin_b12} pg/mL`;
+          if (lab.iron) personalizedContext += `\n- Iron: ${lab.iron} μg/dL`;
+          if (lab.ferritin) personalizedContext += `\n- Ferritin: ${lab.ferritin} ng/mL`;
+          if (lab.magnesium) personalizedContext += `\n- Magnesium: ${lab.magnesium} mg/dL`;
+          if (lab.cholesterol_total) personalizedContext += `\n- Total Cholesterol: ${lab.cholesterol_total} mg/dL`;
+          if (lab.hdl) personalizedContext += `\n- HDL: ${lab.hdl} mg/dL`;
+          if (lab.ldl) personalizedContext += `\n- LDL: ${lab.ldl} mg/dL`;
+          if (lab.triglycerides) personalizedContext += `\n- Triglycerides: ${lab.triglycerides} mg/dL`;
+          if (lab.glucose) personalizedContext += `\n- Glucose: ${lab.glucose} mg/dL`;
+          if (lab.hba1c) personalizedContext += `\n- HbA1c: ${lab.hba1c}%`;
+          if (lab.tsh) personalizedContext += `\n- TSH: ${lab.tsh} mIU/L`;
+        });
+      }
+
       if (uploads && uploads.length > 0) {
-        personalizedContext += `\n\n### AVAILABLE BIOMARKER & GENETIC DATA:`;
+        personalizedContext += `\n\n### AVAILABLE FILES:`;
         uploads.forEach(upload => {
-          personalizedContext += `\n- **${upload.file_type}** (${new Date(upload.created_at).toLocaleDateString()})`;
-          if (upload.parsed_data) {
-            const dataStr = JSON.stringify(upload.parsed_data);
-            if (dataStr.length > 200) {
-              personalizedContext += `: ${dataStr.substring(0, 200)}...`;
-            } else {
-              personalizedContext += `: ${dataStr}`;
-            }
+          personalizedContext += `\n- **${upload.file_name}** (${new Date(upload.created_at).toLocaleDateString()})`;
+          if (upload.processing_status) {
+            personalizedContext += ` - Status: ${upload.processing_status}`;
           }
         });
       }

@@ -337,7 +337,7 @@ export default function QuestionnairePage() {
         });
         if (storageError) throw storageError;
 
-        const { error: dbError } = await supabase.from('uploaded_files').insert({
+        const { data: uploadRecord, error: dbError } = await supabase.from('uploaded_files').insert({
           user_id: user.id,
           assessment_id: assessmentInsert.id,
           file_type: type,
@@ -346,8 +346,26 @@ export default function QuestionnairePage() {
           mime_type: file.type,
           storage_path: filePath,
           processing_status: 'pending',
-        });
+        }).select().single();
         if (dbError) throw dbError;
+
+        // Trigger processing automatically
+        try {
+          const response = await fetch('/api/supabase/functions/parse_upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ file_id: uploadRecord.id }),
+          });
+          
+          if (!response.ok) {
+            console.warn('Failed to trigger file processing:', await response.text());
+          }
+        } catch (error) {
+          console.warn('Error triggering file processing:', error);
+          // Don't throw here - file is uploaded successfully, processing can be done later
+        }
       };
 
       // 3) Upload genetic file if provided
@@ -418,7 +436,7 @@ export default function QuestionnairePage() {
             </h1>
             
             <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-              We're analyzing your health data and creating personalized supplement recommendations...
+              We&apos;re analyzing your health data and creating personalized supplement recommendations...
             </p>
 
             {/* Progress Steps */}
@@ -465,7 +483,7 @@ export default function QuestionnairePage() {
 
             {/* Auto-redirect notice */}
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              You'll be automatically redirected to your recommendations in a few seconds...
+              You&apos;ll be automatically redirected to your recommendations in a few seconds...
             </p>
           </div>
         </div>

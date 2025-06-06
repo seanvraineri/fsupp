@@ -88,7 +88,13 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col h-full">
       {product?.image_url ? (
         <div className="relative w-full h-40 mb-4">
-          <img src={product.image_url} alt={rec.supplement_name} className="object-contain w-full h-full" loading="lazy" />
+          <Image 
+            src={product.image_url} 
+            alt={rec.supplement_name} 
+            fill
+            className="object-contain" 
+            loading="lazy" 
+          />
         </div>
       ) : (
         <div className="flex items-center justify-center w-full h-40 mb-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg">

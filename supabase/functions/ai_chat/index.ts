@@ -1,4 +1,4 @@
-/// <reference types="https://deno.land/x/types/react.d.ts" />
+// React types reference disabled to avoid Deno type error
 
 // @ts-nocheck
 // Edge Function runs in Deno environment

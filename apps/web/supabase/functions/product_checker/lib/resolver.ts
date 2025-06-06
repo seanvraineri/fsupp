@@ -16,7 +16,7 @@ export interface ResolvedProduct {
 }
 
 const DSLD_ENDPOINT = Deno.env.get("DSLD_ENDPOINT") ?? "https://dsld.od.nih.gov/dsld";
-const PROXY_URL = Deno.env.get("SCRAPER_PROXY_URL")!;
+const PROXY_URL = Deno.env.get("SCRAPER_PROXY_URL");
 const OPENAI_KEY = Deno.env.get("OPENAI_KEY");
 
 async function searchDSLD(query: string): Promise<ResolvedProduct | null> {

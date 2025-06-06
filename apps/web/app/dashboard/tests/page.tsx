@@ -41,7 +41,7 @@ export default function TestsPage() {
           <div>
             <h3 className="font-semibold mb-2 text-primary-from">Genetic-file essentials</h3>
             <ul className="list-disc list-inside space-y-1 ml-4">
-              <li><code>.txt</code>, <code>.csv</code> or <code>.vcf</code> &nbsp;— raw data exports only (screenshots won&apos;t work).</li>
+              <li><code>.txt</code>, <code>.csv</code>, <code>.pdf</code> or <code>.vcf</code> &nbsp;— raw data exports or genetic reports (screenshots won&apos;t work).</li>
               <li>Contains the &quot;nutrition SNPs&quot; we rely on:<br/>
                 <span className="ml-2 text-xs">MTHFR C677T / A1298C • MTRR A66G • VDR FokI / BsmI • COMT Val158Met • GSTM1 / GSTT1 deletion • APOE rs429358 / rs7412</span>
               </li>

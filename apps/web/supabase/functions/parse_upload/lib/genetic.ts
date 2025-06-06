@@ -16,7 +16,7 @@ const HIGHLIGHT_SNPS = [
   "rs1544410", // VDR
 ];
 
-export async function processGeneticFile(text: string, supabase: any, fileRow: any): Promise<ProcessResult> {
+export async function processGeneticFile(text: string, supabase: any, fileRow: any, format?: string, bytes?: ArrayBuffer): Promise<ProcessResult> {
   const snpData: Record<string, string> = {};
 
   // --- deterministic parse --------------------------------------------------
@@ -33,9 +33,17 @@ export async function processGeneticFile(text: string, supabase: any, fileRow: a
   }
 
   // --- AI fallback if needed -----------------------------------------------
+  // For PDFs or when deterministic parsing yields too few results
   if (Object.keys(snpData).length < 50) {
-    const aiSnps = await aiParseGeneticTable(text);
-    Object.assign(snpData, aiSnps);
+    if (format === 'pdf' && bytes) {
+      // Use AI vision model for PDF processing
+      const aiSnps = await aiParseGeneticPDF(bytes);
+      Object.assign(snpData, aiSnps);
+    } else {
+      // Use AI text parsing for text files
+      const aiSnps = await aiParseGeneticTable(text);
+      Object.assign(snpData, aiSnps);
+    }
   }
 
   // Highlights
@@ -77,4 +85,47 @@ export async function processGeneticFile(text: string, supabase: any, fileRow: a
     db_columns_used: Object.keys(row),
     skipped_columns: [],
   } as ProcessResult;
+}
+
+// Helper function to parse genetic data from PDF using AI
+async function aiParseGeneticPDF(bytes: ArrayBuffer): Promise<Record<string, string>> {
+  const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!openaiApiKey) {
+    console.warn("OPENAI_API_KEY not configured – PDF genetic parsing will be skipped.");
+    return {};
+  }
+
+  try {
+    const OpenAI = (await import("npm:openai@4.18.0")).default;
+    const openai = new OpenAI({ apiKey: openaiApiKey });
+    
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+    const prompt = `You are a genetic report parser. This PDF contains genetic data with SNP IDs and genotypes. Extract all valid genetic markers and return as JSON mapping { rsid: genotype }. Only include rows with valid rsIDs (rs followed by numbers) and genotype of 1-4 letters. Example: { "rs1801133": "TT", "rs1801131": "CC" }.`;
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0,
+      max_tokens: 2048,
+      messages: [
+        { role: "system", content: prompt },
+        { 
+          role: "user", 
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:application/pdf;base64,${base64}`
+              }
+            }
+          ]
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+    
+    return JSON.parse(response.choices[0].message.content ?? "{}");
+  } catch (error) {
+    console.error("Error parsing genetic PDF with AI:", error);
+    return {};
+  }
 } 

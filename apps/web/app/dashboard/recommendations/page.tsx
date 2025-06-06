@@ -34,7 +34,7 @@ export default function RecommendationsPage() {
     
     const { data: analysis } = await supabase
       .from('ai_analyses')
-      .select('id, interaction_warnings, analysis_summary')
+      .select('id, interaction_warnings, analysis_summary, relevant_genes, relevant_biomarkers')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -67,6 +67,8 @@ export default function RecommendationsPage() {
       recs: recommendations ?? [], 
       warnings: analysis?.interaction_warnings ?? [], 
       analysis_summary: analysis?.analysis_summary || null,
+      relevant_genes: analysis?.relevant_genes || [],
+      relevant_biomarkers: analysis?.relevant_biomarkers || [],
       markers_count: markersCount ?? 0, 
       labs_count: labsCount ?? 0 
     };
@@ -181,6 +183,24 @@ export default function RecommendationsPage() {
         {noUploads && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
             <p className="text-blue-800 dark:text-blue-200 text-sm">Upload your genetics or recent labs to upgrade plan accuracy and get genotype-specific dosing.</p>
+          </div>
+        )}
+
+        {data?.relevant_genes?.length > 0 && (
+          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 p-4 rounded-lg">
+            <h2 className="font-semibold text-purple-800 dark:text-purple-200 mb-1">Key Genetic Insights</h2>
+            <p className="text-purple-800 dark:text-purple-200 text-sm">
+              {data.relevant_genes.join(', ')}
+            </p>
+          </div>
+        )}
+
+        {data?.relevant_biomarkers?.length > 0 && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
+            <h2 className="font-semibold text-green-800 dark:text-green-200 mb-1">Key Biomarker Findings</h2>
+            <p className="text-green-800 dark:text-green-200 text-sm">
+              {data.relevant_biomarkers.join(', ')}
+            </p>
           </div>
         )}
 

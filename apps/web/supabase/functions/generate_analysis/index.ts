@@ -591,6 +591,8 @@ serve(async (req) => {
     let analysis_summary = "Based on your health profile, here are personalized supplement recommendations to support your wellness goals.";
     let interaction_warnings: string[] = [];
     let supplements = [...baseRecommendations.general];
+    let relevant_genes: any[] = [];
+    let relevant_biomarkers: any[] = [];
 
     // Add condition-specific recommendations
     const healthConcerns = assessment.health_concerns || [];
@@ -659,6 +661,8 @@ serve(async (req) => {
             }
           }
           analysis_summary += ` Genetic analysis shows ${geneRef.gene} variation.`;
+          relevant_genes.push(geneRef.gene);
+          relevant_biomarkers.push(geneRef.rsids.join(', '));
         }
       }
     }
@@ -781,7 +785,9 @@ You MUST return valid JSON only with this exact format:
       "timeline": "Expected timeframe for benefits",
       "priority": "high"|"medium"|"low"
     }
-  ]
+  ],
+  "relevant_genes": ["MTR", "APOE"],
+  "relevant_biomarkers": ["LDL-C", "Homocysteine"]
 }`;
 
         const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
@@ -825,6 +831,8 @@ Focus particularly on their health goals: ${assessment.health_goals?.join(', ') 
             analysis_summary = result.analysis_summary;
             interaction_warnings = result.interaction_warnings || [];
             supplements = result.supplements;
+            relevant_genes = result.relevant_genes || [];
+            relevant_biomarkers = result.relevant_biomarkers || [];
             aiAnalysisSuccessful = true;
             console.log("Enhanced Claude analysis successful with health goals integration");
           }
@@ -889,6 +897,8 @@ Focus your recommendations on achieving these specific health goals while ensuri
         analysis_summary = result.analysis_summary;
         interaction_warnings = result.interaction_warnings || [];
         supplements = result.supplements;
+        relevant_genes = result.relevant_genes || [];
+        relevant_biomarkers = result.relevant_biomarkers || [];
         aiAnalysisSuccessful = true;
         console.log("Enhanced OpenAI analysis successful with health goals integration");
       } catch (err) { 
@@ -936,7 +946,9 @@ Focus your recommendations on achieving these specific health goals while ensuri
       model_name: aiAnalysisSuccessful ? (ANTHROPIC_API_KEY ? 'claude-3-haiku' : 'gpt-3.5-turbo') : 'rule-based', 
       analysis_summary, 
       interaction_warnings: interaction_warnings || [],
-      overall_confidence: aiAnalysisSuccessful ? 0.9 : 0.6
+      overall_confidence: aiAnalysisSuccessful ? 0.9 : 0.6,
+      relevant_genes: relevant_genes || [],
+      relevant_biomarkers: relevant_biomarkers || []
     };
     
     console.log("Analysis data:", JSON.stringify(analysisData, null, 2));

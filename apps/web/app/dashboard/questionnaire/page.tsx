@@ -293,6 +293,8 @@ export default function QuestionnairePage() {
         
         if (updateError) throw updateError;
         assessmentInsert = updateResult;
+        
+        console.log('Updated existing health assessment:', assessmentInsert.id);
       } else {
         // Create new assessment
         const assessmentPayload = {
@@ -324,6 +326,8 @@ export default function QuestionnairePage() {
         
         if (insertError) throw insertError;
         assessmentInsert = insertResult;
+        
+        console.log('Created new health assessment:', assessmentInsert.id);
       }
 
       // Helper to handle file upload & DB insert

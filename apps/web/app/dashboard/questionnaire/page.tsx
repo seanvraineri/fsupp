@@ -73,6 +73,7 @@ export default function QuestionnairePage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [startTime] = useState(Date.now());
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const totalSteps = 5;
   
   // Temporary form state for UI
@@ -105,15 +106,18 @@ export default function QuestionnairePage() {
   };
 
   const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    // Validation for step 1
+    if (currentStep === 1) {
+      if (!formData.age || !formData.gender) {
+        alert('Please fill in all required fields (Age and Gender) before continuing.');
+        return;
+      }
     }
+    if (currentStep < totalSteps) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
   // Parse height based on unit system
@@ -227,6 +231,14 @@ export default function QuestionnairePage() {
   const handleSubmit = async () => {
     const aiFormattedData = prepareDataForAI();
     
+    // Validate required fields
+    if (!aiFormattedData.demographics.age || !aiFormattedData.demographics.gender) {
+      alert('Please fill in all required demographic information (Age and Gender).');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
       // 1) Get current user
       const {
@@ -237,34 +249,80 @@ export default function QuestionnairePage() {
         throw userError || new Error('User not found');
       }
 
-      // 2) Insert assessment row
-      const assessmentPayload = {
-        user_id: user.id,
-        age: aiFormattedData.demographics.age,
-        gender: aiFormattedData.demographics.gender,
-        height_value: aiFormattedData.demographics.height?.value ?? null,
-        height_unit: aiFormattedData.demographics.height?.unit ?? null,
-        weight_value: aiFormattedData.demographics.weight?.value ?? null,
-        weight_unit: aiFormattedData.demographics.weight?.unit ?? null,
-        activity_level: aiFormattedData.lifestyle.activityLevel,
-        sleep_duration: aiFormattedData.lifestyle.sleepDuration,
-        current_medications: aiFormattedData.medical.currentMedications.length ? aiFormattedData.medical.currentMedications : null,
-        health_conditions: aiFormattedData.medical.healthConditions.length ? aiFormattedData.medical.healthConditions : null,
-        allergies: aiFormattedData.medical.allergies.length ? aiFormattedData.medical.allergies : null,
-        diet_type: aiFormattedData.dietary.dietType,
-        dietary_restrictions: aiFormattedData.dietary.restrictions.length ? aiFormattedData.dietary.restrictions : null,
-        health_goals: aiFormattedData.dietary.healthGoals.length ? aiFormattedData.dietary.healthGoals : null,
-        assessment_version: aiFormattedData.metadata.assessmentVersion,
-        completion_time: aiFormattedData.metadata.completionTime,
-        is_complete: true,
-      } as const;
-
-      const { data: assessmentInsert, error: assessmentError } = await supabase
+      // 2) Check if user already has a completed assessment
+      const { data: existingAssessment } = await supabase
         .from('health_assessments')
-        .insert(assessmentPayload)
-        .select()
-        .single();
-      if (assessmentError) throw assessmentError;
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_complete', true)
+        .maybeSingle();
+
+      let assessmentInsert;
+      const isUpdate = !!existingAssessment;
+
+      if (existingAssessment) {
+        // Update existing assessment
+        const assessmentPayload = {
+          age: aiFormattedData.demographics.age,
+          gender: aiFormattedData.demographics.gender,
+          height_value: aiFormattedData.demographics.height?.value ?? null,
+          height_unit: aiFormattedData.demographics.height?.unit ?? null,
+          weight_value: aiFormattedData.demographics.weight?.value ?? null,
+          weight_unit: aiFormattedData.demographics.weight?.unit ?? null,
+          activity_level: aiFormattedData.lifestyle.activityLevel,
+          sleep_duration: aiFormattedData.lifestyle.sleepDuration,
+          current_medications: aiFormattedData.medical.currentMedications.length ? aiFormattedData.medical.currentMedications : null,
+          health_conditions: aiFormattedData.medical.healthConditions.length ? aiFormattedData.medical.healthConditions : null,
+          allergies: aiFormattedData.medical.allergies.length ? aiFormattedData.medical.allergies : null,
+          diet_type: aiFormattedData.dietary.dietType,
+          dietary_restrictions: aiFormattedData.dietary.restrictions.length ? aiFormattedData.dietary.restrictions : null,
+          health_goals: aiFormattedData.dietary.healthGoals.length ? aiFormattedData.dietary.healthGoals : null,
+          assessment_version: aiFormattedData.metadata.assessmentVersion,
+          completion_time: aiFormattedData.metadata.completionTime,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { data: updateResult, error: updateError } = await supabase
+          .from('health_assessments')
+          .update(assessmentPayload)
+          .eq('id', existingAssessment.id)
+          .select()
+          .single();
+        
+        if (updateError) throw updateError;
+        assessmentInsert = updateResult;
+      } else {
+        // Create new assessment
+        const assessmentPayload = {
+          user_id: user.id,
+          age: aiFormattedData.demographics.age,
+          gender: aiFormattedData.demographics.gender,
+          height_value: aiFormattedData.demographics.height?.value ?? null,
+          height_unit: aiFormattedData.demographics.height?.unit ?? null,
+          weight_value: aiFormattedData.demographics.weight?.value ?? null,
+          weight_unit: aiFormattedData.demographics.weight?.unit ?? null,
+          activity_level: aiFormattedData.lifestyle.activityLevel,
+          sleep_duration: aiFormattedData.lifestyle.sleepDuration,
+          current_medications: aiFormattedData.medical.currentMedications.length ? aiFormattedData.medical.currentMedications : null,
+          health_conditions: aiFormattedData.medical.healthConditions.length ? aiFormattedData.medical.healthConditions : null,
+          allergies: aiFormattedData.medical.allergies.length ? aiFormattedData.medical.allergies : null,
+          diet_type: aiFormattedData.dietary.dietType,
+          dietary_restrictions: aiFormattedData.dietary.restrictions.length ? aiFormattedData.dietary.restrictions : null,
+          health_goals: aiFormattedData.dietary.healthGoals.length ? aiFormattedData.dietary.healthGoals : null,
+          assessment_version: aiFormattedData.metadata.assessmentVersion,
+          completion_time: aiFormattedData.metadata.completionTime,
+          is_complete: true,
+        } as const;
+
+        const { data: insertResult, error: insertError } = await supabase
+          .from('health_assessments')
+          .insert(assessmentPayload)
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        assessmentInsert = insertResult;
+      }
 
       // Helper to handle file upload & DB insert
       const uploadFile = async (
@@ -300,11 +358,19 @@ export default function QuestionnairePage() {
         await uploadFile(formData.labFile, 'lab_results');
       }
 
+      // Success message
+      const message = isUpdate 
+        ? 'Health assessment updated successfully!' 
+        : 'Health assessment completed successfully!';
+      alert(message);
+
       // All good -> navigate to dashboard
       router.push('/dashboard');
     } catch (err) {
       console.error('Error completing assessment:', err);
       alert((err as Error).message || 'Something went wrong');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -339,7 +405,7 @@ export default function QuestionnairePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Age
+                    Age <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -349,12 +415,13 @@ export default function QuestionnairePage() {
                     placeholder="Enter your age"
                     min="1"
                     max="120"
+                    required
                   />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Gender
+                    Gender <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {['Male', 'Female', 'Other'].map((option) => (
@@ -768,10 +835,24 @@ export default function QuestionnairePage() {
             ) : (
               <button
                 onClick={handleSubmit}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-from to-primary-to text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                disabled={isSubmitting}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                  isSubmitting 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-primary-from to-primary-to hover:shadow-lg'
+                } text-white`}
               >
-                See my plan
-                <Check size={20} />
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    See my plan
+                    <Check size={20} />
+                  </>
+                )}
               </button>
             )}
           </div>

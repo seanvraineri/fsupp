@@ -74,6 +74,8 @@ export default function QuestionnairePage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [startTime] = useState(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showWaitingScreen, setShowWaitingScreen] = useState(false);
+  const [processingStep, setProcessingStep] = useState(0);
   const totalSteps = 5;
   
   // Temporary form state for UI
@@ -362,10 +364,28 @@ export default function QuestionnairePage() {
       const message = isUpdate 
         ? 'Health assessment updated successfully!' 
         : 'Health assessment completed successfully!';
-      alert(message);
+      
+      // Show waiting screen and redirect after delay
+      setIsSubmitting(false);
+      setShowWaitingScreen(true);
+      
+      // Animate processing steps
+      const steps = [
+        { delay: 0, step: 0 },
+        { delay: 800, step: 1 },
+        { delay: 1600, step: 2 },
+        { delay: 2400, step: 3 }
+      ];
+      
+      steps.forEach(({ delay, step }) => {
+        setTimeout(() => setProcessingStep(step), delay);
+      });
+      
+      // Auto-redirect to recommendations after 3 seconds
+      setTimeout(() => {
+        router.push('/dashboard/recommendations');
+      }, 3000);
 
-      // All good -> navigate to dashboard
-      router.push('/dashboard');
     } catch (err) {
       console.error('Error completing assessment:', err);
       alert((err as Error).message || 'Something went wrong');
@@ -380,500 +400,572 @@ export default function QuestionnairePage() {
 
   return (
     <DashboardShell>
-      <div className="max-w-3xl mx-auto">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Health Assessment</h1>
-            <span className="text-sm text-gray-500">Step {currentStep} of {totalSteps}</span>
-          </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div 
-              className="bg-gradient-to-r from-primary-from to-primary-to h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-            />
+      {showWaitingScreen ? (
+        // Waiting Screen
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-from/5 to-primary-to/5">
+          <div className="max-w-lg mx-auto text-center px-8 py-12">
+            {/* Success Animation */}
+            <div className="relative mb-8">
+              <div className="w-24 h-24 mx-auto bg-gradient-to-r from-primary-from to-primary-to rounded-full flex items-center justify-center animate-pulse">
+                <Check className="w-12 h-12 text-white animate-bounce" />
+              </div>
+              <div className="absolute inset-0 w-24 h-24 mx-auto border-4 border-primary-from/30 rounded-full animate-ping"></div>
+            </div>
+
+            {/* Main Message */}
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Assessment Complete! 🎉
+            </h1>
+            
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+              We're analyzing your health data and creating personalized supplement recommendations...
+            </p>
+
+            {/* Progress Steps */}
+            <div className="space-y-4 mb-8">
+              {[
+                { label: 'Processing your responses', completed: processingStep >= 0 },
+                { label: 'Analyzing genetic data', completed: processingStep >= 1 },
+                { label: 'Generating recommendations', completed: processingStep >= 2 },
+                { label: 'Creating your plan', completed: processingStep >= 3 }
+              ].map((step, index) => (
+                <div key={index} className="flex items-center justify-center gap-3">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-500 ${
+                    step.completed 
+                      ? 'bg-green-500 text-white' 
+                      : processingStep === index 
+                        ? 'bg-primary-from text-white animate-pulse'
+                        : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {step.completed ? '✓' : processingStep === index ? '⏳' : (index + 1)}
+                  </div>
+                  <span className={`text-sm transition-all duration-500 ${
+                    step.completed || processingStep === index 
+                      ? 'text-gray-900 dark:text-white font-medium' 
+                      : 'text-gray-500'
+                  }`}>
+                    {step.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Loading Animation */}
+            <div className="flex justify-center mb-6">
+              <div className="flex space-x-2">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-3 h-3 bg-primary-from rounded-full animate-bounce"
+                    style={{ animationDelay: `${i * 0.2}s` }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Auto-redirect notice */}
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              You'll be automatically redirected to your recommendations in a few seconds...
+            </p>
           </div>
         </div>
+      ) : (
+        // Regular Assessment Form
+        <div className="max-w-3xl mx-auto">
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Health Assessment</h1>
+              <span className="text-sm text-gray-500">Step {currentStep} of {totalSteps}</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-primary-from to-primary-to h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+              />
+            </div>
+          </div>
 
-        {/* Form Steps */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
-          {/* Step 1: Personal Information */}
-          {currentStep === 1 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Age <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.age}
-                    onChange={(e) => updateFormData('age', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter your age"
-                    min="1"
-                    max="120"
-                    required
-                  />
+          {/* Form Steps */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
+            {/* Step 1: Personal Information */}
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Age <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.age}
+                      onChange={(e) => updateFormData('age', e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Enter your age"
+                      min="1"
+                      max="120"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Gender <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['Male', 'Female', 'Other'].map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => updateFormData('gender', option.toLowerCase())}
+                          className={`py-2 px-3 rounded-lg border-2 transition-all text-sm ${
+                            formData.gender === option.toLowerCase()
+                              ? 'border-primary-from bg-primary-from/10 text-primary-from'
+                              : 'border-gray-300 dark:border-gray-600 hover:border-primary-from/50'
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Height
+                    </label>
+                    
+                    {/* Unit Toggle */}
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        onClick={() => updateFormData('heightUnit', 'imperial')}
+                        className={`px-4 py-1 rounded-lg text-sm transition-all ${
+                          formData.heightUnit === 'imperial'
+                            ? 'bg-primary-from text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        Feet/Inches
+                      </button>
+                      <button
+                        onClick={() => updateFormData('heightUnit', 'metric')}
+                        className={`px-4 py-1 rounded-lg text-sm transition-all ${
+                          formData.heightUnit === 'metric'
+                            ? 'bg-primary-from text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        Centimeters
+                      </button>
+                    </div>
+                    
+                    {/* Height Input Fields */}
+                    {formData.heightUnit === 'imperial' ? (
+                      <div className="flex gap-3 items-center">
+                        <div className="flex-1">
+                          <input
+                            type="number"
+                            value={formData.heightFeet}
+                            onChange={(e) => updateFormData('heightFeet', e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            placeholder="Feet"
+                            min="0"
+                            max="8"
+                          />
+                        </div>
+                        <span className="text-gray-500">ft</span>
+                        <div className="flex-1">
+                          <input
+                            type="number"
+                            value={formData.heightInches}
+                            onChange={(e) => updateFormData('heightInches', e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            placeholder="Inches"
+                            min="0"
+                            max="11"
+                          />
+                        </div>
+                        <span className="text-gray-500">in</span>
+                      </div>
+                    ) : (
+                      <div className="flex gap-3 items-center max-w-xs">
+                        <input
+                          type="number"
+                          value={formData.heightCm}
+                          onChange={(e) => updateFormData('heightCm', e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="Height in cm"
+                          min="50"
+                          max="250"
+                        />
+                        <span className="text-gray-500">cm</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Weight
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.weight}
+                      onChange={(e) => updateFormData('weight', e.target.value)}
+                      className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="e.g., 160 lbs or 73kg"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Format: 160 lbs or 73kg</p>
+                  </div>
                 </div>
+              </div>
+            )}
+
+            {/* Step 2: Lifestyle */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold mb-6">Lifestyle</h2>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Gender <span className="text-red-500">*</span>
+                    Activity Level
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['Male', 'Female', 'Other'].map((option) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {['Sedentary', 'Lightly Active', 'Moderately Active', 'Very Active'].map((level) => (
                       <button
-                        key={option}
-                        onClick={() => updateFormData('gender', option.toLowerCase())}
-                        className={`py-2 px-3 rounded-lg border-2 transition-all text-sm ${
-                          formData.gender === option.toLowerCase()
+                        key={level}
+                        onClick={() => updateFormData('activityLevel', level)}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          formData.activityLevel === level
                             ? 'border-primary-from bg-primary-from/10 text-primary-from'
                             : 'border-gray-300 dark:border-gray-600 hover:border-primary-from/50'
                         }`}
                       >
-                        {option}
+                        <div className="font-medium">{level}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {level === 'Sedentary' && 'Little to no exercise'}
+                          {level === 'Lightly Active' && '1-3 days/week'}
+                          {level === 'Moderately Active' && '3-5 days/week'}
+                          {level === 'Very Active' && '6-7 days/week'}
+                        </div>
                       </button>
                     ))}
                   </div>
                 </div>
                 
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Height
+                    Average Sleep (hours per night)
                   </label>
-                  
-                  {/* Unit Toggle */}
-                  <div className="flex gap-2 mb-3">
-                    <button
-                      onClick={() => updateFormData('heightUnit', 'imperial')}
-                      className={`px-4 py-1 rounded-lg text-sm transition-all ${
-                        formData.heightUnit === 'imperial'
-                          ? 'bg-primary-from text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      Feet/Inches
-                    </button>
-                    <button
-                      onClick={() => updateFormData('heightUnit', 'metric')}
-                      className={`px-4 py-1 rounded-lg text-sm transition-all ${
-                        formData.heightUnit === 'metric'
-                          ? 'bg-primary-from text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      Centimeters
-                    </button>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="4"
+                      max="12"
+                      step="0.5"
+                      value={formData.sleepHours || 7}
+                      onChange={(e) => updateFormData('sleepHours', e.target.value)}
+                      className="flex-1"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-gray-400 w-16 text-right">
+                      {formData.sleepHours || 7} h
+                    </span>
                   </div>
-                  
-                  {/* Height Input Fields */}
-                  {formData.heightUnit === 'imperial' ? (
-                    <div className="flex gap-3 items-center">
-                      <div className="flex-1">
-                        <input
-                          type="number"
-                          value={formData.heightFeet}
-                          onChange={(e) => updateFormData('heightFeet', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                          placeholder="Feet"
-                          min="0"
-                          max="8"
-                        />
-                      </div>
-                      <span className="text-gray-500">ft</span>
-                      <div className="flex-1">
-                        <input
-                          type="number"
-                          value={formData.heightInches}
-                          onChange={(e) => updateFormData('heightInches', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                          placeholder="Inches"
-                          min="0"
-                          max="11"
-                        />
-                      </div>
-                      <span className="text-gray-500">in</span>
-                    </div>
-                  ) : (
-                    <div className="flex gap-3 items-center max-w-xs">
-                      <input
-                        type="number"
-                        value={formData.heightCm}
-                        onChange={(e) => updateFormData('heightCm', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                        placeholder="Height in cm"
-                        min="50"
-                        max="250"
-                      />
-                      <span className="text-gray-500">cm</span>
-                    </div>
-                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Health Information */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold mb-6">Health Information</h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Current Medications
+                  </label>
+                  <textarea
+                    value={formData.medications}
+                    onChange={(e) => updateFormData('medications', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="List medications separated by commas (e.g., Aspirin, Metformin) or type 'None'"
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Separate multiple medications with commas</p>
                 </div>
                 
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Weight
+                    Health Conditions
                   </label>
-                  <input
-                    type="text"
-                    value={formData.weight}
-                    onChange={(e) => updateFormData('weight', e.target.value)}
-                    className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="e.g., 160 lbs or 73kg"
+                  <textarea
+                    value={formData.conditions}
+                    onChange={(e) => updateFormData('conditions', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="List conditions separated by commas (e.g., Diabetes, Hypertension) or type 'None'"
+                    rows={3}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Format: 160 lbs or 73kg</p>
+                  <p className="text-xs text-gray-500 mt-1">Separate multiple conditions with commas</p>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Lifestyle */}
-          {currentStep === 2 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-6">Lifestyle</h2>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Activity Level
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {['Sedentary', 'Lightly Active', 'Moderately Active', 'Very Active'].map((level) => (
-                    <button
-                      key={level}
-                      onClick={() => updateFormData('activityLevel', level)}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        formData.activityLevel === level
-                          ? 'border-primary-from bg-primary-from/10 text-primary-from'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-primary-from/50'
-                      }`}
-                    >
-                      <div className="font-medium">{level}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {level === 'Sedentary' && 'Little to no exercise'}
-                        {level === 'Lightly Active' && '1-3 days/week'}
-                        {level === 'Moderately Active' && '3-5 days/week'}
-                        {level === 'Very Active' && '6-7 days/week'}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Average Sleep (hours per night)
-                </label>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="range"
-                    min="4"
-                    max="12"
-                    step="0.5"
-                    value={formData.sleepHours || 7}
-                    onChange={(e) => updateFormData('sleepHours', e.target.value)}
-                    className="flex-1"
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Allergies
+                  </label>
+                  <textarea
+                    value={formData.allergies}
+                    onChange={(e) => updateFormData('allergies', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="List allergies separated by commas (e.g., Peanuts, Shellfish, Penicillin) or type 'None'"
+                    rows={3}
                   />
-                  <span className="text-sm text-gray-600 dark:text-gray-400 w-16 text-right">
-                    {formData.sleepHours || 7} h
-                  </span>
+                  <p className="text-xs text-gray-500 mt-1">Include food, medication, and environmental allergies</p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Step 3: Health Information */}
-          {currentStep === 3 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-6">Health Information</h2>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Current Medications
-                </label>
-                <textarea
-                  value={formData.medications}
-                  onChange={(e) => updateFormData('medications', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="List medications separated by commas (e.g., Aspirin, Metformin) or type 'None'"
-                  rows={3}
-                />
-                <p className="text-xs text-gray-500 mt-1">Separate multiple medications with commas</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Health Conditions
-                </label>
-                <textarea
-                  value={formData.conditions}
-                  onChange={(e) => updateFormData('conditions', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="List conditions separated by commas (e.g., Diabetes, Hypertension) or type 'None'"
-                  rows={3}
-                />
-                <p className="text-xs text-gray-500 mt-1">Separate multiple conditions with commas</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Allergies
-                </label>
-                <textarea
-                  value={formData.allergies}
-                  onChange={(e) => updateFormData('allergies', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="List allergies separated by commas (e.g., Peanuts, Shellfish, Penicillin) or type 'None'"
-                  rows={3}
-                />
-                <p className="text-xs text-gray-500 mt-1">Include food, medication, and environmental allergies</p>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Dietary Preferences */}
-          {currentStep === 4 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-6">Dietary Preferences</h2>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Diet Type
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {['Omnivore', 'Vegetarian', 'Vegan', 'Keto', 'Paleo', 'Other'].map((diet) => (
-                    <button
-                      key={diet}
-                      onClick={() => updateFormData('dietType', diet)}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        formData.dietType === diet
-                          ? 'border-primary-from bg-primary-from/10 text-primary-from'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-primary-from/50'
-                      }`}
-                    >
-                      {diet}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Dietary Restrictions
-                </label>
-                <textarea
-                  value={formData.restrictions}
-                  onChange={(e) => updateFormData('restrictions', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="List restrictions separated by commas (e.g., Gluten-free, Dairy-free, Nut-free) or type 'None'"
-                  rows={3}
-                />
-                <p className="text-xs text-gray-500 mt-1">Separate multiple restrictions with commas</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Health Goals
-                </label>
-                <textarea
-                  value={formData.goals}
-                  onChange={(e) => updateFormData('goals', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="List your health goals separated by commas (e.g., Improve energy, Better sleep, Weight management, Immune support)"
-                  rows={3}
-                />
-                <p className="text-xs text-gray-500 mt-1">Be specific about what you want to achieve</p>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Upload Health Data */}
-          {currentStep === 5 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-6">Upload Health Data (Optional)</h2>
-              
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-blue-800 dark:text-blue-200">
-                    <p className="font-medium mb-1">Enhance your recommendations</p>
-                    <p>Upload genetic data (23andMe, AncestryDNA) and recent blood work for more personalized supplement recommendations.</p>
+            {/* Step 4: Dietary Preferences */}
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold mb-6">Dietary Preferences</h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Diet Type
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {['Omnivore', 'Vegetarian', 'Vegan', 'Keto', 'Paleo', 'Other'].map((diet) => (
+                      <button
+                        key={diet}
+                        onClick={() => updateFormData('dietType', diet)}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          formData.dietType === diet
+                            ? 'border-primary-from bg-primary-from/10 text-primary-from'
+                            : 'border-gray-300 dark:border-gray-600 hover:border-primary-from/50'
+                        }`}
+                      >
+                        {diet}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Genetic Data
-                </label>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-primary-from/50 transition-colors">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {formData.geneticFile ? formData.geneticFile.name : 'Drop your genetic data file here or click to browse'}
-                  </p>
-                  <input
-                    type="file"
-                    accept=".txt,.csv,.zip,.pdf"
-                    onChange={(e) => handleFileChange('geneticFile', e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="genetic-file"
-                  />
-                  <label
-                    htmlFor="genetic-file"
-                    className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Choose File
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Dietary Restrictions
                   </label>
-                  <p className="text-xs text-gray-500 mt-2">Supports 23andMe, AncestryDNA formats (.txt, .csv, .zip, .pdf)</p>
+                  <textarea
+                    value={formData.restrictions}
+                    onChange={(e) => updateFormData('restrictions', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="List restrictions separated by commas (e.g., Gluten-free, Dairy-free, Nut-free) or type 'None'"
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Separate multiple restrictions with commas</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Health Goals
+                  </label>
+                  <textarea
+                    value={formData.goals}
+                    onChange={(e) => updateFormData('goals', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="List your health goals separated by commas (e.g., Improve energy, Better sleep, Weight management, Immune support)"
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Be specific about what you want to achieve</p>
                 </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Blood Work Results
-                </label>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-primary-from/50 transition-colors">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {formData.labFile ? formData.labFile.name : 'Drop your lab results here or click to browse'}
-                  </p>
-                  <input
-                    type="file"
-                    accept=".pdf,.png,.jpg,.jpeg"
-                    onChange={(e) => handleFileChange('labFile', e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="lab-file"
-                  />
-                  <label
-                    htmlFor="lab-file"
-                    className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Choose File
-                  </label>
-                  <p className="text-xs text-gray-500 mt-2">Supports PDF, PNG, JPG formats</p>
-                </div>
-              </div>
-
-              {/* Test ordering section */}
-              <h3 className="text-lg font-semibold mt-10">Need a test?</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Order an at-home kit below, then upload the raw data to unlock deeper personalization.</p>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {[
-                  {
-                    logo: '/logos/23andme.svg',
-                    title: 'Genetic Starter Kit (23andMe)',
-                    desc: 'Raw SNP file (~650k markers). No supplement advice included.',
-                    link: 'https://www.23andme.com/compare/',
-                  },
-                  {
-                    logo: '/logos/nebula.svg',
-                    title: 'Nebula Genomics — 30× WGS',
-                    desc: 'Whole-genome sequencing; we interpret nutrition SNPs.',
-                    link: 'https://dnacomplete.com/tier-selection/',
-                  },
-                ].map((t) => (
-                  <TestCard key={t.title} logoSrc={t.logo} title={t.title} description={t.desc} href={t.link} />
-                ))}
-              </div>
-
-              {/* Current Supplements */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Current Supplements
-                </label>
-                <textarea
-                  value={formData.currentSupplements}
-                  onChange={(e) => updateFormData('currentSupplements', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="List supplements separated by commas (e.g., Vitamin D3, Omega-3, Creatine)"
-                  rows={3}
-                />
-                <p className="text-xs text-gray-500 mt-1">Separate multiple supplements with commas</p>
-              </div>
-
-              {/* Upload step skip link */}
-              <p className="text-xs text-gray-500 text-center mt-6">
-                <button
-                  type="button"
-                  onClick={() => router.push('/dashboard')}
-                  className="underline hover:text-primary-from"
-                >
-                  Skip for now → you can upload anytime from Dashboard
-                </button>
-              </p>
-            </div>
-          )}
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
-            <button
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-                currentStep === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300'
-              }`}
-            >
-              <ChevronLeft size={20} />
-              Previous
-            </button>
-            
-            {currentStep < totalSteps ? (
-              <button
-                onClick={nextStep}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-from to-primary-to text-white rounded-lg font-medium hover:shadow-lg transition-all"
-              >
-                Next
-                <ChevronRight size={20} />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-                  isSubmitting 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-primary-from to-primary-to hover:shadow-lg'
-                } text-white`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    See my plan
-                    <Check size={20} />
-                  </>
-                )}
-              </button>
             )}
+
+            {/* Step 5: Upload Health Data */}
+            {currentStep === 5 && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold mb-6">Upload Health Data (Optional)</h2>
+                
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-800 dark:text-blue-200">
+                      <p className="font-medium mb-1">Enhance your recommendations</p>
+                      <p>Upload genetic data (23andMe, AncestryDNA) and recent blood work for more personalized supplement recommendations.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Genetic Data
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-primary-from/50 transition-colors">
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      {formData.geneticFile ? formData.geneticFile.name : 'Drop your genetic data file here or click to browse'}
+                    </p>
+                    <input
+                      type="file"
+                      accept=".txt,.csv,.zip,.pdf"
+                      onChange={(e) => handleFileChange('geneticFile', e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="genetic-file"
+                    />
+                    <label
+                      htmlFor="genetic-file"
+                      className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Choose File
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">Supports 23andMe, AncestryDNA formats (.txt, .csv, .zip, .pdf)</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Blood Work Results
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-primary-from/50 transition-colors">
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      {formData.labFile ? formData.labFile.name : 'Drop your lab results here or click to browse'}
+                    </p>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      onChange={(e) => handleFileChange('labFile', e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="lab-file"
+                    />
+                    <label
+                      htmlFor="lab-file"
+                      className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Choose File
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">Supports PDF, PNG, JPG formats</p>
+                  </div>
+                </div>
+
+                {/* Test ordering section */}
+                <h3 className="text-lg font-semibold mt-10">Need a test?</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Order an at-home kit below, then upload the raw data to unlock deeper personalization.</p>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {[
+                    {
+                      logo: '/logos/23andme.svg',
+                      title: 'Genetic Starter Kit (23andMe)',
+                      desc: 'Raw SNP file (~650k markers). No supplement advice included.',
+                      link: 'https://www.23andme.com/compare/',
+                    },
+                    {
+                      logo: '/logos/nebula.svg',
+                      title: 'Nebula Genomics — 30× WGS',
+                      desc: 'Whole-genome sequencing; we interpret nutrition SNPs.',
+                      link: 'https://dnacomplete.com/tier-selection/',
+                    },
+                  ].map((t) => (
+                    <TestCard key={t.title} logoSrc={t.logo} title={t.title} description={t.desc} href={t.link} />
+                  ))}
+                </div>
+
+                {/* Current Supplements */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Current Supplements
+                  </label>
+                  <textarea
+                    value={formData.currentSupplements}
+                    onChange={(e) => updateFormData('currentSupplements', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-from focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="List supplements separated by commas (e.g., Vitamin D3, Omega-3, Creatine)"
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Separate multiple supplements with commas</p>
+                </div>
+
+                {/* Upload step skip link */}
+                <p className="text-xs text-gray-500 text-center mt-6">
+                  <button
+                    type="button"
+                    onClick={() => router.push('/dashboard')}
+                    className="underline hover:text-primary-from"
+                  >
+                    Skip for now → you can upload anytime from Dashboard
+                  </button>
+                </p>
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8">
+              <button
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                  currentStep === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <ChevronLeft size={20} />
+                Previous
+              </button>
+              
+              {currentStep < totalSteps ? (
+                <button
+                  onClick={nextStep}
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-from to-primary-to text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                >
+                  Next
+                  <ChevronRight size={20} />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                    isSubmitting 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-primary-from to-primary-to hover:shadow-lg'
+                  } text-white`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      See my plan
+                      <Check size={20} />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Step Indicators */}
+          <div className="flex justify-center mt-8 space-x-2">
+            {[1, 2, 3, 4, 5].map((step) => (
+              <div
+                key={step}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  step === currentStep
+                    ? 'w-8 bg-gradient-to-r from-primary-from to-primary-to'
+                    : step < currentStep
+                    ? 'bg-primary-from'
+                    : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              />
+            ))}
           </div>
         </div>
-
-        {/* Step Indicators */}
-        <div className="flex justify-center mt-8 space-x-2">
-          {[1, 2, 3, 4, 5].map((step) => (
-            <div
-              key={step}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                step === currentStep
-                  ? 'w-8 bg-gradient-to-r from-primary-from to-primary-to'
-                  : step < currentStep
-                  ? 'bg-primary-from'
-                  : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
+      )}
     </DashboardShell>
   );
 } 

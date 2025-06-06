@@ -648,7 +648,7 @@ export default function QuestionnairePage() {
                   </p>
                   <input
                     type="file"
-                    accept=".txt,.csv,.zip"
+                    accept=".txt,.csv,.zip,.pdf"
                     onChange={(e) => handleFileChange('geneticFile', e.target.files?.[0] || null)}
                     className="hidden"
                     id="genetic-file"
@@ -660,7 +660,7 @@ export default function QuestionnairePage() {
                     <FileText className="w-4 h-4 mr-2" />
                     Choose File
                   </label>
-                  <p className="text-xs text-gray-500 mt-2">Supports 23andMe, AncestryDNA formats (.txt, .csv, .zip)</p>
+                  <p className="text-xs text-gray-500 mt-2">Supports 23andMe, AncestryDNA formats (.txt, .csv, .zip, .pdf)</p>
                 </div>
               </div>
 

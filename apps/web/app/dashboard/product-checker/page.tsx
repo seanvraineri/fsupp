@@ -18,30 +18,72 @@ interface AnalyserResult {
   name: string;
   thumb: string;
   date: string;
+  summary?: string;
 }
 
 // Helper to convert raw verdict from Edge Function to AnalyserResult display shape
 function verdictToResult(verdict: any, updatedAt: string): AnalyserResult {
+  // If simplified payload
+  if (verdict.message && !verdict.product) {
+    return {
+      personal: {},
+      score: 75,
+      ingredients: [],
+      claims: [],
+      fit: [],
+      name: verdict.message as string,
+      thumb: `https://picsum.photos/seed/${Math.random()}/80`,
+      date: new Date(updatedAt).toLocaleDateString(),
+    };
+  }
+
   return {
     personal: verdict.personal,
-    score: verdict.score,
-    ingredients: verdict.ingredients,
-    claims: verdict.claims,
+    score: verdict.score ?? 70,
+    ingredients: verdict.ingredients ?? [],
+    claims: verdict.claims ?? [],
     fit: verdict.personal?.bullets ?? [],
     name: verdict.product?.name ?? "Unknown product",
     thumb: `https://picsum.photos/seed/${verdict.product?.id ?? Math.random()}/80`,
-    date: new Date(updatedAt).toLocaleDateString()
+    date: new Date(updatedAt).toLocaleDateString(),
+    summary: verdict.personal?.summary,
   };
 }
 
 export default function ProductCheckerPage(){
-  const supabase = createClientComponentClient();
+  const supabase = createClientComponentClient({
+    supabaseUrl: "https://tcptynohlpggtufqanqg.supabase.co",
+    supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjcHR5bm9obHBnZ3R1ZnFhbnFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxOTgyMDUsImV4cCI6MjA2Mzc3NDIwNX0.q9MsmKQAoIUUtyFNE86U9mBupzBboDJO6T1oChtV2E0"
+  });
   const [userId,setUserId] = useState<string|null>(null);
   const [query,setQuery] = useState("");
   const [loading,setLoading] = useState(false);
   const [result,setResult] = useState<AnalyserResult|null>(null);
   const [archive,setArchive] = useState<AnalyserResult[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const clearHistory = async () => {
+    if (!userId) {
+      console.error("Cannot clear history: no user ID");
+      return;
+    }
+    console.log("Clearing history for user:", userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("clear-history", {
+        body: { userId },
+      });
+      if (error) {
+        console.error("Clear history error:", error);
+        throw error;
+      }
+      console.log("Clear history success:", data);
+      setArchive([]); // Clear UI instantly
+    } catch (err) {
+      console.error("Failed to clear history:", err);
+      // Show user feedback
+      alert("Failed to clear history. Please try again.");
+    }
+  };
 
   // Fetch logged-in user and their history on mount
   useEffect(()=>{
@@ -50,13 +92,13 @@ export default function ProductCheckerPage(){
       if(!user) return;
       setUserId(user.id);
       const { data, error } = await supabase
-        .from("product_scans")
-        .select("verdict,created_at")
+        .from("product_verdict_cache")
+        .select("verdict,updated_at")
         .eq("user_id", user.id)
-        .order("created_at", { ascending:false })
+        .order("updated_at", { ascending:false })
         .limit(20);
       if(error){ console.error(error); return; }
-      const mapped = data.map(d=> verdictToResult(d.verdict, d.created_at));
+      const mapped = data.map(d=> verdictToResult(d.verdict, d.updated_at));
       setArchive(mapped);
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,72 +210,75 @@ export default function ProductCheckerPage(){
             )}
 
             {!loading && result && (
-              <Tabs defaultValue="overall" className="space-y-6 animate-fadeIn">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-                  <TabsTrigger value="overall">Overall Score</TabsTrigger>
-                  <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
-                  <TabsTrigger value="claims">Claims</TabsTrigger>
-                  <TabsTrigger value="fit">Personal Fit</TabsTrigger>
-                </TabsList>
-                {/* overall */}
-                <TabsContent value="overall" asChild>
-                  <Card className="p-6 space-y-4">
-                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                      <div className={`w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold border-4 border-${color(result.score)}-500 bg-${color(result.score)}-100 text-${color(result.score)}-700`}>{result.score}</div>
-                      <div>
-                        <h3 className="text-2xl font-semibold">{result.name}</h3>
-                        <p className={`text-xl font-medium text-${color(result.score)}-600`}>
-                          {result.score >= 80 ? "Excellent Choice! 😊" : result.score >= 60 ? "Good Option 👍" : result.score >= 40 ? "Consider Alternatives 🤔" : "Not Recommended 😟"}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-muted-foreground">{result.fit.join(' ')}</p>
-                  </Card>
-                </TabsContent>
-
-                {/* ingredients */}
-                <TabsContent value="ingredients" asChild>
-                  <Card className="p-6 overflow-x-auto">
-                    <table className="text-sm w-full">
-                      <thead><tr><th className="text-left py-2 pr-2 font-semibold">Ingredient</th><th className="text-center py-2 px-2 font-semibold">Amount</th><th className="text-center py-2 pl-2 font-semibold">Quality</th></tr></thead>
-                      <tbody>
-                        {result.ingredients.map(ing=> (
-                          <tr key={ing.name} className="border-t border-muted/50 hover:bg-muted/30 transition-colors">
-                            <td className="py-2 pr-2">{ing.name}</td>
-                            <td className="text-center py-2 px-2">{ing.amount ?? '-'}</td>
-                            <td className={`text-center py-2 pl-2 font-medium ${ing.quality==="good"?"text-green-600":ing.quality==="questionable"?"text-orange-500":"text-red-600"}`}>{ing.quality}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </Card>
-                </TabsContent>
-                {/* claims */}
-                <TabsContent value="claims" asChild>
-                  <Card className="p-6 space-y-4">
-                    {result.claims.map(c=> (
-                      <div key={c.claim} className="border-b border-muted/50 pb-3 last:border-b-0 last:pb-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize bg-${c.verdict==="supported"?"green":c.verdict==="weak"?"yellow":"red"}-100 text-${c.verdict==="supported"?"green":c.verdict==="weak"?"yellow":"red"}-800`}>{c.verdict}</span>
-                          <p className="font-semibold text-base">{c.claim}</p>
+              <Tabs defaultValue="overall">
+                <div className="space-y-6 animate-fadeIn">
+                  <TabsList>
+                    <TabsTrigger value="overall">Overall Score</TabsTrigger>
+                    <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+                    <TabsTrigger value="claims">Claims</TabsTrigger>
+                    <TabsTrigger value="fit">Personal Fit</TabsTrigger>
+                  </TabsList>
+                  {/* overall */}
+                  <TabsContent value="overall" asChild>
+                    <Card className="p-6 space-y-4">
+                      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                        <div className={`w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold border-4 border-${color(result.score)}-500 bg-${color(result.score)}-100 text-${color(result.score)}-700`}>{result.score}</div>
+                        <div>
+                          <h3 className="text-2xl font-semibold">{result.name}</h3>
+                          <p className={`text-xl font-medium text-${color(result.score)}-600`}>
+                            {result.score >= 80 ? "Excellent Choice! 😊" : result.score >= 60 ? "Good Option 👍" : result.score >= 40 ? "Consider Alternatives 🤔" : "Not Recommended 😟"}
+                          </p>
+                          {result.summary && <p className="mt-2 text-muted-foreground text-sm max-w-prose">{result.summary}</p>}
                         </div>
-                        <p className="text-muted-foreground text-sm ml-[calc(0.625rem+0.75rem)]">{c.blurb}</p>
                       </div>
-                    ))}
-                    {result.claims.length === 0 && <p className="text-muted-foreground">No specific claims identified or analyzed for this product.</p>}
-                  </Card>
-                </TabsContent>
-                {/* fit */}
-                <TabsContent value="fit" asChild>
-                  <Card className="p-6">
-                    <h3 className="font-semibold text-lg mb-3">Personalized Fit Analysis:</h3>
-                    {result.personal?.summary && <p className="mb-3 text-muted-foreground">{result.personal.summary}</p>}
-                    <ul className="space-y-2">
-                      {result.fit.map((f:string)=>(<li key={f} className="flex items-start gap-2"><Search className="w-4 h-4 mt-1 text-primary flex-shrink-0"/><span>{f}</span></li>))}
-                    </ul>
-                    {result.fit.length === 0 && <p className="text-muted-foreground">No specific personalization notes for you with this product. This may update as we learn more about your profile.</p>}
-                  </Card>
-                </TabsContent>
+                      <p className="text-muted-foreground">{result.fit.join(' ')}</p>
+                    </Card>
+                  </TabsContent>
+
+                  {/* ingredients */}
+                  <TabsContent value="ingredients" asChild>
+                    <Card className="p-6 overflow-x-auto">
+                      <table className="text-sm w-full">
+                        <thead><tr><th className="text-left py-2 pr-2 font-semibold">Ingredient</th><th className="text-center py-2 px-2 font-semibold">Amount</th><th className="text-center py-2 pl-2 font-semibold">Quality</th></tr></thead>
+                        <tbody>
+                          {result.ingredients.map(ing=> (
+                            <tr key={ing.name} className="border-t border-muted/50 hover:bg-muted/30 transition-colors">
+                              <td className="py-2 pr-2">{ing.name}</td>
+                              <td className="text-center py-2 px-2">{ing.amount ?? '-'}</td>
+                              <td className={`text-center py-2 pl-2 font-medium ${ing.quality==="good"?"text-green-600":ing.quality==="questionable"?"text-orange-500":"text-red-600"}`}>{ing.quality}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </Card>
+                  </TabsContent>
+                  {/* claims */}
+                  <TabsContent value="claims" asChild>
+                    <Card className="p-6 space-y-4">
+                      {result.claims.map(c=> (
+                        <div key={c.claim} className="border-b border-muted/50 pb-3 last:border-b-0 last:pb-0">
+                          <div className="flex items-center gap-3 mb-1">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize bg-${c.verdict==="supported"?"green":c.verdict==="weak"?"yellow":"red"}-100 text-${c.verdict==="supported"?"green":c.verdict==="weak"?"yellow":"red"}-800`}>{c.verdict}</span>
+                            <p className="font-semibold text-base">{c.claim}</p>
+                          </div>
+                          <p className="text-muted-foreground text-sm ml-[calc(0.625rem+0.75rem)]">{c.blurb}</p>
+                        </div>
+                      ))}
+                      {result.claims.length === 0 && <p className="text-muted-foreground">No specific claims identified or analyzed for this product.</p>}
+                    </Card>
+                  </TabsContent>
+                  {/* fit */}
+                  <TabsContent value="fit" asChild>
+                    <Card className="p-6">
+                      <h3 className="font-semibold text-lg mb-3">Personalized Fit Analysis:</h3>
+                      {result.personal?.summary && <p className="mb-3 text-muted-foreground">{result.personal.summary}</p>}
+                      <ul className="space-y-2">
+                        {result.fit.map((f:string)=>(<li key={f} className="flex items-start gap-2"><Search className="w-4 h-4 mt-1 text-primary flex-shrink-0"/><span>{f}</span></li>))}
+                      </ul>
+                      {result.fit.length === 0 && <p className="text-muted-foreground">No specific personalization notes for you with this product. This may update as we learn more about your profile.</p>}
+                    </Card>
+                  </TabsContent>
+                </div>
               </Tabs>
             )}
           </div>
@@ -241,23 +286,23 @@ export default function ProductCheckerPage(){
 
         {/* archive */}
         <div className="mt-10 lg:mt-0 lg:sticky lg:top-24 space-y-4">
-          <h2 className="text-xl font-semibold mb-3">Scan History</h2>
-          {archive.length === 0 && (
-            <div className="p-6 border-2 border-dashed border-muted-foreground/20 rounded-lg text-center text-muted-foreground">
-              <ArchiveIcon className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
-              <p className="font-medium">No Scans Yet</p>
-              <p className="text-sm">Your past product checks will appear here.</p>
-            </div>
-          )}
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Scan History</h2>
+            <Button variant="ghost" size="icon" onClick={clearHistory}>
+              <RefreshCcw className="w-5 h-5 text-muted-foreground" />
+            </Button>
+          </div>
           <div className="grid gap-3 max-h-[calc(100vh-10rem)] overflow-y-auto pr-1 simple-scrollbar">
-            {archive.map((a,i)=> (
-              <Card key={i} className="p-3 flex items-center gap-3 cursor-pointer hover:bg-muted/80 transition-colors" onClick={()=>setResult(a)}>
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-semibold bg-${color(a.score)}-100 text-${color(a.score)}-800 border border-${color(a.score)}-200`}>{a.score}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium line-clamp-1 truncate">{a.name}</p>
-                  <p className="text-xs text-muted-foreground">{a.date}</p>
+            {archive.map((item, index) => (
+              <div key={`${item.name}-${item.date}-${index}`} className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => setResult(item)}>
+                <div style={{backgroundColor: color(item.score)}} className="w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold text-white shadow-md">
+                  {item.score}
                 </div>
-              </Card>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium line-clamp-1 truncate">{item.name}</p>
+                  <p className="text-xs text-muted-foreground">{item.date}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>

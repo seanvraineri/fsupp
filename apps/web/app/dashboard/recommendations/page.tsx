@@ -30,10 +30,11 @@ export default function RecommendationsPage() {
 
   const fetcher = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { recs: [], warnings: [] };
+    if (!user) return { recs: [], warnings: [], health_goal_focus: null };
+    
     const { data: analysis } = await supabase
       .from('ai_analyses')
-      .select('id, interaction_warnings')
+      .select('id, interaction_warnings, analysis_summary')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -42,24 +43,64 @@ export default function RecommendationsPage() {
     const { count: markersCount } = await supabase.from('genetic_markers').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
     const { count: labsCount } = await supabase.from('lab_biomarkers').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
 
+    // Get recommendations with their product links
     const { data: recommendations } = await supabase
       .from('supplement_recommendations')
-      .select('*, product_links(*)')
+      .select(`
+        *,
+        product_links:product_links!recommendation_id(
+          id,
+          product_name,
+          brand,
+          product_url,
+          image_url,
+          price,
+          verified
+        )
+      `)
       .eq('user_id', user.id)
       .eq('analysis_id', analysis?.id || '')
       .eq('is_active', true)
-      .order('priority_score');
+      .order('priority_score', { ascending: false });
 
-    return { recs: recommendations ?? [], warnings: analysis?.interaction_warnings ?? [], markers_count: markersCount ?? 0, labs_count: labsCount ?? 0 };
+    return { 
+      recs: recommendations ?? [], 
+      warnings: analysis?.interaction_warnings ?? [], 
+      analysis_summary: analysis?.analysis_summary || null,
+      markers_count: markersCount ?? 0, 
+      labs_count: labsCount ?? 0 
+    };
+  };
+
+  const populateProductLinks = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    try {
+      console.log('Populating product links for existing recommendations...');
+      const { data, error } = await supabase.functions.invoke('populate_recommendation_links', {
+        body: { user_id: user.id }
+      });
+      
+      if (error) {
+        console.error('Error populating product links:', error);
+      } else {
+        console.log('Product links populated:', data);
+        mutate(); // Refresh the data
+      }
+    } catch (error) {
+      console.error('Error calling populate_recommendation_links:', error);
+    }
   };
 
   const { data, isLoading, mutate } = useSWR('recommendations', fetcher);
   const warnings = data?.warnings ?? [];
   const recsFiltered = (data?.recs ?? []).filter((r: any) => {
     if (filter === 'all') return true;
-    if (filter === 'core') return r.priority_score <= 3;
-    if (filter === 'optional') return r.priority_score > 3 && r.priority_score <= 6;
-    return r.priority_score > 6; // experimental
+    if (filter === 'high') return r.priority_score >= 5;
+    if (filter === 'medium') return r.priority_score >= 3 && r.priority_score < 5;
+    if (filter === 'low') return r.priority_score < 3;
+    return true;
   });
 
   // banners helpers
@@ -99,10 +140,28 @@ export default function RecommendationsPage() {
             <AdherenceRing percent={percent} size={56} />
             <h1 className="text-3xl font-bold">Your Supplement Plan</h1>
           </div>
-          <button onClick={() => mutate()} className="px-3 py-1 rounded-md border text-sm">Refresh Plan</button>
+          <div className="flex gap-2">
+            <button 
+              onClick={populateProductLinks} 
+              className="px-3 py-1 rounded-md border text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              Link Products
+            </button>
+            <button onClick={() => mutate()} className="px-3 py-1 rounded-md border text-sm">Refresh Plan</button>
+          </div>
         </div>
 
         <FilterBar value={filter} onChange={setFilter} />
+
+        {/* AI Analysis Summary */}
+        {data?.analysis_summary && (
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 p-6 rounded-lg">
+            <h2 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+              🎯 Your Personalized Plan Analysis
+            </h2>
+            <p className="text-blue-800 dark:text-blue-200 text-sm leading-relaxed">{data.analysis_summary}</p>
+          </div>
+        )}
 
         {warnings.length > 0 && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">

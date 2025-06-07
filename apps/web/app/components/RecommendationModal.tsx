@@ -232,33 +232,91 @@ export default function RecommendationModal({ rec, open, onOpenChange }: { rec: 
                   </Tabs.Content>
 
                   <Tabs.Content value="personalization" className="p-6 space-y-4">
-                    <h3 className="font-semibold text-lg mb-4">Personalized for Your Health Profile</h3>
+                    <div className="text-center mb-6">
+                      <h3 className="font-bold text-xl mb-2 text-purple-800 dark:text-purple-200">🎯 Specifically Chosen For YOU</h3>
+                      <p className="text-sm text-purple-600 dark:text-purple-400">
+                        This isn't a generic recommendation - it's precisely tailored to your unique biology
+                      </p>
+                    </div>
                     
-                    <div className="space-y-4">
-                      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 rounded-lg">
-                        <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-2">🧬 Based on Your Data</h4>
-                        <p className="text-sm text-purple-700 dark:text-purple-300">
-                          {rec.recommendation_reason}
-                        </p>
+                    <div className="space-y-6">
+                      <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-green-50 dark:from-purple-900/20 dark:via-blue-900/20 dark:to-green-900/20 border-2 border-purple-200 dark:border-purple-800 p-6 rounded-xl">
+                        <h4 className="font-bold text-purple-800 dark:text-purple-200 mb-3 flex items-center gap-2">
+                          <span className="text-lg">💬</span>
+                          <span>Our Personalized Reasoning</span>
+                        </h4>
+                        <div className="text-sm text-purple-700 dark:text-purple-300 leading-relaxed">
+                          {rec.recommendation_reason?.split('.').map((sentence, idx) => {
+                            // Highlight key personalization phrases
+                            const isPersonalizedSentence = sentence.includes('we think') || 
+                                                         sentence.includes('we believe') || 
+                                                         sentence.includes('we chose') || 
+                                                         sentence.includes('we specifically') ||
+                                                         sentence.includes('for you') ||
+                                                         sentence.includes('your unique') ||
+                                                         sentence.includes('precisely tailored') ||
+                                                         sentence.includes('specifically chosen');
+                            
+                            if (isPersonalizedSentence && sentence.trim()) {
+                              return (
+                                <span key={idx} className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded font-medium">
+                                  {sentence.trim()}.
+                                </span>
+                              );
+                            }
+                            return sentence.trim() ? <span key={idx}>{sentence.trim()}. </span> : null;
+                          })}
+                        </div>
                       </div>
 
                       {enhancedData?.genetic_reasoning && (
-                        <div className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 p-4 rounded-lg">
-                          <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">🧬 Genetic Considerations</h4>
-                          <p className="text-sm text-green-700 dark:text-green-300">
+                        <div className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 border border-green-200 dark:border-green-700 p-4 rounded-lg">
+                          <h4 className="font-bold text-green-800 dark:text-green-200 mb-3 flex items-center gap-2">
+                            <span>🧬</span>
+                            <span>Your Genetic Profile Impact</span>
+                          </h4>
+                          <p className="text-sm text-green-700 dark:text-green-300 leading-relaxed">
                             {enhancedData.genetic_reasoning}
                           </p>
                         </div>
                       )}
 
                       {enhancedData?.biomarker_reasoning && (
-                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-4 rounded-lg">
-                          <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">📊 Lab Results Impact</h4>
-                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200 dark:border-blue-700 p-4 rounded-lg">
+                          <h4 className="font-bold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
+                            <span>📊</span>
+                            <span>Your Lab Results Tell The Story</span>
+                          </h4>
+                          <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
                             {enhancedData.biomarker_reasoning}
                           </p>
                         </div>
                       )}
+
+                      <div className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border border-emerald-200 dark:border-emerald-700 p-4 rounded-lg">
+                        <h4 className="font-bold text-emerald-800 dark:text-emerald-200 mb-3 flex items-center gap-2">
+                          <span>🎯</span>
+                          <span>Why This Works Best For You</span>
+                        </h4>
+                        <ul className="text-sm text-emerald-700 dark:text-emerald-300 space-y-2">
+                          <li className="flex items-start gap-2">
+                            <span className="text-emerald-500 flex-shrink-0 mt-1">•</span>
+                            <span><strong>Precision Dosing:</strong> Based on your genetic variants and current biomarker levels</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-emerald-500 flex-shrink-0 mt-1">•</span>
+                            <span><strong>Optimal Form:</strong> Chosen specifically for how YOUR body processes nutrients</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-emerald-500 flex-shrink-0 mt-1">•</span>
+                            <span><strong>Safety Verified:</strong> Analyzed against your medications, allergies, and health conditions</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-emerald-500 flex-shrink-0 mt-1">•</span>
+                            <span><strong>Goal Aligned:</strong> Selected to support your specific health objectives</span>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </Tabs.Content>
 

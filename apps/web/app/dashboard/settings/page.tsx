@@ -89,6 +89,8 @@ export default function SettingsPage() {
       if (!user) throw new Error('Not signed in');
       for (const file of files) {
         const path = `${user.id}/${Date.now()}_${file.name}`;
+        const ext = file.name.toLowerCase().split('.').pop() || '';
+        const guessedType = ['pdf','csv'].includes(ext) ? 'lab_results' : 'genetic';
         const { error: upErr } = await supabase.storage.from('uploads').upload(path, file);
         if (upErr) throw upErr;
         // create db row so parser can find it
@@ -98,7 +100,7 @@ export default function SettingsPage() {
             user_id: user.id,
             storage_path: path,
             file_name: file.name,
-            file_type: 'unknown',
+            file_type: guessedType,
             processing_status: 'queued'
           })
           .select()
@@ -106,7 +108,7 @@ export default function SettingsPage() {
         if (insErr) throw insErr;
 
         try {
-          await supabase.functions.invoke('parse_upload', { body: { file_id: fileRow.id } });
+          await supabase.functions.invoke('parse_upload', { body: { file_id: fileRow.id, file_type: guessedType } });
         } catch (_) {}
       }
       alert('Files uploaded and processing started. Refresh later to see results.');

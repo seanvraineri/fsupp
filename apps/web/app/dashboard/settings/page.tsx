@@ -100,7 +100,7 @@ export default function SettingsPage() {
             storage_path: path,
             file_name: file.name,
             file_type: guessedType,
-            processing_status: 'uploaded'
+            processing_status: 'pending'
           })
           .select()
           .single();

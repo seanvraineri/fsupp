@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const [cancelling, setCancelling] = useState(false);
   const [genes, setGenes] = useState<string[]>([]);
   const [labs, setLabs] = useState<any | null>(null);
+  const [geneRows, setGeneRows] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -50,6 +51,15 @@ export default function SettingsPage() {
           .limit(1)
           .maybeSingle();
         setLabs(latestLab);
+
+        // Fetch genetic markers
+        const { data: gRows } = await supabase
+          .from('genetic_markers')
+          .select('rsid, genotype')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        setGeneRows(gRows || []);
       } catch (e: any) {
         setError(e.message);
       } finally {
@@ -132,6 +142,22 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {geneRows.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">Detailed Genetic Markers (latest)</h2>
+            <table className="text-sm w-full">
+              <thead>
+                <tr><th className="text-left py-1">RSID</th><th className="text-left py-1">Genotype</th></tr>
+              </thead>
+              <tbody>
+                {geneRows.map(r=> (
+                  <tr key={r.rsid}><td className="py-1 pr-4">{r.rsid}</td><td className="py-1">{r.genotype}</td></tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

@@ -390,6 +390,16 @@ serve(async (req) => {
           if (lab.glucose) personalizedContext += `\n- Glucose: ${lab.glucose} mg/dL`;
           if (lab.hba1c) personalizedContext += `\n- HbA1c: ${lab.hba1c}%`;
           if (lab.tsh) personalizedContext += `\n- TSH: ${lab.tsh} mIU/L`;
+          
+          // Fallback: include first 8 biomarkers from JSON if headline cols missing
+          if (lab.biomarker_data) {
+            const entries = Object.entries(lab.biomarker_data).slice(0,8);
+            entries.forEach(([k,v])=>{
+              if (!["vitamin_d","vitamin_b12","iron","ferritin","magnesium","cholesterol_total","hdl","ldl","triglycerides","glucose","hba1c","tsh"].includes(k)) {
+                personalizedContext += `\n- ${k.replace(/_/g,' ')}: ${v}`;
+              }
+            });
+          }
         });
       }
 

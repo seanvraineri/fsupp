@@ -81,24 +81,26 @@ export default function SettingsPage() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
     setUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not signed in');
-      const path = `${user.id}/${Date.now()}_${file.name}`;
-      const { error: upErr } = await supabase.storage.from('uploads').upload(path, file);
-      if (upErr) throw upErr;
-      // Invoke parse_upload function (if exists) to process
-      try {
-        await supabase.functions.invoke('parse_upload', { body: { user_id: user.id, file_path: path } });
-      } catch (_) {}
-      alert('File uploaded and processing started. Refresh later to see results.');
+      for (const file of files) {
+        const path = `${user.id}/${Date.now()}_${file.name}`;
+        const { error: upErr } = await supabase.storage.from('uploads').upload(path, file);
+        if (upErr) throw upErr;
+        try {
+          await supabase.functions.invoke('parse_upload', { body: { user_id: user.id, file_path: path } });
+        } catch (_) {}
+      }
+      alert('Files uploaded and processing started. Refresh later to see results.');
     } catch (err: any) {
       alert('Upload failed: ' + err.message);
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -172,7 +174,7 @@ export default function SettingsPage() {
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Upload New Data</h2>
           <p className="text-sm mb-2 text-gray-600 dark:text-gray-300">Upload raw genetic files (e.g., .txt, .zip) or lab PDFs/CSVs to update your plan.</p>
-          <input type="file" accept=".txt,.zip,.csv,.pdf" onChange={handleFileUpload} disabled={uploading} />
+          <input type="file" multiple accept=".txt,.zip,.csv,.pdf" onChange={handleFileUpload} disabled={uploading} />
           {uploading && <p className="text-sm mt-2">Uploading…</p>}
         </div>
 

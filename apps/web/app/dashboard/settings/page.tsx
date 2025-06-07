@@ -98,7 +98,7 @@ export default function SettingsPage() {
             user_id: user.id,
             storage_path: path,
             file_name: file.name,
-            file_type: undefined, // parser will set later
+            file_type: 'unknown',
             processing_status: 'queued'
           })
           .select()

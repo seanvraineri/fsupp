@@ -9,6 +9,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [genes, setGenes] = useState<string[]>([]);
+  const [labs, setLabs] = useState<any | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -28,6 +30,26 @@ export default function SettingsPage() {
           .maybeSingle();
         if (error) throw error;
         setAssessment(data);
+
+        // Fetch latest AI analysis for gene list
+        const { data: analysis } = await supabase
+          .from('ai_analyses')
+          .select('relevant_genes')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setGenes(analysis?.relevant_genes || []);
+
+        // Fetch latest lab row
+        const { data: latestLab } = await supabase
+          .from('lab_biomarkers')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setLabs(latestLab);
       } catch (e: any) {
         setError(e.message);
       } finally {
@@ -85,6 +107,33 @@ export default function SettingsPage() {
             {cancelling ? 'Processing…' : 'Cancel Subscription'}
           </button>
         </div>
+
+        {/* Genetic highlights */}
+        {genes.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">Genetic Highlights</h2>
+            <p className="text-sm">Key variants used in your current supplement plan:</p>
+            <ul className="list-disc list-inside mt-2 text-sm space-y-1">
+              {genes.map(g => (<li key={g}>{g}</li>))}
+            </ul>
+          </div>
+        )}
+
+        {/* Latest labs */}
+        {labs && (
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">Latest Lab Results</h2>
+            <p className="text-sm mb-2 text-gray-500">{labs.lab_name || 'Lab'} – {labs.test_date ? new Date(labs.test_date).toLocaleDateString() : new Date(labs.created_at).toLocaleDateString()}</p>
+            <div className="grid grid-cols-2 gap-y-2 text-sm">
+              {Object.entries(labs).filter(([k,v])=>['vitamin_d','vitamin_b12','iron','ferritin','magnesium','cholesterol_total','hdl','ldl','triglycerides','glucose','hba1c','tsh'].includes(k) && v!==null).map(([k,v])=> (
+                <div key={k} className="flex justify-between">
+                  <span className="capitalize">{k.replace(/_/g,' ')}</span>
+                  <span>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </DashboardShell>
   );

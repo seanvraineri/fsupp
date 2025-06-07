@@ -967,6 +967,22 @@ Focus your recommendations on achieving these specific health goals while ensuri
     
     console.log("Analysis inserted, ID:", analysisRow?.id);
 
+    // 🔄  Vector memory: store the analysis summary
+    try {
+      await supabase.functions.invoke('embedding_worker', {
+        body: {
+          items: [{
+            user_id,
+            source_type: 'plan',
+            source_id: analysisRow.id,
+            content: analysis_summary.slice(0, 15000)
+          }]
+        }
+      });
+    } catch (embedErr) {
+      console.error('embedding_worker error', embedErr);
+    }
+
     if (Array.isArray(uniqueSupplements) && analysisRow) {
       const rows = uniqueSupplements.map((s)=>({ 
         user_id, 

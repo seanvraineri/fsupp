@@ -122,6 +122,19 @@ serve(async (req) => {
       result = await processLabFile(detected.format, arrayBuf, detected.textContent, supabase, fileRow);
     }
     
+    // 🔄  Send content to embedding_worker for vector memory
+    try {
+      const items = [{
+        user_id: fileRow.user_id,
+        source_type: determinedFileType === 'genetic' ? 'gene' : 'lab',
+        source_id: fileRow.id,
+        content: detected.textContent.slice(0, 15000) // avoid huge payloads
+      }];
+      await supabase.functions.invoke('embedding_worker', { body: { items } });
+    } catch (embedErr) {
+      console.error('embedding_worker error', embedErr);
+    }
+    
     await supabase.from('uploaded_files').update({ 
       processing_status: 'completed',
       processing_completed_at: new Date().toISOString()

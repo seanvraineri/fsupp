@@ -217,6 +217,7 @@ serve(async (req) => {
 
     let personalizedContext = "";
     let currentUploadedFileContext = "";
+    let memoryContext = "";
 
     if (filePayload && filePayload.content) {
       try {
@@ -307,6 +308,15 @@ serve(async (req) => {
         .eq("role", "assistant")
         .order("created_at", { ascending: false })
         .limit(10);
+
+      // Get latest AI analysis for quick highlights
+      const { data: latestAnalysis } = await supabase
+        .from('ai_analyses')
+        .select('relevant_genes, relevant_biomarkers')
+        .eq('user_id', db_user_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       // Build rich context
       personalizedContext = `\n\n## USER PERSONALIZATION DATA:`;
@@ -401,6 +411,13 @@ serve(async (req) => {
         });
       }
 
+      if (latestAnalysis?.relevant_genes?.length) {
+        personalizedContext += `\n\n### KEY GENETIC INSIGHTS (most recent plan):\n- ${latestAnalysis.relevant_genes.join(', ')}`;
+      }
+      if (latestAnalysis?.relevant_biomarkers?.length) {
+        personalizedContext += `\n\n### KEY BIOMARKER FINDINGS (most recent plan):\n- ${latestAnalysis.relevant_biomarkers.join(', ')}`;
+      }
+
       personalizedContext += `\n\n### PERSONALIZATION INSTRUCTIONS:
 - Reference their specific health conditions and goals in every response
 - Build on previous conversations and supplement recommendations
@@ -408,6 +425,35 @@ serve(async (req) => {
 - Adapt language to their demonstrated knowledge level from past chats
 - Track progress from previous recommendations and adjust accordingly
 - Always connect new advice to their existing supplement regimen`;
+
+      if (db_user_id && userMessageContent && OPENAI_API_KEY) {
+        try {
+          // generate embedding for current prompt
+          const embedResp = await fetch("https://api.openai.com/v1/embeddings", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ input: userMessageContent, model: "text-embedding-3-small", encoding_format: "float" })
+          });
+          if (embedResp.ok) {
+            const embedJson = await embedResp.json();
+            const embedding = embedJson.data[0].embedding as number[];
+            const embeddingLiteral = `[${embedding.join(',')}]`;
+            const { data: memoryRows, error: memErr } = await supabase.rpc('match_user_embeddings', {
+              uid: db_user_id,
+              query: embeddingLiteral,
+              match_count: 6
+            });
+            if (!memErr && memoryRows && memoryRows.length > 0) {
+              memoryContext += "\n\n## PERSONAL MEMORY SNIPPETS:";
+              memoryRows.forEach((row: any) => {
+                memoryContext += `\n- ${row.content.substring(0, 200).replace(/\n/g,' ')}...`;
+              });
+            }
+          }
+        } catch (memEx) {
+          console.error('Vector memory retrieval error', memEx);
+        }
+      }
     }
 
     const currentUserMessageForLLM = { 
@@ -423,7 +469,7 @@ serve(async (req) => {
         content: msg.content
       }));
 
-      const systemContentForXAI = HIPAA_COMPLIANT_PERSONALITY_PROMPT + personalizedContext + currentUploadedFileContext;
+      const systemContentForXAI = HIPAA_COMPLIANT_PERSONALITY_PROMPT + personalizedContext + currentUploadedFileContext + memoryContext;
 
       const aiResp = await fetch("https://api.x.ai/v1/chat/completions", {
         method: "POST",
@@ -479,7 +525,7 @@ serve(async (req) => {
       
       const systemPromptForOpenAI = {
         role: "system",
-        content: HIPAA_COMPLIANT_PERSONALITY_PROMPT + personalizedContext + currentUploadedFileContext
+        content: HIPAA_COMPLIANT_PERSONALITY_PROMPT + personalizedContext + currentUploadedFileContext + memoryContext
       };
 
       const openAIHistoryMessages = (messagesHistory || []).map((msg: any) => ({
@@ -541,7 +587,7 @@ serve(async (req) => {
         content: msg.content
       }));
 
-      const systemContentForClaude = HIPAA_COMPLIANT_PERSONALITY_PROMPT + personalizedContext + currentUploadedFileContext;
+      const systemContentForClaude = HIPAA_COMPLIANT_PERSONALITY_PROMPT + personalizedContext + currentUploadedFileContext + memoryContext;
 
       const anthropicMessages = [...claudeMessages, currentUserMessageForLLM];
 

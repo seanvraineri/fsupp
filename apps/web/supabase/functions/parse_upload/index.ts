@@ -140,6 +140,9 @@ serve(async (req) => {
       processing_completed_at: new Date().toISOString()
     }).eq('id', fileRow.id);
     
+    // Update file_type if we inferred it
+    await supabase.from('uploaded_files').update({ file_type: determinedFileType }).eq('id', fileRow.id);
+    
     return new Response(JSON.stringify(result), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }

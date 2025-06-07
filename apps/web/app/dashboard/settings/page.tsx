@@ -89,8 +89,7 @@ export default function SettingsPage() {
       if (!user) throw new Error('Not signed in');
       for (const file of files) {
         const path = `${user.id}/${Date.now()}_${file.name}`;
-        const ext = file.name.toLowerCase().split('.').pop() || '';
-        const guessedType = ext === 'csv' ? 'lab_results' : 'genetic';
+        const guessedType = 'genetic';
         const { error: upErr } = await supabase.storage.from('uploads').upload(path, file);
         if (upErr) throw upErr;
         // create db row so parser can find it

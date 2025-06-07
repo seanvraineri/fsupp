@@ -69,7 +69,20 @@ export async function processLabFile(format: FileFormat, bytes: ArrayBuffer, tex
 
   await supabase.from("lab_biomarkers").upsert(mapped, { onConflict: "file_id" });
 
-  // Similar insertion near end of save function (we assume function saveLabData exists) but simpler to append after updating.
+  // --- Vector memory ingestion -------------------------------------------
+  try {
+    const headlineKeys = Object.keys(biomarkerMap).slice(0, 10);
+    const summary = `Lab file ${fileRow.file_name} parsed ${Object.keys(biomarkerMap).length} biomarkers. Key: ${headlineKeys.map(k=>`${k}:${biomarkerMap[k]}`).join('; ')}`;
+    const items = [
+      { user_id: fileRow.user_id, source_type: 'lab_summary', source_id: fileRow.id, content: summary }
+    ];
+    for (const [k,v] of Object.entries(biomarkerMap).slice(0, 200)) {
+      items.push({ user_id: fileRow.user_id, source_type: 'lab', source_id: fileRow.id, content: `${k}: ${v}` });
+    }
+    await supabase.functions.invoke('embedding_worker', { body: { items } });
+  } catch(err) {
+    console.error('embedding_worker error (lab)', err);
+  }
 
   return {
     status:"ok",

@@ -1,7 +1,7 @@
 "use client";
 import DashboardShell from '../components/DashboardShell';
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, Database, Dna, Activity } from 'lucide-react';
 import dynamic from 'next/dynamic';
 const HealthScoreCard = dynamic(()=>import('../components/HealthScoreCard'),{ ssr:false });
 
@@ -51,6 +51,48 @@ export default function DashboardPage() {
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Update</h3>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">-</p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">No data uploaded yet</p>
+          </div>
+        </div>
+
+        {/* Comprehensive Analysis Feature Highlight */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+            <div className="flex items-start gap-4">
+              <Database className="w-8 h-8 text-blue-600 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                  🚀 Comprehensive Health Analysis
+                </h3>
+                <p className="text-blue-800 dark:text-blue-200 text-sm mb-4">
+                  Our expanded knowledge base now covers <strong>22 genetic variants</strong> across 20+ metabolic pathways and <strong>40+ biomarkers</strong> 
+                  including complete blood count, comprehensive metabolic panel, hormones, and vitamins. Get precision-targeted supplement recommendations 
+                  based on your unique genetic and lab data.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <Dna className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <div className="font-medium text-purple-800 dark:text-purple-200">Genetic Analysis</div>
+                      <div className="text-sm text-purple-600 dark:text-purple-300">MTHFR, COMT, APOE, VDR, HFE & more</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Activity className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <div className="font-medium text-blue-800 dark:text-blue-200">Lab Analysis</div>
+                      <div className="text-sm text-blue-600 dark:text-blue-300">CBC, CMP, lipids, hormones, vitamins</div>
+                    </div>
+                  </div>
+                </div>
+                <Link
+                  href="/dashboard/analysis"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 text-sm font-medium"
+                >
+                  <Database className="w-4 h-4" />
+                  Explore Comprehensive Analysis
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 

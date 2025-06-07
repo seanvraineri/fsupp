@@ -351,6 +351,7 @@ serve(async (req) => {
           const testDate = new Date(genetic.created_at).toLocaleDateString();
           personalizedContext += `\n**Genetic Test from ${genetic.source_company || 'Unknown'} (${testDate}):**`;
           
+          // Show key highlights first
           if (genetic.mthfr_c677t) {
             personalizedContext += `\n- MTHFR C677T: ${genetic.mthfr_c677t}`;
           }
@@ -366,6 +367,50 @@ serve(async (req) => {
           if (genetic.vdr_variants && typeof genetic.vdr_variants === 'object') {
             personalizedContext += `\n- VDR Variants: ${JSON.stringify(genetic.vdr_variants)}`;
           }
+          
+          // Show comprehensive SNP data if available
+          if (genetic.snp_data && typeof genetic.snp_data === 'object' && Object.keys(genetic.snp_data).length > 0) {
+            const snpCount = Object.keys(genetic.snp_data).length;
+            personalizedContext += `\n**COMPREHENSIVE GENETIC DATA (${snpCount.toLocaleString()} SNPs):**`;
+            
+            // For small datasets, show all. For large datasets, show comprehensive sample
+            const allSnps = Object.entries(genetic.snp_data);
+            
+            if (snpCount <= 100) {
+              // Show all SNPs for small datasets
+              personalizedContext += `\n  ALL SNPs: ${allSnps.map(([rsid, genotype]) => `${rsid}:${genotype}`).join(', ')}`;
+            } else {
+              // For large datasets, show strategic sampling
+              const importantSnps = ['rs1801133', 'rs1801131', 'rs429358', 'rs7412', 'rs4680', 'rs1544410', 'rs2228570'];
+              const foundImportant = [];
+              const randomSample = [];
+              
+              // Get important SNPs
+              importantSnps.forEach(rsid => {
+                if (genetic.snp_data[rsid]) {
+                  foundImportant.push(`${rsid}:${genetic.snp_data[rsid]}`);
+                }
+              });
+              
+              // Get random sample of remaining SNPs (up to 50 more)
+              const otherSnps = allSnps.filter(([rsid]) => !importantSnps.includes(rsid));
+              const sampleSize = Math.min(50, otherSnps.length);
+              for (let i = 0; i < sampleSize; i++) {
+                const randomIndex = Math.floor(Math.random() * otherSnps.length);
+                const [rsid, genotype] = otherSnps.splice(randomIndex, 1)[0];
+                randomSample.push(`${rsid}:${genotype}`);
+              }
+              
+              if (foundImportant.length > 0) {
+                personalizedContext += `\n  KEY SNPs: ${foundImportant.join(', ')}`;
+              }
+              if (randomSample.length > 0) {
+                personalizedContext += `\n  SAMPLE DATA: ${randomSample.join(', ')}`;
+              }
+              personalizedContext += `\n  FULL DATASET: ${snpCount.toLocaleString()} total SNPs available for analysis`;
+            }
+          }
+          
           if (genetic.chip_version) {
             personalizedContext += `\n- Chip Version: ${genetic.chip_version}`;
           }
@@ -378,27 +423,85 @@ serve(async (req) => {
           const testDate = lab.test_date || new Date(lab.created_at).toLocaleDateString();
           personalizedContext += `\n**Lab Results from ${lab.lab_name || 'Unknown'} (${testDate}):**`;
           
-          if (lab.vitamin_d) personalizedContext += `\n- Vitamin D: ${lab.vitamin_d} ng/mL`;
-          if (lab.vitamin_b12) personalizedContext += `\n- Vitamin B12: ${lab.vitamin_b12} pg/mL`;
-          if (lab.iron) personalizedContext += `\n- Iron: ${lab.iron} μg/dL`;
-          if (lab.ferritin) personalizedContext += `\n- Ferritin: ${lab.ferritin} ng/mL`;
-          if (lab.magnesium) personalizedContext += `\n- Magnesium: ${lab.magnesium} mg/dL`;
-          if (lab.cholesterol_total) personalizedContext += `\n- Total Cholesterol: ${lab.cholesterol_total} mg/dL`;
-          if (lab.hdl) personalizedContext += `\n- HDL: ${lab.hdl} mg/dL`;
-          if (lab.ldl) personalizedContext += `\n- LDL: ${lab.ldl} mg/dL`;
-          if (lab.triglycerides) personalizedContext += `\n- Triglycerides: ${lab.triglycerides} mg/dL`;
-          if (lab.glucose) personalizedContext += `\n- Glucose: ${lab.glucose} mg/dL`;
-          if (lab.hba1c) personalizedContext += `\n- HbA1c: ${lab.hba1c}%`;
-          if (lab.tsh) personalizedContext += `\n- TSH: ${lab.tsh} mIU/L`;
-          
-          // Fallback: include first 8 biomarkers from JSON if headline cols missing
-          if (lab.biomarker_data) {
-            const entries = Object.entries(lab.biomarker_data).slice(0,8);
-            entries.forEach(([k,v])=>{
-              if (!["vitamin_d","vitamin_b12","iron","ferritin","magnesium","cholesterol_total","hdl","ldl","triglycerides","glucose","hba1c","tsh"].includes(k)) {
-                personalizedContext += `\n- ${k.replace(/_/g,' ')}: ${v}`;
-              }
-            });
+          // Show ALL biomarkers from comprehensive extraction (biomarker_data JSON)
+          if (lab.biomarker_data && Object.keys(lab.biomarker_data).length > 0) {
+            const biomarkerCount = Object.keys(lab.biomarker_data).length;
+            personalizedContext += `\n**COMPREHENSIVE LAB PANEL (${biomarkerCount.toLocaleString()} biomarkers):**`;
+            
+            // For small datasets, show all. For large datasets, show organized sample
+            const allBiomarkers = Object.entries(lab.biomarker_data);
+            
+            if (biomarkerCount <= 50) {
+              // Show all biomarkers for small datasets
+              const biomarkerList = allBiomarkers.map(([k, v]) => {
+                const displayName = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                return `${displayName}: ${v}`;
+              });
+              personalizedContext += `\n  ALL BIOMARKERS: ${biomarkerList.join(', ')}`;
+            } else {
+              // For large datasets, dynamically categorize and sample
+              const categories: Record<string, string[]> = {};
+              
+              allBiomarkers.forEach(([k, v]) => {
+                const key = k.toLowerCase();
+                const displayName = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const value = typeof v === 'number' ? v.toString() : v;
+                const biomarkerStr = `${displayName}: ${value}`;
+                
+                // Dynamic categorization based on common medical terms
+                if (key.includes('cholesterol') || key.includes('hdl') || key.includes('ldl') || key.includes('triglyceride') || key.includes('lipid')) {
+                  if (!categories['LIPID PANEL']) categories['LIPID PANEL'] = [];
+                  categories['LIPID PANEL'].push(biomarkerStr);
+                } else if (key.includes('glucose') || key.includes('insulin') || key.includes('hba1c') || key.includes('bun') || key.includes('creatinine') || key.includes('sodium') || key.includes('potassium') || key.includes('chloride')) {
+                  if (!categories['METABOLIC PANEL']) categories['METABOLIC PANEL'] = [];
+                  categories['METABOLIC PANEL'].push(biomarkerStr);
+                } else if (key.includes('blood_cell') || key.includes('hemoglobin') || key.includes('hematocrit') || key.includes('platelet') || key.includes('neutrophil') || key.includes('lymphocyte') || key.includes('eosinophil') || key.includes('basophil') || key.includes('monocyte')) {
+                  if (!categories['COMPLETE BLOOD COUNT']) categories['COMPLETE BLOOD COUNT'] = [];
+                  categories['COMPLETE BLOOD COUNT'].push(biomarkerStr);
+                } else if (key.includes('testosterone') || key.includes('estradiol') || key.includes('tsh') || key.includes('t4') || key.includes('t3') || key.includes('prolactin') || key.includes('shbg') || key.includes('hormone')) {
+                  if (!categories['HORMONE PANEL']) categories['HORMONE PANEL'] = [];
+                  categories['HORMONE PANEL'].push(biomarkerStr);
+                } else if (key.includes('vitamin') || key.includes('b12') || key.includes('folate') || key.includes('iron') || key.includes('ferritin') || key.includes('zinc') || key.includes('magnesium') || key.includes('calcium')) {
+                  if (!categories['VITAMINS & MINERALS']) categories['VITAMINS & MINERALS'] = [];
+                  categories['VITAMINS & MINERALS'].push(biomarkerStr);
+                } else if (key.includes('liver') || key.includes('ast') || key.includes('alt') || key.includes('bilirubin') || key.includes('alkaline') || key.includes('ggt')) {
+                  if (!categories['LIVER FUNCTION']) categories['LIVER FUNCTION'] = [];
+                  categories['LIVER FUNCTION'].push(biomarkerStr);
+                } else if (key.includes('kidney') || key.includes('egfr') || key.includes('albumin') || key.includes('protein')) {
+                  if (!categories['KIDNEY FUNCTION']) categories['KIDNEY FUNCTION'] = [];
+                  categories['KIDNEY FUNCTION'].push(biomarkerStr);
+                } else if (key.includes('inflammatory') || key.includes('crp') || key.includes('esr') || key.includes('sed_rate')) {
+                  if (!categories['INFLAMMATORY MARKERS']) categories['INFLAMMATORY MARKERS'] = [];
+                  categories['INFLAMMATORY MARKERS'].push(biomarkerStr);
+                } else {
+                  if (!categories['OTHER BIOMARKERS']) categories['OTHER BIOMARKERS'] = [];
+                  categories['OTHER BIOMARKERS'].push(biomarkerStr);
+                }
+              });
+              
+              // Display categorized data
+              Object.entries(categories).forEach(([categoryName, biomarkers]) => {
+                if (biomarkers.length > 0) {
+                  personalizedContext += `\n  ${categoryName} (${biomarkers.length}): ${biomarkers.join(', ')}`;
+                }
+              });
+              
+              personalizedContext += `\n  FULL DATASET: ${biomarkerCount.toLocaleString()} total biomarkers available for analysis`;
+            }
+          } else {
+            // Fallback to individual columns if biomarker_data is empty
+            if (lab.vitamin_d) personalizedContext += `\n- Vitamin D: ${lab.vitamin_d} ng/mL`;
+            if (lab.vitamin_b12) personalizedContext += `\n- Vitamin B12: ${lab.vitamin_b12} pg/mL`;
+            if (lab.iron) personalizedContext += `\n- Iron: ${lab.iron} μg/dL`;
+            if (lab.ferritin) personalizedContext += `\n- Ferritin: ${lab.ferritin} ng/mL`;
+            if (lab.magnesium) personalizedContext += `\n- Magnesium: ${lab.magnesium} mg/dL`;
+            if (lab.cholesterol_total) personalizedContext += `\n- Total Cholesterol: ${lab.cholesterol_total} mg/dL`;
+            if (lab.hdl) personalizedContext += `\n- HDL: ${lab.hdl} mg/dL`;
+            if (lab.ldl) personalizedContext += `\n- LDL: ${lab.ldl} mg/dL`;
+            if (lab.triglycerides) personalizedContext += `\n- Triglycerides: ${lab.triglycerides} mg/dL`;
+            if (lab.glucose) personalizedContext += `\n- Glucose: ${lab.glucose} mg/dL`;
+            if (lab.hba1c) personalizedContext += `\n- HbA1c: ${lab.hba1c}%`;
+            if (lab.tsh) personalizedContext += `\n- TSH: ${lab.tsh} mIU/L`;
           }
         });
       }

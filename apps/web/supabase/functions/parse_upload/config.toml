@@ -1,0 +1,2 @@
+[functions.parse_upload]
+verify_jwt = true 

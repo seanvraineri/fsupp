@@ -1,5 +1,5 @@
 "use client";
-import { Menu, Home, FileText, MessageSquare, User, X, LogOut, Zap, Upload, Settings } from 'lucide-react';
+import { Menu, Home, FileText, MessageSquare, User, X, LogOut, Zap, Upload, Settings, Database } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -13,6 +13,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Health Assessment', href: '/dashboard/questionnaire', icon: FileText },
+    { name: 'Comprehensive Analysis', href: '/dashboard/analysis', icon: Database },
     { name: 'Recommendations', href: '/dashboard/recommendations', icon: Zap },
     { name: 'Order Tests', href: '/dashboard/tests', icon: Upload },
     { name: 'AI Chat', href: '/dashboard/chat', icon: MessageSquare },

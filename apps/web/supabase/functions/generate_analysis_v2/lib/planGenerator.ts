@@ -2,8 +2,8 @@
 // @ts-nocheck
 
 import { UserContext } from "./dataFetch.ts";
-import { summariseLabs } from "./labs.ts";
-import { summariseGenes } from "./genes.ts";
+import { summariseLabs, summariseComprehensiveLabs, identifyLabConcerns } from "./labs.ts";
+import { summariseGenes, summariseComprehensiveGenes, identifyGeneticConcerns, generateGeneticSupplementRecommendations } from "./genes.ts";
 import { callOpenAI } from "./llm.ts";
 import { getRagContext } from "./rag.ts";
 
@@ -21,14 +21,65 @@ export interface PlanItem {
 
 export async function generatePlan(ctx:UserContext, sb:any): Promise<{ plan:PlanItem[]; tokens:number; costUsd:number; raw:string; }> {
   const profileText = ctx.profile?.summary ?? JSON.stringify(ctx.profile);
-  const labsText = summariseLabs(ctx.labs);
-  const genesText = summariseGenes(ctx.genes);
+  
+  // USE COMPREHENSIVE DATA (not limited legacy format) ==================
+  const labsText = ctx.comprehensiveLabs?.length > 0 
+    ? summariseComprehensiveLabs(ctx.comprehensiveLabs)
+    : summariseLabs(ctx.labs); // fallback to legacy
+    
+  const genesText = ctx.comprehensiveGenes?.length > 0
+    ? summariseComprehensiveGenes(ctx.comprehensiveGenes)
+    : summariseGenes(ctx.genes); // fallback to legacy
 
-  const rag = await getRagContext(`${profileText}\n${labsText}\n${genesText}`, sb);
+  // IDENTIFY SPECIFIC CONCERNS FROM COMPREHENSIVE DATA ==================
+  const labConcerns = ctx.comprehensiveLabs?.length > 0 
+    ? identifyLabConcerns(ctx.comprehensiveLabs)
+    : [];
+    
+  const geneticConcerns = ctx.comprehensiveGenes?.length > 0
+    ? identifyGeneticConcerns(ctx.comprehensiveGenes)
+    : [];
+    
+  const geneticRecommendations = ctx.comprehensiveGenes?.length > 0
+    ? generateGeneticSupplementRecommendations(ctx.comprehensiveGenes)
+    : [];
 
-  const systemPrompt = `You are SupplementScribe Analysis v2. Use the provided health context to create a personalised dietary supplement plan.${rag.textBlock}\n\nReturn ONLY valid JSON array where each element has keys: supplement, purpose, dosage, timing, evidence, citations (array of PubMed IDs).`;
+  // BUILD COMPREHENSIVE CONTEXT ==========================================
+  let comprehensiveContext = `${profileText}\n${labsText}\n${genesText}`;
+  
+  if (labConcerns.length > 0) {
+    comprehensiveContext += `\n\n**IDENTIFIED LAB CONCERNS:**\n${labConcerns.join('\n')}`;
+  }
+  
+  if (geneticConcerns.length > 0) {
+    comprehensiveContext += `\n\n**GENETIC CONSIDERATIONS:**\n${geneticConcerns.join('\n')}`;
+  }
+  
+  if (geneticRecommendations.length > 0) {
+    comprehensiveContext += `\n\n**GENETIC-BASED RECOMMENDATIONS:**\n${geneticRecommendations.join('\n')}`;
+  }
 
-  const userMessage = `USER PROFILE:\n${profileText}\n\nLAB DATA:\n${labsText}\n\nGENE DATA:\n${genesText}`;
+  const rag = await getRagContext(comprehensiveContext, sb);
+
+  const systemPrompt = `You are SupplementScribe Analysis v2 with COMPREHENSIVE health data analysis. You have access to complete biomarker panels (not just highlights) and extensive genetic SNP data.
+
+Use this comprehensive health context to create a highly personalized dietary supplement plan based on:
+- COMPLETE biomarker analysis (all lab values provided)
+- COMPREHENSIVE genetic variants (specific SNPs and their implications)  
+- Identified health concerns and genetic predispositions
+- Evidence-based supplement recommendations
+
+Focus on addressing specific biomarker abnormalities and genetic variants with targeted supplementation. Use precise dosages based on the individual's complete health profile.
+
+${rag.textBlock}
+
+Return ONLY valid JSON array where each element has keys: supplement, purpose, dosage, timing, evidence, citations (array of PubMed IDs).`;
+
+  const userMessage = `COMPREHENSIVE HEALTH PROFILE:
+
+${comprehensiveContext}
+
+Please analyze this COMPLETE health data and provide targeted supplement recommendations based on the specific biomarker values and genetic variants shown.`;
 
   const llmRes = await callOpenAI(systemPrompt, userMessage);
 

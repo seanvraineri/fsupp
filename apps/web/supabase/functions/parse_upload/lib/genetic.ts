@@ -1,9 +1,10 @@
 // deno-lint-ignore-file
 // @ts-nocheck
-// genetic.ts - v2 2025-06-06 - Fast Processing Version
-// Quick deterministic parsing + async AI fallback
+// genetic.ts - v2 2025-06-06
+// Comprehensive genetic parser (txt/csv/zip) with aggressive SNP extraction
 
 import { aiParseGeneticTable } from "./ai.ts";
+import type { FileFormat } from "./detectFileType.ts";
 import type { ProcessResult } from "../index.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 
@@ -17,58 +18,194 @@ const HIGHLIGHT_SNPS = [
   "rs4680", // COMT
 ];
 
-export async function processGeneticFile(text: string, supabase: any, fileRow: any, format?: string, bytes?: ArrayBuffer): Promise<ProcessResult> {
-  const snpData: Record<string, string> = {};
+export async function processGeneticFile(text: string, supabase: any, fileRow: any, format: FileFormat, bytes: ArrayBuffer): Promise<ProcessResult> {
+  let plainText = text;
+  const snpMap: Record<string, string> = {};
 
-  // --- FAST deterministic parse (always try first) -------------------------
-  const lines = text.split(/\r?\n/);
-  for (const line of lines) {
-    if (!line.trim() || line.startsWith("#")) continue;
-    const parts = line.split(/[\s,\t]+/);
-    if (parts.length < 2) continue;
-    const rsid = parts[0].trim();
-    const genotype = parts[parts.length - 1].trim().toUpperCase();
-    if (/^rs\d+$/.test(rsid) && /^[ACGT]{1,4}$/.test(genotype)) {
-      snpData[rsid] = genotype;
-    }
+  // Extract text content for ZIP files
+  if (format === "zip") {
+    plainText = await extractZipContents(bytes);
   }
 
-  console.log(`Deterministic parsing found ${Object.keys(snpData).length} SNPs`);
+  console.log('Processing genetic text length:', plainText.length);
+  console.log('Sample:', plainText.slice(0, 500));
 
-  // --- QUICK AI text parsing if needed (not PDF vision) --------------------
-  if (Object.keys(snpData).length < 50 && text.length > 100) {
-    try {
-      console.log("Running quick AI text parsing...");
-      const aiSnps = await aiParseGeneticTable(text.slice(0, 10000)); // Limit text size for speed
-      Object.assign(snpData, aiSnps);
-      console.log(`AI text parsing added ${Object.keys(aiSnps).length} more SNPs`);
-    } catch (error) {
-      console.warn("AI text parsing failed:", error);
-    }
-  }
-
-  // --- Save what we have immediately ----------------------------------------
-  const highlights = extractHighlights(snpData);
+  // AGGRESSIVE MULTI-STRATEGY SNP PARSING =================================
   
-  // DB insert with current data
-  await saveGeneticData(supabase, fileRow, snpData, highlights);
+  // Strategy 1: Standard rs-ID patterns
+  extractRsIdPatterns(plainText, snpMap);
+  
+  // Strategy 2: Tabular data extraction
+  extractTabularData(plainText, snpMap);
+  
+  // Strategy 3: CSV/TSV structure parsing
+  extractStructuredData(plainText, snpMap);
+  
+  // Strategy 4: AI extraction for complex formats
+  await extractWithAI(plainText, snpMap);
 
-  // --- Queue advanced AI processing if PDF and insufficient data ------------
-  if (format === 'pdf' && Object.keys(snpData).length < 100 && bytes) {
-    console.log("Queuing advanced PDF AI processing...");
-    // Queue background processing (don't wait for it)
-    queueAdvancedPDFProcessing(fileRow.id, bytes, supabase).catch(err => 
-      console.error("Background PDF processing failed:", err)
-    );
+  console.log('Total SNPs extracted:', Object.keys(snpMap).length);
+  console.log('Sample SNPs:', Object.keys(snpMap).slice(0, 10));
+
+  // Save to database ======================================================
+  const highlights = extractHighlights(snpMap);
+  await saveGeneticData(supabase, fileRow, snpMap, highlights);
+
+  // Vector embeddings =====================================================
+  try {
+    const allSnps = Object.entries(snpMap);
+    const snpCount = allSnps.length;
+    
+    // Create summary with dynamic sampling
+    const sampleSnps = snpCount <= 100 ? allSnps : allSnps.slice(0, 50);
+    const summary = `Genetic file ${fileRow.file_name} parsed ${snpCount.toLocaleString()} SNPs. Sample: ${sampleSnps.map(([rs, gt]) => `${rs}:${gt}`).join('; ')}${snpCount > 50 ? ` +${snpCount - 50} more` : ''}`;
+    
+    const items = [
+      { user_id: fileRow.user_id, source_type: 'genetic_summary', source_id: fileRow.id, content: summary }
+    ];
+    
+    // Store ALL SNPs in embeddings, no limits
+    for (const [rsid, genotype] of allSnps) {
+      items.push({ user_id: fileRow.user_id, source_type: 'genetic', source_id: fileRow.id, content: `${rsid}: ${genotype}` });
+    }
+    
+    console.log(`Creating ${items.length} embedding items for ${snpCount} SNPs`);
+    await supabase.functions.invoke('embedding_worker', { body: { items } });
+  } catch (err) {
+    console.error('embedding_worker error (genetic)', err);
   }
 
   return {
     status: "ok",
     file_id: fileRow.id,
     highlights,
-    snp_count: Object.keys(snpData).length,
-    processing_mode: format === 'pdf' && Object.keys(snpData).length < 100 ? 'partial_with_background' : 'complete',
+    snp_count: Object.keys(snpMap).length,
+    sample_snps: Object.fromEntries(Object.entries(snpMap).slice(0, 10)),
   } as ProcessResult;
+}
+
+// EXTRACTION FUNCTIONS ===================================================
+
+async function extractZipContents(bytes: ArrayBuffer): Promise<string> {
+  try {
+    const JSZip = (await import("https://esm.sh/jszip@3.10.1")).default;
+    const zip = new JSZip();
+    const zipFile = await zip.loadAsync(bytes);
+    
+    let allText = '';
+    for (const [filename, file] of Object.entries(zipFile.files)) {
+      if (!file.dir && (filename.endsWith('.txt') || filename.endsWith('.csv') || filename.includes('genetic'))) {
+        const content = await file.async('text');
+        allText += `\n\n=== ${filename} ===\n${content}`;
+      }
+    }
+    return allText;
+  } catch (e) {
+    console.error("ZIP extraction failed:", e);
+    return '';
+  }
+}
+
+function extractRsIdPatterns(text: string, snpMap: Record<string, string>): void {
+  const patterns = [
+    // Pattern 1: rs123456\tAA or rs123456 AA
+    /(rs\d+)[\s\t]+([ATCGDI-]{1,4})/gi,
+    // Pattern 2: rs123456,AA or rs123456;AA  
+    /(rs\d+)[,;]([ATCGDI-]{1,4})/gi,
+    // Pattern 3: rs123456:AA
+    /(rs\d+):([ATCGDI-]{1,4})/gi,
+    // Pattern 4: rs123456 = AA
+    /(rs\d+)\s*=\s*([ATCGDI-]{1,4})/gi,
+    // Pattern 5: Quote-wrapped formats
+    /"(rs\d+)"\s*[,\t]\s*"([ATCGDI-]{1,4})"/gi
+  ];
+
+  for (const pattern of patterns) {
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      const [, rsid, genotype] = match;
+      if (rsid && genotype && genotype.length <= 4) {
+        snpMap[rsid.toLowerCase()] = genotype.toUpperCase();
+      }
+    }
+  }
+}
+
+function extractTabularData(text: string, snpMap: Record<string, string>): void {
+  const lines = text.split(/\r?\n/);
+  
+  for (const line of lines) {
+    // Split by common delimiters
+    const columns = line.split(/[\t,;|]/).map(col => col.trim().replace(/"/g, ''));
+    
+    if (columns.length >= 2) {
+      for (let i = 0; i < columns.length - 1; i++) {
+        const col1 = columns[i];
+        const col2 = columns[i + 1];
+        
+        // Check if first column is rs-ID and second is genotype
+        if (/^rs\d+$/i.test(col1) && /^[ATCGDI-]{1,4}$/i.test(col2)) {
+          snpMap[col1.toLowerCase()] = col2.toUpperCase();
+        }
+      }
+    }
+  }
+}
+
+function extractStructuredData(text: string, snpMap: Record<string, string>): void {
+  const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+  
+  // Look for header row to identify column positions
+  let rsidCol = -1;
+  let genotypeCol = -1;
+  
+  for (let lineIdx = 0; lineIdx < Math.min(5, lines.length); lineIdx++) {
+    const line = lines[lineIdx];
+    const columns = line.split(/[\t,;|]/).map(col => col.trim().toLowerCase());
+    
+    // Check for common header patterns
+    rsidCol = columns.findIndex(col => 
+      col.includes('rsid') || col.includes('snp') || col.includes('variant') || col.includes('rs_id')
+    );
+    genotypeCol = columns.findIndex(col => 
+      col.includes('genotype') || col.includes('allele') || col.includes('call') || col.includes('gt')
+    );
+    
+    if (rsidCol >= 0 && genotypeCol >= 0) {
+      // Process data rows
+      for (let dataIdx = lineIdx + 1; dataIdx < lines.length; dataIdx++) {
+        const dataLine = lines[dataIdx];
+        const dataCols = dataLine.split(/[\t,;|]/).map(col => col.trim().replace(/"/g, ''));
+        
+        if (dataCols.length > Math.max(rsidCol, genotypeCol)) {
+          const rsid = dataCols[rsidCol];
+          const genotype = dataCols[genotypeCol];
+          
+          if (/^rs\d+$/i.test(rsid) && /^[ATCGDI-]{1,4}$/i.test(genotype)) {
+            snpMap[rsid.toLowerCase()] = genotype.toUpperCase();
+          }
+        }
+      }
+      break;
+    }
+  }
+}
+
+async function extractWithAI(text: string, snpMap: Record<string, string>): Promise<void> {
+  try {
+    const aiSnps = await aiParseGeneticTable(text);
+    console.log('AI extracted SNPs:', Object.keys(aiSnps || {}).length);
+    
+    if (aiSnps && typeof aiSnps === 'object') {
+      for (const [rsid, genotype] of Object.entries(aiSnps)) {
+        if (/^rs\d+$/i.test(rsid) && typeof genotype === 'string' && /^[ATCGDI-]{1,4}$/i.test(genotype)) {
+          snpMap[rsid.toLowerCase()] = genotype.toUpperCase();
+        }
+      }
+    }
+  } catch (err) {
+    console.error('AI extraction failed (genetic):', err);
+  }
 }
 
 function extractHighlights(snpData: Record<string, string>): Record<string, string | null> {
@@ -108,13 +245,6 @@ function extractHighlights(snpData: Record<string, string>): Record<string, stri
 }
 
 async function saveGeneticData(supabase: any, fileRow: any, snpData: Record<string, string>, highlights: Record<string, any>) {
-  // Check available columns
-  const { data: cols } = await supabase
-    .from("information_schema.columns")
-    .select("column_name")
-    .eq("table_name", "genetic_markers");
-  const COL_SET = new Set(cols?.map((c: any) => c.column_name) || []);
-
   const row: Record<string, unknown> = {
     user_id: fileRow.user_id,
     file_id: fileRow.id,
@@ -123,31 +253,14 @@ async function saveGeneticData(supabase: any, fileRow: any, snpData: Record<stri
     created_at: new Date().toISOString(),
   };
   
-  // Add highlight columns if they exist
-  for (const [key, val] of Object.entries(highlights)) {
-    if (COL_SET.has(key)) {
-      row[key] = val;
-    }
-  }
+  // Add highlight columns
+  if (highlights.mthfr_c677t) row.mthfr_c677t = highlights.mthfr_c677t;
+  if (highlights.mthfr_a1298c) row.mthfr_a1298c = highlights.mthfr_a1298c;
+  if (highlights.apoe_variant) row.apoe_variant = highlights.apoe_variant;
+  if (highlights.vdr_variants) row.vdr_variants = highlights.vdr_variants;
+  if (highlights.comt_variants) row.comt_variants = highlights.comt_variants;
 
   await supabase.from("genetic_markers").upsert(row, { onConflict: "file_id" });
-
-  // --- Vector memory ingestion ------------------------------------------------
-  try {
-    const summary = `Genetic file ${fileRow.file_name} parsed ${Object.keys(snpData).length} SNPs. Key highlights: ${Object.entries(highlights).map(([k,v])=>`${k}:${JSON.stringify(v)}`).join('; ')}`;
-    const items = [
-      { user_id: fileRow.user_id, source_type: 'gene_summary', source_id: fileRow.id, content: summary }
-    ];
-
-    // Also embed individual highlight rows for quick recall
-    for (const [rsid, genotype] of Object.entries(snpData).slice(0,200)) { // cap to 200 embeds per file
-      items.push({ user_id: fileRow.user_id, source_type: 'gene', source_id: fileRow.id, content: `${rsid}: ${genotype}` });
-    }
-
-    await supabase.functions.invoke('embedding_worker', { body: { items } });
-  } catch(err) {
-    console.error('embedding_worker error (genetic)', err);
-  }
 }
 
 function detectSourceCompany(fileName: string): string {
@@ -209,53 +322,4 @@ async function queueAdvancedPDFProcessing(fileId: string, bytes: ArrayBuffer, su
           })
           .eq("file_id", fileId);
         
-        console.log(`Updated genetic markers with ${Object.keys(combinedSnps).length} total SNPs`);
-      }
-    }
-    
-  } catch (error) {
-    console.error("Advanced PDF processing failed:", error);
-  }
-}
-
-async function splitPDFIntoChunks(bytes: ArrayBuffer): Promise<string[]> {
-  // For now, just return the whole content as one chunk
-  // In the future, we could implement actual PDF page splitting
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
-  return [base64];
-}
-
-async function processChunkWithAI(base64Chunk: string, openaiApiKey: string): Promise<Record<string, string>> {
-  try {
-    const OpenAI = (await import("npm:openai@4.18.0")).default;
-    const openai = new OpenAI({ apiKey: openaiApiKey });
-    
-    const prompt = `Extract genetic SNP data from this document. Return ONLY a JSON object with rsID keys and genotype values. Example: {"rs1801133": "TT", "rs1801131": "CC"}. Only include valid rsIDs (rs + numbers) with 1-4 letter genotypes (A,C,G,T combinations).`;
-    
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0,
-      max_tokens: 1500,
-      messages: [
-        { role: "system", content: prompt },
-        { 
-          role: "user", 
-          content: [
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:application/pdf;base64,${base64Chunk}`
-              }
-            }
-          ]
-        }
-      ],
-      response_format: { type: "json_object" },
-    });
-    
-    return JSON.parse(response.choices[0].message.content ?? "{}");
-  } catch (error) {
-    console.error("Error processing chunk with AI:", error);
-    return {};
-  }
-} 
+        console.log(`

@@ -45,7 +45,17 @@ serve(async (req) => {
       return new Response('Missing path or file_id parameter', { status: 400 });
     }
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const supabase = createClient(
+      SUPABASE_URL,
+      SERVICE_ROLE_KEY,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`
+          }
+        }
+      }
+    );
     
     // Get file row - either by path or by file_id
     let fileRow: any;
@@ -60,7 +70,7 @@ serve(async (req) => {
         .single();
       
       if (frErr || !fileData) {
-        return new Response('File not found by file_id', { status: 404 });
+        return new Response(`File not found by file_id | err=${JSON.stringify(frErr)} | data=${JSON.stringify(fileData)}`, { status: 404 });
       }
       
       fileRow = fileData;
@@ -115,6 +125,8 @@ serve(async (req) => {
     const detected = await detectFileType(arrayBuf, fileRow.file_name);
     
     let result: ProcessResult;
+    
+    console.log('Processing file type:', determinedFileType, 'format:', detected.format);
     
     if (determinedFileType === 'genetic') {
       result = await processGeneticFile(detected.textContent, supabase, fileRow, detected.format, arrayBuf);
@@ -177,6 +189,6 @@ serve(async (req) => {
       console.error('Failed to update file status:', updateErr);
     }
     
-    return new Response('Processing failed', { status: 500 });
+    return new Response(`Processing failed: ${err}`, { status: 500 });
   }
 }); 

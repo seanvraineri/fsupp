@@ -587,357 +587,189 @@ serve(async (req) => {
     
     console.log(`Found ${markers?.length || 0} genetic markers, ${labs?.length || 0} lab biomarkers`);
 
-    // Prepare base analysis
-    let analysis_summary = "Based on your health profile, here are personalized supplement recommendations to support your wellness goals.";
-    let interaction_warnings: string[] = [];
-    let supplements = [...baseRecommendations.general];
-    let relevant_genes: any[] = [];
-    let relevant_biomarkers: any[] = [];
-
-    // Add condition-specific recommendations
-    const healthConcerns = assessment.health_concerns || [];
-    if (healthConcerns.includes('fatigue') || healthConcerns.includes('low_energy')) {
-      supplements.push(...baseRecommendations.fatigue);
-      analysis_summary += " Focus areas include energy support.";
-    }
-    if (healthConcerns.includes('stress') || healthConcerns.includes('anxiety')) {
-      supplements.push(...baseRecommendations.stress);
-      analysis_summary += " Stress management support included.";
-    }
-    if (healthConcerns.includes('sleep_issues') || healthConcerns.includes('insomnia')) {
-      supplements.push(...baseRecommendations.sleep);
-      analysis_summary += " Sleep quality optimization addressed.";
-    }
-    if (healthConcerns.includes('digestive_issues') || healthConcerns.includes('bloating')) {
-      supplements.push(...baseRecommendations.digestion);
-      analysis_summary += " Digestive health support included.";
-    }
-
-    // Add genetic-based recommendations if available
+    // HOLISTIC PRECISION MEDICINE ANALYSIS SYSTEM
+    // Primary catalysts: Genetic SNPs + Biomarkers
+    // Secondary factors: Health goals + Lifestyle + Medical history
+    
+    console.log("🧬 Starting comprehensive holistic analysis...");
+    
+    // STEP 1: GENETIC SNP ANALYSIS - Primary Catalyst
+    const geneticRecommendations = [];
+    const geneticConcerns = [];
+    
     if (markers && markers.length > 0) {
-      const userGenes = new Set(markers.map(m => m.rsid));
-      const geneVariants = new Map(markers.map(m => [m.rsid, m.genotype]));
+      console.log(`Analyzing ${markers.length} genetic markers...`);
       
-      // Check for gene-gene interactions first
-      const detectedInteractions = [];
-      for (const [key, interaction] of Object.entries(geneInteractions)) {
-        const hasAllGenes = interaction.genes.every(gene => {
-          return geneReferences.some(ref => 
-            ref.gene === gene && 
-            ref.rsids.some(rsid => userGenes.has(rsid))
-          );
-        });
-        
-        if (hasAllGenes) {
-          detectedInteractions.push(interaction);
-          interaction_warnings.push(`Gene interaction detected: ${interaction.concern}. ${interaction.caution}`);
-        }
-      }
-      
+      // Process each genetic marker for recommendations
       for (const marker of markers) {
         const geneRef = geneReferences.find(ref => ref.rsids.includes(marker.rsid));
         if (geneRef && geneRef.genotypesOfConcern?.includes(marker.genotype)) {
-          // Check if we already have this supplement
-          const existingSupp = supplements.find(s => s.supplement_name.toLowerCase().includes(geneRef.supplement.toLowerCase()));
-          if (!existingSupp) {
-            // Check for gene-specific contraindications
-            const shouldAvoid = detectedInteractions.some(interaction => 
-              interaction.genes.includes(geneRef.gene) && 
-              interaction.supplements && 
-              interaction.supplements.some(supp => geneRef.supplement.includes(supp))
-            );
-            
-            if (!shouldAvoid) {
-              const [amount, unit] = geneRef.dosage.match(/(\d+(?:\.\d+)?)\s*(.+)/) || [0, 'mg'];
-              supplements.push({
-                supplement_name: geneRef.supplement.split(';')[0].trim(),
-                dosage_amount: parseFloat(amount) || 1000,
-                dosage_unit: unit || 'mg',
-                frequency: 'daily',
-                reason: `Genetic variation in ${geneRef.gene} - ${geneRef.impact}`,
-                evidence: geneRef.evidence,
-                cautions: geneRef.cautions
-              });
-            }
-          }
-          analysis_summary += ` Genetic analysis shows ${geneRef.gene} variation.`;
-          relevant_genes.push(geneRef.gene);
-          relevant_biomarkers.push(geneRef.rsids.join(', '));
-        }
-      }
-    }
-    
-    // Check medical condition interactions
-    const medicalConditions = new Set((assessment.medical_conditions ?? []).map((c: string) => c.toLowerCase()));
-    for (const [condition, rules] of Object.entries(medicalConditionInteractions)) {
-      if (medicalConditions.has(condition)) {
-        // Remove contraindicated supplements
-        supplements = supplements.filter(s => {
-          const shouldAvoid = rules.avoid.some(avoid => 
-            s.supplement_name.toLowerCase().includes(avoid.toLowerCase())
-          );
-          if (shouldAvoid) {
-            interaction_warnings.push(`Avoiding ${s.supplement_name} due to ${condition}: ${rules.caution}`);
-            return false;
-          }
-          return true;
-        });
-        
-        // Add condition-specific recommendations
-        if (rules.consider) {
-          for (const consideredSupplement of rules.consider) {
-            const exists = supplements.find(s => 
-              s.supplement_name.toLowerCase().includes(consideredSupplement.toLowerCase())
-            );
-            if (!exists) {
-              supplements.push({
-                supplement_name: consideredSupplement,
-                dosage_amount: 500,
-                dosage_unit: 'mg',
-                frequency: 'daily',
-                reason: `Recommended for ${condition}`,
-                evidence: 'moderate',
-                cautions: rules.caution
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // If we have AI API keys, try to use them for better analysis with comprehensive context
-    let aiAnalysisSuccessful = false;
-    
-    if (ANTHROPIC_API_KEY) {
-      try {
-        console.log("Using Anthropic Claude for comprehensive analysis");
-        
-        // Create comprehensive user context for AI
-        const userContext = {
-          demographics: {
-            age: assessment.age,
-            sex: assessment.sex,
-            height: assessment.height,
-            weight: assessment.weight
-          },
-          health_goals: assessment.health_goals || [],
-          primary_concerns: assessment.health_concerns || [],
-          lifestyle: {
-            activity_level: assessment.activity_level,
-            stress_level: assessment.stress_level,
-            sleep_hours: assessment.sleep_hours,
-            diet_type: assessment.diet_type
-          },
-          medical_history: {
-            conditions: assessment.medical_conditions || [],
-            medications: assessment.current_medications || [],
-            allergies: assessment.allergies || [],
-            family_history: assessment.family_history || []
-          },
-          genetic_profile: markers || [],
-          lab_results: labs || [],
-          supplement_preferences: {
-            budget_range: assessment.supplement_budget,
-            form_preferences: assessment.supplement_forms,
-            timing_preferences: assessment.preferred_timing
-          }
-        };
-        
-        const enhancedSystemPrompt = `You are SupplementScribe, an advanced precision medicine AI specializing in personalized supplement recommendations. You have access to comprehensive user health data including genetics, labs, medical history, and specific health goals.
-
-CRITICAL SAFETY REQUIREMENTS:
-1. Always check for drug-supplement interactions based on current medications
-2. Avoid supplements contraindicated by medical conditions
-3. Consider genetic variants that affect supplement metabolism and safety
-4. Never recommend iron to users with HFE variants (hemochromatosis risk)
-5. Be cautious with methylation supplements in COMT/MTHFR combinations
-6. Respect allergy restrictions absolutely
-
-PERSONALIZATION PRIORITIES:
-1. Address the user's specific health goals as the PRIMARY focus
-2. Consider their lifestyle, activity level, and dietary patterns
-3. Factor in their supplement budget and form preferences
-4. Tailor dosages based on genetic variants when relevant
-5. Provide realistic timelines for expected benefits
-
-HEALTH GOALS INTEGRATION:
-- If weight loss is a goal: emphasize metabolic support, blood sugar balance
-- If energy is a goal: focus on mitochondrial support, B-vitamins, adaptogens
-- If stress management: prioritize magnesium, adaptogens, calming herbs
-- If athletic performance: emphasize recovery, anti-inflammatory, electrolytes
-- If cognitive health: focus on omega-3s, antioxidants, neuroprotectants
-- If longevity: emphasize cellular health, NAD+, antioxidants
-
-You MUST return valid JSON only with this exact format:
-{
-  "analysis_summary": "Comprehensive analysis addressing user's specific health goals and genetic profile",
-  "interaction_warnings": ["Specific safety warnings"],
-  "health_goal_focus": "Primary health goals being addressed",
-  "supplements": [
-    {
-      "supplement_name": "string",
-      "dosage_amount": number,
-      "dosage_unit": "string", 
-      "frequency": "string",
-      "reason": "string explaining how this addresses their specific goals",
-      "evidence": "high"|"moderate"|"low",
-      "cautions": "string|null",
-      "timeline": "Expected timeframe for benefits",
-      "priority": "high"|"medium"|"low"
-    }
-  ],
-  "relevant_genes": ["MTR", "APOE"],
-  "relevant_biomarkers": ["LDL-C", "Homocysteine"]
-}`;
-
-        const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": ANTHROPIC_API_KEY,
-            "anthropic-version": "2023-06-01"
-          },
-          body: JSON.stringify({
-            model: "claude-3-haiku-20240307",
-            max_tokens: 2048,
-            temperature: 0.2,
-            system: enhancedSystemPrompt,
-            messages: [{
-              role: "user",
-              content: `Please analyze this user's complete health profile and create personalized supplement recommendations that specifically address their health goals and genetic profile:
-
-USER PROFILE: ${JSON.stringify(userContext, null, 2)}
-
-GENETIC REFERENCES: ${JSON.stringify(geneReferences, null, 2)}
-
-SAFETY DATA: 
-- Drug Interactions: ${JSON.stringify(drugConflicts, null, 2)}
-- Allergy Conflicts: ${JSON.stringify(allergyConflicts, null, 2)}
-- Medical Condition Interactions: ${JSON.stringify(medicalConditionInteractions, null, 2)}
-
-Focus particularly on their health goals: ${assessment.health_goals?.join(', ') || 'general wellness'}`
-            }]
-          }),
-        });
-
-        if (aiResp.ok) {
-          const aiJson = await aiResp.json();
-          const aiContent = aiJson.content[0].text;
+          console.log(`🧬 Found variant of concern: ${marker.rsid} (${marker.genotype}) - ${geneRef.gene}`);
           
-          // Try to extract JSON from the response
-          let jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const result = JSON.parse(jsonMatch[0]);
-            analysis_summary = result.analysis_summary;
-            interaction_warnings = result.interaction_warnings || [];
-            supplements = result.supplements;
-            relevant_genes = result.relevant_genes || [];
-            relevant_biomarkers = result.relevant_biomarkers || [];
-            aiAnalysisSuccessful = true;
-            console.log("Enhanced Claude analysis successful with health goals integration");
+          // Extract dosage information
+          const dosageMatch = geneRef.dosage.match(/(\d+(?:\.\d+)?)\s*[-–]?\s*(\d+(?:\.\d+)?)?\s*(µg|mcg|mg|g|IU)/i);
+          const minDose = dosageMatch ? parseFloat(dosageMatch[1]) : 100;
+          const maxDose = dosageMatch && dosageMatch[2] ? parseFloat(dosageMatch[2]) : minDose;
+          const unit = dosageMatch ? dosageMatch[3] : 'mg';
+          
+          // Create genetic-driven recommendation
+          const supplements = geneRef.supplement.split(';').map(s => s.trim());
+          
+          supplements.forEach(supplement => {
+            geneticRecommendations.push({
+              supplement_name: supplement,
+              dosage_amount: minDose,
+              dosage_unit: unit,
+              frequency: 'daily',
+              timing: getOptimalTiming(supplement),
+              recommendation_reason: `Genetic Analysis: Your ${marker.rsid} (${marker.genotype}) variant in the ${geneRef.gene} gene causes ${geneRef.impact.toLowerCase()}. This genetic predisposition requires targeted ${supplement} supplementation to optimize your methylation, detoxification, or metabolic pathways.`,
+              evidence_quality: geneRef.evidence,
+              priority_score: geneRef.evidence === 'high' ? 9 : geneRef.evidence === 'moderate' ? 7 : 5,
+              expected_benefits: [`Genetic pathway optimization within 4-8 weeks`, `Improved ${geneRef.gene} function`, `Reduced risk of ${geneRef.gene}-related health issues`],
+              contraindications: geneRef.cautions ? [geneRef.cautions] : [],
+              genetic_reasoning: `${marker.rsid} (${marker.genotype}) variant: ${geneRef.impact}`,
+              source_type: 'genetic',
+              source_data: { rsid: marker.rsid, genotype: marker.genotype, gene: geneRef.gene }
+            });
+          });
+          
+          geneticConcerns.push(`${geneRef.gene} variant (${marker.rsid}: ${marker.genotype})`);
+          relevant_genes.push(geneRef.gene);
+        }
+      }
+    }
+
+    // STEP 2: BIOMARKER ANALYSIS - Primary Catalyst
+    const biomarkerRecommendations = [];
+    const biomarkerConcerns = [];
+    
+    if (labs && labs.length > 0) {
+      console.log(`Analyzing ${labs.length} lab panels...`);
+      
+      for (const lab of labs) {
+        if (lab.biomarker_data && typeof lab.biomarker_data === 'object') {
+          console.log(`📊 Processing biomarkers from: ${lab.lab_name || 'Lab Panel'}`);
+          
+          // Analyze each biomarker
+          for (const [biomarkerName, value] of Object.entries(lab.biomarker_data)) {
+            const normalizedName = biomarkerName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            const numericValue = parseFloat(String(value));
+            
+            // Check if biomarker is outside optimal ranges and needs supplementation
+            const biomarkerRecommendation = analyzeBiomarker(normalizedName, numericValue, biomarkerName);
+            
+            if (biomarkerRecommendation) {
+              biomarkerRecommendations.push({
+                ...biomarkerRecommendation,
+                biomarker_reasoning: `Lab Analysis: Your ${biomarkerName} level of ${value} indicates ${biomarkerRecommendation.concern}. This biomarker abnormality requires targeted supplementation to restore optimal levels and prevent associated health risks.`,
+                source_type: 'biomarker',
+                source_data: { biomarker: biomarkerName, value: value, lab_name: lab.lab_name }
+              });
+              
+              biomarkerConcerns.push(`${biomarkerName}: ${value}`);
+              relevant_biomarkers.push(biomarkerName);
+            }
           }
         }
-      } catch (err) {
-        console.error('Claude API error:', err);
       }
     }
+
+    // STEP 3: HEALTH GOALS & LIFESTYLE INTEGRATION
+    const lifestyleRecommendations = [];
+    const healthGoals = assessment.health_goals || [];
+    const healthConcerns = assessment.health_concerns || [];
     
-    if (!aiAnalysisSuccessful && OPENAI_API_KEY) {
-      try {
-        console.log("Using OpenAI for comprehensive analysis");
-        
-        const userContext = {
-          demographics: { age: assessment.age, sex: assessment.sex },
-          health_goals: assessment.health_goals || [],
-          primary_concerns: assessment.health_concerns || [],
-          lifestyle: { activity_level: assessment.activity_level, stress_level: assessment.stress_level },
-          medical_history: { 
-            conditions: assessment.medical_conditions || [],
-            medications: assessment.current_medications || [],
-            allergies: assessment.allergies || []
-          },
-          genetic_profile: markers || [],
-          lab_results: labs || []
-        };
-        
-        // Import OpenAI dynamically
-        const OpenAI = (await import("npm:openai@4.18.0")).default;
-        const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
-        
-        const completion = await openai.chat.completions.create({ 
-          model: 'gpt-3.5-turbo-0125', 
-          messages: [
-            {
-              role:'system',
-              content:`You are SupplementScribe, a precision medicine AI. Create personalized supplement recommendations focusing on the user's specific health goals, genetic profile, and safety considerations. Always prioritize their stated health goals and consider drug interactions, allergies, and medical conditions. Return ONLY valid JSON with format: {"analysis_summary": string, "interaction_warnings": string[], "health_goal_focus": string, "supplements": [{"supplement_name": string, "dosage_amount": number, "dosage_unit": string, "frequency": string, "reason": string, "evidence": "high"|"moderate"|"low", "cautions": string|null, "priority": "high"|"medium"|"low"}]}`
-            },
-            {
-              role:'user',
-              content: `Analyze this user's health profile and create recommendations focused on their health goals:
-
-USER CONTEXT: ${JSON.stringify(userContext, null, 2)}
-
-GENETIC REFERENCES: ${JSON.stringify(geneReferences.slice(0, 10), null, 2)}
-
-SAFETY CONSIDERATIONS:
-- Drug Interactions: ${JSON.stringify(drugConflicts, null, 2)}
-- Allergy Conflicts: ${JSON.stringify(allergyConflicts, null, 2)}
-
-PRIMARY HEALTH GOALS: ${assessment.health_goals?.join(', ') || 'general wellness'}
-
-Focus your recommendations on achieving these specific health goals while ensuring safety.`
-            }
-          ], 
-          max_tokens: 1500,
-          temperature: 0.2,
-          response_format: { type: "json_object" }
-        });
-        
-        const result = JSON.parse(completion.choices[0].message.content ?? '{}');
-        analysis_summary = result.analysis_summary;
-        interaction_warnings = result.interaction_warnings || [];
-        supplements = result.supplements;
-        relevant_genes = result.relevant_genes || [];
-        relevant_biomarkers = result.relevant_biomarkers || [];
-        aiAnalysisSuccessful = true;
-        console.log("Enhanced OpenAI analysis successful with health goals integration");
-      } catch (err) { 
-        console.error('OpenAI error:', err);
-      }
-    }
-
-    // Process allergies and drug interactions
-    const allergies = new Set((assessment.allergies ?? []).map((a: string)=>a.toLowerCase()));
-    const meds = new Set((assessment.current_medications ?? []).map((m: string)=>m.toLowerCase()));
-
-    console.log(`Processing ${supplements.length} supplements for filtering`);
-    supplements = supplements.filter((s)=>{
-      const lower = s.supplement_name.toLowerCase();
-      for (const [allergy,bad] of Object.entries(allergyConflicts)) {
-        if (allergies.has(allergy) && bad.some((b)=>b.toLowerCase()===lower)) { 
-          interaction_warnings.push(`Avoid ${s.supplement_name} due to ${allergy} allergy.`); 
-          return false; 
-        }
-      }
-      for (const [drug,bad] of Object.entries(drugConflicts)) {
-        if ([...meds].some((m)=>m.includes(drug)) && bad.some((b)=>b.toLowerCase()===lower)) { 
-          interaction_warnings.push(`${s.supplement_name} may interact with ${drug}.`); 
-          return false; 
-        }
-      }
-      return true;
+    console.log(`🎯 Integrating health goals: ${healthGoals.join(', ')}`);
+    console.log(`⚠️ Addressing health concerns: ${healthConcerns.join(', ')}`);
+    
+    // Goal-specific recommendations
+    healthGoals.forEach(goal => {
+      const goalRecommendations = getGoalSpecificRecommendations(goal, assessment);
+      lifestyleRecommendations.push(...goalRecommendations);
+    });
+    
+    // Concern-specific recommendations
+    healthConcerns.forEach(concern => {
+      const concernRecommendations = getConcernSpecificRecommendations(concern, assessment);
+      lifestyleRecommendations.push(...concernRecommendations);
     });
 
-    // Remove duplicates
-    const uniqueSupplements = supplements.reduce((acc: any[], curr) => {
-      const exists = acc.find(s => s.supplement_name.toLowerCase() === curr.supplement_name.toLowerCase());
-      if (!exists) {
-        acc.push(curr);
-      }
-      return acc;
-    }, []);
+    // STEP 4: COMBINE AND PRIORITIZE ALL RECOMMENDATIONS
+    let allRecommendations = [
+      ...geneticRecommendations,
+      ...biomarkerRecommendations,
+      ...lifestyleRecommendations
+    ];
 
-    console.log(`Filtered to ${uniqueSupplements.length} unique supplements`);
+    // Remove duplicates and merge similar supplements
+    allRecommendations = mergeSimilarSupplements(allRecommendations);
+
+    // STEP 5: GENE-GENE AND BIOMARKER INTERACTIONS
+    allRecommendations = checkInteractions(allRecommendations, markers, labs, interaction_warnings);
+
+    // STEP 6: SAFETY FILTERING
+    allRecommendations = applySafetyFilters(allRecommendations, assessment, interaction_warnings);
+
+    // STEP 6.5: AI-POWERED FLEXIBLE INTERACTION SAFETY CHECK
+    if (ANTHROPIC_API_KEY || OPENAI_API_KEY) {
+      try {
+        console.log("🤖 Running AI-powered interaction analysis...");
+        const interactionResult = await performAIInteractionAnalysis(allRecommendations, assessment, markers, labs, ANTHROPIC_API_KEY, OPENAI_API_KEY);
+        allRecommendations = interactionResult.safeRecommendations;
+        interaction_warnings.push(...interactionResult.warnings);
+      } catch (aiError) {
+        console.error('AI interaction analysis error:', aiError);
+        // Fallback to basic safety checks
+        const fallbackResult = performBasicSafetyCheck(allRecommendations, assessment, markers, labs);
+        allRecommendations = fallbackResult.safeRecommendations;
+        interaction_warnings.push(...fallbackResult.warnings);
+      }
+    } else {
+      // Use basic safety checks if no AI available
+      const fallbackResult = performBasicSafetyCheck(allRecommendations, assessment, markers, labs);
+      allRecommendations = fallbackResult.safeRecommendations;
+      interaction_warnings.push(...fallbackResult.warnings);
+    }
+
+    // STEP 7: AI ENHANCEMENT (if available)
+    if (ANTHROPIC_API_KEY || OPENAI_API_KEY) {
+      try {
+        console.log("🤖 Enhancing recommendations with AI analysis...");
+        
+        const enhancedRecommendations = await enhanceWithAI(
+          allRecommendations,
+          assessment,
+          markers,
+          labs,
+          geneticConcerns,
+          biomarkerConcerns,
+          ANTHROPIC_API_KEY,
+          OPENAI_API_KEY
+        );
+        
+        if (enhancedRecommendations && enhancedRecommendations.length > 0) {
+          allRecommendations = enhancedRecommendations;
+          aiAnalysisSuccessful = true;
+        }
+      } catch (aiError) {
+        console.error('AI enhancement error:', aiError);
+      }
+    }
+
+    // STEP 8: FINAL PRIORITIZATION AND SUMMARY
+    allRecommendations.sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0));
+    
+    // Generate comprehensive analysis summary
+    analysis_summary = generateComprehensiveAnalysisSummary(
+      assessment,
+      geneticConcerns,
+      biomarkerConcerns,
+      allRecommendations,
+      healthGoals
+    );
+
+    supplements = allRecommendations;
+
     console.log("Inserting AI analysis record");
     
     const analysisData = { 
@@ -983,8 +815,8 @@ Focus your recommendations on achieving these specific health goals while ensuri
       console.error('embedding_worker error', embedErr);
     }
 
-    if (Array.isArray(uniqueSupplements) && analysisRow) {
-      const rows = uniqueSupplements.map((s)=>({ 
+    if (Array.isArray(supplements) && analysisRow) {
+      const rows = supplements.map((s)=>({ 
         user_id, 
         analysis_id: analysisRow.id, 
         supplement_name:s.supplement_name, 
@@ -992,10 +824,10 @@ Focus your recommendations on achieving these specific health goals while ensuri
         dosage_unit:s.dosage_unit, 
         frequency:s.frequency, 
         priority_score: s.priority === 'high' ? 5 : s.priority === 'medium' ? 3 : s.priority === 'low' ? 2 : (s.evidence === 'high' ? 5 : s.evidence === 'moderate' ? 3 : 2), 
-        recommendation_reason:s.reason, 
-        expected_benefits: s.timeline ? [s.timeline] : [], 
-        evidence_quality:s.evidence, 
-        contraindications: s.cautions ? [s.cautions] : [],
+        recommendation_reason:s.recommendation_reason, 
+        expected_benefits: s.expected_benefits, 
+        evidence_quality:s.evidence_quality, 
+        contraindications: s.contraindications,
         is_active:true 
       }));
       
@@ -1006,20 +838,20 @@ Focus your recommendations on achieving these specific health goals while ensuri
         console.error("Error inserting recommendations:", recErr);
         console.error("Recommendations error details:", JSON.stringify(recErr, null, 2));
       } else {
-        // After inserting recommendations, populate product links
-        console.log("Populating product links for recommendations");
+        // After inserting recommendations, populate product links AND citations
+        console.log("Populating product links and citations for recommendations");
         try {
           // Get the newly created recommendations
           const { data: newRecommendations } = await supabase
             .from('supplement_recommendations')
-            .select('id, supplement_name')
+            .select('id, supplement_name, recommendation_reason')
             .eq('analysis_id', analysisRow.id);
             
           if (newRecommendations) {
             for (const rec of newRecommendations) {
-              console.log(`Finding products for: ${rec.supplement_name}`);
+              console.log(`Processing: ${rec.supplement_name}`);
               
-              // Use the enhanced single supplement search
+              // 1. FIND PRODUCTS
               const productSearchResponse = await supabase.functions.invoke('product_search', {
                 body: { supplement_name: rec.supplement_name }
               });
@@ -1041,8 +873,6 @@ Focus your recommendations on achieving these specific health goals while ensuri
                 await supabase.from('product_links').insert(productLink);
                 console.log(`Created product link for ${rec.supplement_name}`);
               } else {
-                console.log(`No products found for ${rec.supplement_name}, product search response:`, productSearchResponse);
-                
                 // Create a basic fallback link using the search URLs as backup
                 const fallbackLink = {
                   recommendation_id: rec.id,
@@ -1057,10 +887,36 @@ Focus your recommendations on achieving these specific health goals while ensuri
                 await supabase.from('product_links').insert(fallbackLink);
                 console.log(`Created fallback product link for ${rec.supplement_name}`);
               }
+              
+              // 2. GENERATE PERSONALIZED CITATIONS
+              try {
+                console.log(`Generating citations for: ${rec.supplement_name}`);
+                
+                // Extract genetic variant from recommendation reasoning
+                const geneticVariant = extractGeneticVariant(rec.recommendation_reason);
+                const healthCondition = extractHealthCondition(rec.recommendation_reason);
+                
+                const citationResponse = await supabase.functions.invoke('pubmed_citations', {
+                  body: {
+                    recommendation_id: rec.id,
+                    supplement_name: rec.supplement_name,
+                    health_condition: healthCondition || 'general health',
+                    genetic_variant: geneticVariant
+                  }
+                });
+                
+                if (citationResponse.data?.success) {
+                  console.log(`Generated ${citationResponse.data.citations_found} citations for ${rec.supplement_name}`);
+                } else {
+                  console.log(`Citation generation failed for ${rec.supplement_name}:`, citationResponse.error);
+                }
+              } catch (citationError) {
+                console.error(`Citation error for ${rec.supplement_name}:`, citationError);
+              }
             }
           }
         } catch (productError) {
-          console.error("Error populating product links:", productError);
+          console.error("Error populating product links and citations:", productError);
         }
       }
     }
@@ -1078,3 +934,1081 @@ Focus your recommendations on achieving these specific health goals while ensuri
     });
   }
 }); 
+
+// ============================================================================
+// COMPREHENSIVE HELPER FUNCTIONS FOR HOLISTIC ANALYSIS
+// ============================================================================
+
+// Initialize variables for the analysis
+let analysis_summary = "";
+let interaction_warnings: string[] = [];
+let supplements: any[] = [];
+let relevant_genes: any[] = [];
+let relevant_biomarkers: any[] = [];
+let aiAnalysisSuccessful = false;
+
+// Get optimal timing for supplement absorption
+function getOptimalTiming(supplement: string): string {
+  const supplementLower = supplement.toLowerCase();
+  
+  if (supplementLower.includes('vitamin d') || supplementLower.includes('omega') || supplementLower.includes('fish oil')) {
+    return 'with breakfast (fat-soluble)';
+  }
+  if (supplementLower.includes('magnesium') || supplementLower.includes('melatonin')) {
+    return 'evening with dinner';
+  }
+  if (supplementLower.includes('b12') || supplementLower.includes('methylfolate') || supplementLower.includes('b-complex')) {
+    return 'morning on empty stomach';
+  }
+  if (supplementLower.includes('iron')) {
+    return 'morning on empty stomach with vitamin C';
+  }
+  if (supplementLower.includes('calcium')) {
+    return 'between meals (avoid with iron)';
+  }
+  
+  return 'with food for best absorption';
+}
+
+// Comprehensive biomarker analysis function
+function analyzeBiomarker(normalizedName: string, numericValue: number, displayName: string): any | null {
+  // Skip non-numeric values
+  if (isNaN(numericValue)) return null;
+  
+  // VITAMIN D ANALYSIS
+  if (normalizedName.includes('vitamin_d') || normalizedName.includes('25_oh_d')) {
+    if (numericValue < 30) {
+      return {
+        supplement_name: 'Vitamin D3',
+        dosage_amount: numericValue < 20 ? 5000 : 3000,
+        dosage_unit: 'IU',
+        frequency: 'daily',
+        timing: 'with breakfast (fat-soluble)',
+        recommendation_reason: `Your vitamin D level of ${numericValue} ng/mL is below optimal (30-50 ng/mL).`,
+        evidence_quality: 'high',
+        priority_score: numericValue < 20 ? 9 : 7,
+        expected_benefits: ['Improved immune function within 4-6 weeks', 'Better bone health', 'Enhanced mood regulation'],
+        contraindications: ['Monitor levels to avoid toxicity'],
+        concern: 'vitamin D deficiency'
+      };
+    }
+  }
+  
+  // B12 ANALYSIS
+  if (normalizedName.includes('b12') || normalizedName.includes('cobalamin')) {
+    if (numericValue < 400) {
+      return {
+        supplement_name: 'Methylcobalamin (B12)',
+        dosage_amount: numericValue < 200 ? 5000 : 2000,
+        dosage_unit: 'mcg',
+        frequency: 'daily',
+        timing: 'morning sublingual',
+        recommendation_reason: `Your B12 level of ${numericValue} pg/mL is below optimal (400-900 pg/mL).`,
+        evidence_quality: 'high',
+        priority_score: numericValue < 200 ? 9 : 7,
+        expected_benefits: ['Increased energy within 2-4 weeks', 'Improved cognitive function', 'Better nerve health'],
+        contraindications: ['Use methylated form for better absorption'],
+        concern: 'B12 deficiency'
+      };
+    }
+  }
+  
+  // IRON/FERRITIN ANALYSIS
+  if (normalizedName.includes('ferritin')) {
+    if (numericValue < 30) {
+      return {
+        supplement_name: 'Iron Bisglycinate',
+        dosage_amount: 25,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'morning on empty stomach with vitamin C',
+        recommendation_reason: `Your ferritin level of ${numericValue} ng/mL indicates iron deficiency (optimal: 30-150 ng/mL).`,
+        evidence_quality: 'high',
+        priority_score: 8,
+        expected_benefits: ['Improved energy within 4-8 weeks', 'Better oxygen transport', 'Reduced fatigue'],
+        contraindications: ['Take with vitamin C, avoid with calcium', 'Monitor levels to prevent overload'],
+        concern: 'iron deficiency'
+      };
+    }
+    if (numericValue > 200) {
+      return {
+        supplement_name: 'Lactoferrin',
+        dosage_amount: 200,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'with meals',
+        recommendation_reason: `Your ferritin level of ${numericValue} ng/mL is elevated, suggesting iron overload.`,
+        evidence_quality: 'moderate',
+        priority_score: 7,
+        expected_benefits: ['Iron regulation within 8-12 weeks', 'Reduced oxidative stress'],
+        contraindications: ['AVOID iron supplements', 'Monitor ferritin levels'],
+        concern: 'iron overload'
+      };
+    }
+  }
+  
+  // CHOLESTEROL ANALYSIS
+  if (normalizedName.includes('ldl') || normalizedName.includes('ldl_cholesterol')) {
+    if (numericValue > 100) {
+      return {
+        supplement_name: 'Omega-3 (EPA/DHA)',
+        dosage_amount: 2000,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'with meals',
+        recommendation_reason: `Your LDL cholesterol of ${numericValue} mg/dL is above optimal (<100 mg/dL).`,
+        evidence_quality: 'high',
+        priority_score: numericValue > 130 ? 8 : 6,
+        expected_benefits: ['Improved lipid profile within 8-12 weeks', 'Reduced cardiovascular risk'],
+        contraindications: ['Monitor if on blood thinners'],
+        concern: 'elevated LDL cholesterol'
+      };
+    }
+  }
+  
+  // TRIGLYCERIDES ANALYSIS
+  if (normalizedName.includes('triglycerides')) {
+    if (numericValue > 150) {
+      return {
+        supplement_name: 'Berberine',
+        dosage_amount: 500,
+        dosage_unit: 'mg',
+        frequency: 'twice daily',
+        timing: 'before meals',
+        recommendation_reason: `Your triglycerides of ${numericValue} mg/dL are above optimal (<150 mg/dL).`,
+        evidence_quality: 'high',
+        priority_score: numericValue > 200 ? 8 : 6,
+        expected_benefits: ['Reduced triglycerides within 8-12 weeks', 'Improved metabolic health'],
+        contraindications: ['Monitor blood sugar if diabetic'],
+        concern: 'elevated triglycerides'
+      };
+    }
+  }
+  
+  // GLUCOSE ANALYSIS
+  if (normalizedName.includes('glucose') && !normalizedName.includes('hba1c')) {
+    if (numericValue > 100) {
+      return {
+        supplement_name: 'Chromium Picolinate',
+        dosage_amount: 200,
+        dosage_unit: 'mcg',
+        frequency: 'daily',
+        timing: 'with largest meal',
+        recommendation_reason: `Your fasting glucose of ${numericValue} mg/dL is above optimal (<100 mg/dL).`,
+        evidence_quality: 'moderate',
+        priority_score: numericValue > 125 ? 8 : 6,
+        expected_benefits: ['Better glucose control within 4-6 weeks', 'Improved insulin sensitivity'],
+        contraindications: ['Monitor blood sugar closely if diabetic'],
+        concern: 'elevated glucose'
+      };
+    }
+  }
+  
+  // TSH ANALYSIS
+  if (normalizedName.includes('tsh')) {
+    if (numericValue > 3.0) {
+      return {
+        supplement_name: 'Selenium',
+        dosage_amount: 200,
+        dosage_unit: 'mcg',
+        frequency: 'daily',
+        timing: 'with breakfast',
+        recommendation_reason: `Your TSH of ${numericValue} mIU/L suggests suboptimal thyroid function (optimal: 1.0-3.0 mIU/L).`,
+        evidence_quality: 'moderate',
+        priority_score: 7,
+        expected_benefits: ['Improved thyroid function within 8-12 weeks', 'Better energy levels'],
+        contraindications: ['Monitor thyroid levels', 'Take 4 hours from thyroid medication'],
+        concern: 'elevated TSH'
+      };
+    }
+  }
+  
+  return null;
+}
+
+// Get goal-specific recommendations
+function getGoalSpecificRecommendations(goal: string, assessment: any): any[] {
+  const recommendations = [];
+  const goalLower = goal.toLowerCase();
+  
+  if (goalLower.includes('weight') || goalLower.includes('fat loss')) {
+    recommendations.push({
+      supplement_name: 'Green Tea Extract',
+      dosage_amount: 400,
+      dosage_unit: 'mg',
+      frequency: 'twice daily',
+      timing: 'between meals',
+      recommendation_reason: `Goal-Based: Supporting your weight loss goal with metabolism-boosting green tea extract containing EGCG.`,
+      evidence_quality: 'moderate',
+      priority_score: 6,
+      expected_benefits: ['Increased metabolism within 2-4 weeks', 'Enhanced fat oxidation'],
+      contraindications: ['Contains caffeine - avoid if sensitive'],
+      source_type: 'goal'
+    });
+  }
+  
+  if (goalLower.includes('energy') || goalLower.includes('fatigue')) {
+    recommendations.push({
+      supplement_name: 'CoQ10',
+      dosage_amount: 100,
+      dosage_unit: 'mg',
+      frequency: 'daily',
+      timing: 'with breakfast',
+      recommendation_reason: `Goal-Based: Supporting your energy goals with CoQ10 for mitochondrial energy production.`,
+      evidence_quality: 'high',
+      priority_score: 7,
+      expected_benefits: ['Increased energy within 4-6 weeks', 'Better exercise tolerance'],
+      contraindications: ['Take with fats for absorption'],
+      source_type: 'goal'
+    });
+  }
+  
+  if (goalLower.includes('stress') || goalLower.includes('anxiety')) {
+    recommendations.push({
+      supplement_name: 'Ashwagandha',
+      dosage_amount: 600,
+      dosage_unit: 'mg',
+      frequency: 'daily',
+      timing: 'evening with dinner',
+      recommendation_reason: `Goal-Based: Supporting your stress management goals with adaptogenic ashwagandha.`,
+      evidence_quality: 'high',
+      priority_score: 7,
+      expected_benefits: ['Reduced stress within 2-4 weeks', 'Better cortisol balance'],
+      contraindications: ['Avoid if pregnant or breastfeeding'],
+      source_type: 'goal'
+    });
+  }
+  
+  return recommendations;
+}
+
+// Get concern-specific recommendations
+function getConcernSpecificRecommendations(concern: string, assessment: any): any[] {
+  const recommendations = [];
+  const concernLower = concern.toLowerCase();
+  
+  if (concernLower.includes('sleep') || concernLower.includes('insomnia')) {
+    recommendations.push({
+      supplement_name: 'Melatonin',
+      dosage_amount: 3,
+      dosage_unit: 'mg',
+      frequency: 'nightly',
+      timing: '30 minutes before bed',
+      recommendation_reason: `Concern-Based: Addressing your sleep issues with melatonin for circadian rhythm regulation.`,
+      evidence_quality: 'high',
+      priority_score: 7,
+      expected_benefits: ['Better sleep quality within 1-2 weeks', 'Improved sleep onset'],
+      contraindications: ['Start with 1mg and increase if needed'],
+      source_type: 'concern'
+    });
+  }
+  
+  if (concernLower.includes('digestive') || concernLower.includes('gut') || concernLower.includes('bloating')) {
+    recommendations.push({
+      supplement_name: 'Probiotic Multi-Strain',
+      dosage_amount: 50,
+      dosage_unit: 'billion CFU',
+      frequency: 'daily',
+      timing: 'with breakfast',
+      recommendation_reason: `Concern-Based: Addressing your digestive concerns with comprehensive probiotic support.`,
+      evidence_quality: 'high',
+      priority_score: 6,
+      expected_benefits: ['Improved digestion within 2-4 weeks', 'Better gut health'],
+      contraindications: ['Refrigerate for potency'],
+      source_type: 'concern'
+    });
+  }
+  
+  return recommendations;
+}
+
+// Merge similar supplements to avoid duplicates
+function mergeSimilarSupplements(recommendations: any[]): any[] {
+  const merged = [];
+  const processed = new Set();
+  
+  for (const rec of recommendations) {
+    const key = rec.supplement_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    if (!processed.has(key)) {
+      // Find all similar supplements
+      const similar = recommendations.filter(r => 
+        r.supplement_name.toLowerCase().replace(/[^a-z0-9]/g, '') === key
+      );
+      
+      if (similar.length > 1) {
+        // Merge recommendations - prioritize genetic > biomarker > goal > concern
+        const priority = ['genetic', 'biomarker', 'goal', 'concern'];
+        const best = similar.sort((a, b) => {
+          const aPriority = priority.indexOf(a.source_type) !== -1 ? priority.indexOf(a.source_type) : 999;
+          const bPriority = priority.indexOf(b.source_type) !== -1 ? priority.indexOf(b.source_type) : 999;
+          return aPriority - bPriority;
+        })[0];
+        
+        // Combine reasoning from all sources
+        const allReasons = similar.map(s => s.recommendation_reason).join(' ');
+        best.recommendation_reason = allReasons;
+        
+        // Use highest priority score
+        best.priority_score = Math.max(...similar.map(s => s.priority_score || 0));
+        
+        merged.push(best);
+      } else {
+        merged.push(rec);
+      }
+      
+      processed.add(key);
+    }
+  }
+  
+  return merged;
+}
+
+// Check for gene-gene and biomarker interactions
+function checkInteractions(recommendations: any[], markers: any[], labs: any[], warnings: string[]): any[] {
+  // Check for gene-gene interactions
+  if (markers && markers.length > 0) {
+    const userGenes = new Set(markers.map(m => m.rsid));
+    
+    for (const [key, interaction] of Object.entries(geneInteractions)) {
+      const hasAllGenes = interaction.genes.every(gene => {
+        return geneReferences.some(ref => 
+          ref.gene === gene && 
+          ref.rsids.some(rsid => userGenes.has(rsid))
+        );
+      });
+      
+      if (hasAllGenes) {
+        warnings.push(`Gene interaction detected: ${interaction.concern}. ${interaction.caution}`);
+        
+        // Modify recommendations based on interaction
+        recommendations.forEach(rec => {
+          if (interaction.recommendation && rec.supplement_name.toLowerCase().includes('methylfolate')) {
+            rec.dosage_amount = Math.min(rec.dosage_amount, 400); // Lower dose for interactions
+            rec.contraindications.push(interaction.caution);
+          }
+        });
+      }
+    }
+  }
+  
+  return recommendations;
+}
+
+// Apply safety filters for allergies, medications, and medical conditions
+function applySafetyFilters(recommendations: any[], assessment: any, warnings: string[]): any[] {
+  const allergies = new Set((assessment.allergies ?? []).map((a: string) => a.toLowerCase()));
+  const meds = new Set((assessment.current_medications ?? []).map((m: string) => m.toLowerCase()));
+  const conditions = new Set((assessment.medical_conditions ?? []).map((c: string) => c.toLowerCase()));
+  
+  return recommendations.filter(rec => {
+    const supplementLower = rec.supplement_name.toLowerCase();
+    
+    // Check allergies
+    for (const [allergy, conflicts] of Object.entries(allergyConflicts)) {
+      if (allergies.has(allergy) && conflicts.some(conflict => supplementLower.includes(conflict.toLowerCase()))) {
+        warnings.push(`Avoiding ${rec.supplement_name} due to ${allergy} allergy`);
+        return false;
+      }
+    }
+    
+    // Check drug interactions
+    for (const [drug, conflicts] of Object.entries(drugConflicts)) {
+      if ([...meds].some(med => med.includes(drug)) && conflicts.some(conflict => supplementLower.includes(conflict.toLowerCase()))) {
+        warnings.push(`${rec.supplement_name} may interact with ${drug} medication`);
+        return false;
+      }
+    }
+    
+    // Check medical condition interactions
+    for (const [condition, rules] of Object.entries(medicalConditionInteractions)) {
+      if (conditions.has(condition) && rules.avoid.some(avoid => supplementLower.includes(avoid.toLowerCase()))) {
+        warnings.push(`Avoiding ${rec.supplement_name} due to ${condition}`);
+        return false;
+      }
+    }
+    
+    return true;
+  });
+}
+
+// AI enhancement function
+async function enhanceWithAI(
+  recommendations: any[],
+  assessment: any,
+  markers: any[],
+  labs: any[],
+  geneticConcerns: string[],
+  biomarkerConcerns: string[],
+  anthropicKey?: string,
+  openaiKey?: string
+): Promise<any[]> {
+  
+  const context = {
+    current_recommendations: recommendations,
+    genetic_concerns: geneticConcerns,
+    biomarker_concerns: biomarkerConcerns,
+    health_goals: assessment.health_goals || [],
+    demographics: { age: assessment.age, sex: assessment.sex }
+  };
+  
+  const prompt = `Enhance these supplement recommendations based on comprehensive health data:
+
+CURRENT RECOMMENDATIONS: ${JSON.stringify(recommendations, null, 2)}
+
+GENETIC CONCERNS: ${geneticConcerns.join(', ')}
+BIOMARKER CONCERNS: ${biomarkerConcerns.join(', ')}
+HEALTH GOALS: ${assessment.health_goals?.join(', ') || 'general wellness'}
+
+Please refine dosages, add missing recommendations, and improve personalization. Return the enhanced recommendations in the same JSON format.`;
+
+  if (anthropicKey) {
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01"
+        },
+        body: JSON.stringify({
+          model: "claude-3-haiku-20240307",
+          max_tokens: 4000,
+          temperature: 0.2,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const content = result.content[0].text;
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Anthropic AI enhancement error:', error);
+    }
+  }
+  
+  return recommendations; // Return original if AI enhancement fails
+}
+
+// Generate comprehensive analysis summary
+function generateComprehensiveAnalysisSummary(
+  assessment: any,
+  geneticConcerns: string[],
+  biomarkerConcerns: string[],
+  recommendations: any[],
+  healthGoals: string[]
+): string {
+  
+  let summary = "🧬 **Comprehensive Precision Medicine Analysis**\n\n";
+  
+  if (geneticConcerns.length > 0) {
+    summary += `**Genetic Analysis:** Your genetic profile reveals ${geneticConcerns.length} variant(s) of concern: ${geneticConcerns.join(', ')}. These genetic predispositions require targeted supplementation to optimize your metabolic pathways.\n\n`;
+  }
+  
+  if (biomarkerConcerns.length > 0) {
+    summary += `**Biomarker Analysis:** Your lab results show ${biomarkerConcerns.length} biomarker(s) outside optimal ranges: ${biomarkerConcerns.slice(0, 3).join(', ')}${biomarkerConcerns.length > 3 ? ' and others' : ''}. These abnormalities indicate specific nutritional needs.\n\n`;
+  }
+  
+  if (healthGoals.length > 0) {
+    summary += `**Health Goals Integration:** Your personalized plan addresses your specific goals: ${healthGoals.join(', ')}. Each recommendation is tailored to support these objectives.\n\n`;
+  }
+  
+  const highPriority = recommendations.filter(r => (r.priority_score || 0) >= 8).length;
+  summary += `**Recommendation Summary:** ${recommendations.length} personalized supplements identified, with ${highPriority} high-priority recommendations based on your genetic variants and biomarker abnormalities. This precision approach ensures optimal health outcomes tailored to your unique biology.`;
+  
+  return summary;
+}
+
+// Extract genetic variant from recommendation reasoning
+function extractGeneticVariant(reasoning: string): string | undefined {
+  const geneticPatterns = [
+    /\b(MTHFR)\b/i,
+    /\b(COMT)\b/i,
+    /\b(APOE)\b/i,
+    /\b(FADS)\b/i,
+    /\b(VDR)\b/i,
+    /\b(CYP\w+)\b/i,
+    /\b(rs\d+)\b/i,
+    /\b(MTR)\b/i,
+    /\b(MTRR)\b/i,
+    /\b(CBS)\b/i,
+    /\b(HFE)\b/i,
+    /\b(SOD2)\b/i,
+    /\b(GPX1)\b/i
+  ];
+  
+  for (const pattern of geneticPatterns) {
+    const match = reasoning.match(pattern);
+    if (match) return match[1];
+  }
+  
+  return undefined;
+}
+
+// Extract health condition from recommendation reasoning
+function extractHealthCondition(reasoning: string): string | undefined {
+  const conditionPatterns = [
+    /\b(vitamin d deficiency)\b/i,
+    /\b(b12 deficiency)\b/i,
+    /\b(iron deficiency)\b/i,
+    /\b(elevated cholesterol)\b/i,
+    /\b(high triglycerides)\b/i,
+    /\b(elevated glucose)\b/i,
+    /\b(thyroid dysfunction)\b/i,
+    /\b(inflammation)\b/i,
+    /\b(oxidative stress)\b/i,
+    /\b(methylation)\b/i,
+    /\b(detoxification)\b/i,
+    /\b(cardiovascular)\b/i,
+    /\b(cognitive)\b/i,
+    /\b(energy)\b/i,
+    /\b(stress)\b/i,
+    /\b(sleep)\b/i
+  ];
+  
+  for (const pattern of conditionPatterns) {
+    const match = reasoning.match(pattern);
+    if (match) return match[1];
+  }
+  
+  return undefined;
+}
+
+// ============================================================================
+// COMPREHENSIVE INTERACTION SAFETY SYSTEM
+// ============================================================================
+
+// Blood marker contraindications for specific supplements
+const biomarkerContraindications = {
+  // IRON-RELATED MARKERS
+  'ferritin_high': {
+    threshold: 200, // ng/mL
+    avoid_supplements: ['Iron', 'Iron Bisglycinate', 'Iron Sulfate', 'Chelated Iron', 'Heme Iron'],
+    warning: 'High ferritin levels indicate iron overload risk - iron supplements are contraindicated',
+    alternatives: ['Lactoferrin', 'Vitamin C', 'Quercetin']
+  },
+  'transferrin_saturation_high': {
+    threshold: 45, // %
+    avoid_supplements: ['Iron', 'Iron Bisglycinate', 'Iron Sulfate'],
+    warning: 'Elevated transferrin saturation suggests iron overload',
+    alternatives: ['Lactoferrin']
+  },
+  
+  // CALCIUM-RELATED MARKERS
+  'calcium_high': {
+    threshold: 10.5, // mg/dL
+    avoid_supplements: ['Calcium', 'Calcium Carbonate', 'Calcium Citrate', 'Vitamin D (high dose)'],
+    warning: 'Hypercalcemia detected - avoid calcium and high-dose vitamin D',
+    alternatives: ['Magnesium', 'Vitamin K2']
+  },
+  'pth_low': {
+    threshold: 15, // pg/mL
+    avoid_supplements: ['Calcium', 'Vitamin D (high dose)'],
+    warning: 'Low PTH may indicate calcium overload',
+    alternatives: ['Magnesium']
+  },
+  
+  // KIDNEY FUNCTION MARKERS
+  'creatinine_high': {
+    threshold: 1.4, // mg/dL
+    avoid_supplements: ['Creatine', 'High-dose Magnesium', 'High-dose Potassium', 'High-dose Vitamin C'],
+    warning: 'Elevated creatinine suggests kidney dysfunction - avoid supplements requiring renal clearance',
+    alternatives: ['Lower doses under medical supervision']
+  },
+  'bun_high': {
+    threshold: 25, // mg/dL
+    avoid_supplements: ['Creatine', 'High-dose Protein Powder'],
+    warning: 'High BUN indicates kidney stress',
+    alternatives: ['Support kidney function with medical guidance']
+  },
+  
+  // LIVER FUNCTION MARKERS
+  'alt_high': {
+    threshold: 45, // U/L
+    avoid_supplements: ['Kava', 'High-dose Niacin', 'Green Tea Extract (high dose)', 'Iron (if not deficient)'],
+    warning: 'Elevated liver enzymes - avoid hepatotoxic supplements',
+    alternatives: ['Milk Thistle', 'NAC', 'Lower dose supplements']
+  },
+  'ast_high': {
+    threshold: 45, // U/L
+    avoid_supplements: ['Kava', 'High-dose Niacin', 'Comfrey'],
+    warning: 'Liver dysfunction detected',
+    alternatives: ['Liver support supplements']
+  },
+  
+  // BLOOD PRESSURE MARKERS
+  'systolic_high': {
+    threshold: 140, // mmHg
+    avoid_supplements: ['Licorice', 'Ephedra', 'High-dose Sodium', 'Yohimbe'],
+    warning: 'Hypertension detected - avoid supplements that raise blood pressure',
+    alternatives: ['Magnesium', 'Potassium', 'Hawthorn', 'CoQ10']
+  },
+  
+  // BLOOD SUGAR MARKERS
+  'glucose_very_high': {
+    threshold: 180, // mg/dL
+    avoid_supplements: ['High-dose Chromium (without monitoring)', 'Bitter Melon (without monitoring)'],
+    warning: 'Severe hyperglycemia - supplements affecting blood sugar require medical supervision',
+    alternatives: ['Medical consultation before any glucose-affecting supplements']
+  },
+  
+  // THYROID MARKERS
+  'tsh_very_high': {
+    threshold: 10, // mIU/L
+    avoid_supplements: ['Kelp', 'High-dose Iodine'],
+    warning: 'Severe hypothyroidism - iodine supplements may worsen condition',
+    alternatives: ['Selenium', 'Zinc', 'Medical consultation']
+  },
+  'tsh_very_low': {
+    threshold: 0.1, // mIU/L
+    avoid_supplements: ['Iodine', 'Kelp', 'Thyroid glandulars'],
+    warning: 'Hyperthyroidism detected - avoid thyroid-stimulating supplements',
+    alternatives: ['Support under medical supervision only']
+  }
+};
+
+// Genetic variant contraindications
+const geneticContraindications = {
+  'HFE_homozygous': {
+    rsids: ['rs1799945', 'rs1800562'],
+    risk_genotypes: ['CC', 'AA'],
+    avoid_supplements: ['Iron', 'Iron Bisglycinate', 'Iron Sulfate', 'Multivitamins with Iron'],
+    warning: 'Hemochromatosis variants - iron supplements are NEVER safe',
+    alternatives: ['Lactoferrin', 'Vitamin C', 'Regular phlebotomy monitoring']
+  },
+  'G6PD_deficiency': {
+    rsids: ['rs1050828', 'rs1050829'],
+    risk_genotypes: ['T', 'A'],
+    avoid_supplements: ['High-dose Vitamin C', 'NAC (high dose)', 'Methylene Blue'],
+    warning: 'G6PD deficiency - oxidative supplements may trigger hemolysis',
+    alternatives: ['Lower dose antioxidants', 'Alpha-lipoic acid']
+  },
+  'CYP2D6_poor_metabolizer': {
+    rsids: ['rs3892097', 'rs1065852'],
+    risk_genotypes: ['TT', 'AA'],
+    avoid_supplements: ['High-dose Tyramine-containing supplements'],
+    warning: 'Poor CYP2D6 metabolism affects supplement clearance',
+    alternatives: ['Lower doses', 'Extended dosing intervals']
+  }
+};
+
+// Multi-condition interaction matrix
+const complexInteractions = {
+  'diabetes_kidney_disease': {
+    conditions: ['diabetes', 'kidney_disease'],
+    avoid_supplements: ['Metformin-like supplements', 'High-dose Magnesium', 'Potassium'],
+    warning: 'Diabetes with kidney disease requires extreme caution with supplements',
+    monitoring: 'Regular kidney function and electrolyte monitoring required'
+  },
+  'hypertension_kidney_disease': {
+    conditions: ['hypertension', 'kidney_disease'],
+    avoid_supplements: ['ACE inhibitor-like herbs', 'High-dose Potassium'],
+    warning: 'Combined cardiovascular and kidney conditions limit supplement options',
+    alternatives: ['Lower doses under medical supervision']
+  },
+  'liver_disease_diabetes': {
+    conditions: ['liver_disease', 'diabetes'],
+    avoid_supplements: ['Metformin-like supplements', 'High-dose Niacin'],
+    warning: 'Liver dysfunction affects glucose medication metabolism',
+    alternatives: ['Support liver function first']
+  }
+};
+
+// Comprehensive interaction checker
+function performComprehensiveInteractionCheck(
+  recommendations: any[], 
+  assessment: any, 
+  markers: any[], 
+  labs: any[], 
+  warnings: string[]
+): any[] {
+  
+  console.log("🔍 Starting comprehensive interaction analysis...");
+  
+  // STEP 1: Extract all user data
+  const allergies = new Set((assessment.allergies ?? []).map((a: string) => a.toLowerCase()));
+  const medications = new Set((assessment.current_medications ?? []).map((m: string) => m.toLowerCase()));
+  const conditions = new Set((assessment.medical_conditions ?? []).map((c: string) => c.toLowerCase()));
+  const userGenes = markers ? new Map(markers.map(m => [m.rsid, m.genotype])) : new Map();
+  const biomarkers = extractBiomarkerValues(labs);
+  
+  console.log(`Checking interactions for: ${allergies.size} allergies, ${medications.size} medications, ${conditions.size} conditions, ${userGenes.size} genetic variants, ${Object.keys(biomarkers).length} biomarkers`);
+  
+  // STEP 2: Filter recommendations through comprehensive safety checks
+  const safeRecommendations = recommendations.filter(rec => {
+    const supplementLower = rec.supplement_name.toLowerCase();
+    
+    // 2A: ALLERGY CHECK
+    for (const [allergy, conflicts] of Object.entries(allergyConflicts)) {
+      if (allergies.has(allergy)) {
+        for (const conflict of conflicts) {
+          if (supplementLower.includes(conflict.toLowerCase())) {
+            warnings.push(`❌ ALLERGY CONTRAINDICATION: Avoiding ${rec.supplement_name} due to ${allergy} allergy`);
+            return false;
+          }
+        }
+      }
+    }
+    
+    // 2B: MEDICATION INTERACTION CHECK
+    for (const [drug, conflicts] of Object.entries(drugConflicts)) {
+      if ([...medications].some(med => med.includes(drug))) {
+        for (const conflict of conflicts) {
+          if (supplementLower.includes(conflict.toLowerCase())) {
+            warnings.push(`⚠️ DRUG INTERACTION: ${rec.supplement_name} may interact with ${drug} medication`);
+            return false;
+          }
+        }
+      }
+    }
+    
+    // 2C: BIOMARKER CONTRAINDICATION CHECK
+    for (const [markerKey, contraindication] of Object.entries(biomarkerContraindications)) {
+      const markerValue = biomarkers[markerKey.replace(/_high|_low|_very_high|_very_low/, '')];
+      if (markerValue !== undefined) {
+        const isHigh = markerKey.includes('_high') && markerValue > contraindication.threshold;
+        const isLow = markerKey.includes('_low') && markerValue < contraindication.threshold;
+        
+        if (isHigh || isLow) {
+          for (const avoidSupplement of contraindication.avoid_supplements) {
+            if (supplementLower.includes(avoidSupplement.toLowerCase())) {
+              warnings.push(`🩸 BIOMARKER CONTRAINDICATION: ${contraindication.warning}`);
+              return false;
+            }
+          }
+        }
+      }
+    }
+    
+    // 2D: GENETIC CONTRAINDICATION CHECK
+    for (const [geneticKey, contraindication] of Object.entries(geneticContraindications)) {
+      for (const rsid of contraindication.rsids) {
+        const userGenotype = userGenes.get(rsid);
+        if (userGenotype && contraindication.risk_genotypes.includes(userGenotype)) {
+          for (const avoidSupplement of contraindication.avoid_supplements) {
+            if (supplementLower.includes(avoidSupplement.toLowerCase())) {
+              warnings.push(`🧬 GENETIC CONTRAINDICATION: ${contraindication.warning} (${rsid}: ${userGenotype})`);
+              return false;
+            }
+          }
+        }
+      }
+    }
+    
+    // 2E: MEDICAL CONDITION INTERACTION CHECK
+    for (const [condition, rules] of Object.entries(medicalConditionInteractions)) {
+      if (conditions.has(condition)) {
+        for (const avoidSupplement of rules.avoid) {
+          if (supplementLower.includes(avoidSupplement.toLowerCase())) {
+            warnings.push(`🏥 MEDICAL CONDITION CONTRAINDICATION: Avoiding ${rec.supplement_name} due to ${condition}`);
+            return false;
+          }
+        }
+      }
+    }
+    
+    // 2F: COMPLEX MULTI-CONDITION CHECK
+    for (const [interactionKey, interaction] of Object.entries(complexInteractions)) {
+      const hasAllConditions = interaction.conditions.every(cond => conditions.has(cond));
+      if (hasAllConditions) {
+        for (const avoidSupplement of interaction.avoid_supplements) {
+          if (supplementLower.includes(avoidSupplement.toLowerCase())) {
+            warnings.push(`🚨 COMPLEX INTERACTION: ${interaction.warning}`);
+            return false;
+          }
+        }
+      }
+    }
+    
+    return true; // Supplement passed all safety checks
+  });
+  
+  // STEP 3: GENE-GENE INTERACTION ADJUSTMENTS
+  safeRecommendations.forEach(rec => {
+    // Check for MTHFR + COMT interaction (overmethylation risk)
+    const hasMTHFR = markers?.some(m => m.rsid.includes('1801133') && ['CT', 'TT'].includes(m.genotype));
+    const hasCOMTSlow = markers?.some(m => m.rsid === 'rs4680' && m.genotype === 'AA');
+    
+    if (hasMTHFR && hasCOMTSlow && rec.supplement_name.toLowerCase().includes('methylfolate')) {
+      rec.dosage_amount = Math.min(rec.dosage_amount, 400); // Reduce methylfolate dose
+      rec.contraindications.push('Reduced dose due to MTHFR+COMT interaction risk');
+      warnings.push(`🧬 GENE-GENE INTERACTION: Reducing methylfolate dose due to MTHFR+COMT overmethylation risk`);
+    }
+  });
+  
+  // STEP 4: DOSAGE ADJUSTMENTS FOR BIOMARKERS
+  safeRecommendations.forEach(rec => {
+    // Adjust vitamin D dose based on current levels
+    if (rec.supplement_name.toLowerCase().includes('vitamin d')) {
+      const vitaminDLevel = biomarkers['vitamin_d'] || biomarkers['25_oh_d'];
+      if (vitaminDLevel) {
+        if (vitaminDLevel < 10) {
+          rec.dosage_amount = Math.max(rec.dosage_amount, 5000); // Higher dose for severe deficiency
+          warnings.push(`📊 BIOMARKER ADJUSTMENT: Increased vitamin D dose due to severe deficiency (${vitaminDLevel} ng/mL)`);
+        } else if (vitaminDLevel > 80) {
+          rec.dosage_amount = Math.min(rec.dosage_amount, 1000); // Lower dose for high levels
+          warnings.push(`📊 BIOMARKER ADJUSTMENT: Reduced vitamin D dose due to elevated levels (${vitaminDLevel} ng/mL)`);
+        }
+      }
+    }
+    
+    // Adjust iron dose based on ferritin and hemoglobin
+    if (rec.supplement_name.toLowerCase().includes('iron')) {
+      const ferritin = biomarkers['ferritin'];
+      const hemoglobin = biomarkers['hemoglobin'];
+      
+      if (ferritin && ferritin > 100) {
+        rec.dosage_amount = Math.min(rec.dosage_amount, 18); // Lower dose if ferritin adequate
+        warnings.push(`📊 BIOMARKER ADJUSTMENT: Reduced iron dose due to adequate ferritin (${ferritin} ng/mL)`);
+      }
+      
+      if (hemoglobin && hemoglobin < 10) {
+        rec.dosage_amount = Math.max(rec.dosage_amount, 25); // Higher dose for severe anemia
+        warnings.push(`📊 BIOMARKER ADJUSTMENT: Increased iron dose due to severe anemia (${hemoglobin} g/dL)`);
+      }
+    }
+  });
+  
+  console.log(`✅ Interaction check complete: ${recommendations.length} → ${safeRecommendations.length} safe recommendations`);
+  return safeRecommendations;
+}
+
+// Extract biomarker values from lab data
+function extractBiomarkerValues(labs: any[]): Record<string, number> {
+  const biomarkers: Record<string, number> = {};
+  
+  if (!labs) return biomarkers;
+  
+  for (const lab of labs) {
+    if (lab.biomarker_data && typeof lab.biomarker_data === 'object') {
+      for (const [key, value] of Object.entries(lab.biomarker_data)) {
+        const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const numericValue = parseFloat(String(value));
+        
+        if (!isNaN(numericValue)) {
+          biomarkers[normalizedKey] = numericValue;
+        }
+      }
+    }
+  }
+  
+  return biomarkers;
+}
+
+// AI-POWERED FLEXIBLE INTERACTION CHECKING
+async function performAIInteractionAnalysis(
+  recommendations: any[],
+  assessment: any,
+  markers: any[],
+  labs: any[],
+  anthropicKey?: string,
+  openaiKey?: string
+): Promise<{ safeRecommendations: any[], warnings: string[] }> {
+  
+  console.log("🤖 Starting AI-powered interaction analysis...");
+  
+  const warnings: string[] = [];
+  
+  // Create comprehensive user profile for AI analysis
+  const userProfile = {
+    demographics: {
+      age: assessment.age,
+      sex: assessment.sex,
+      weight: assessment.weight,
+      height: assessment.height
+    },
+    medical_conditions: assessment.medical_conditions || [],
+    current_medications: assessment.current_medications || [],
+    allergies: assessment.allergies || [],
+    family_history: assessment.family_history || [],
+    genetic_variants: markers?.map(m => ({ rsid: m.rsid, genotype: m.genotype })) || [],
+    biomarkers: extractBiomarkerValues(labs),
+    lifestyle_factors: {
+      activity_level: assessment.activity_level,
+      stress_level: assessment.stress_level,
+      sleep_hours: assessment.sleep_hours,
+      diet_type: assessment.diet_type,
+      alcohol_consumption: assessment.alcohol_consumption,
+      smoking_status: assessment.smoking_status
+    }
+  };
+
+  const prompt = `You are an expert clinical pharmacist and precision medicine specialist. Analyze the following user profile and supplement recommendations for potential interactions, contraindications, and safety concerns.
+
+USER PROFILE:
+${JSON.stringify(userProfile, null, 2)}
+
+PROPOSED SUPPLEMENTS:
+${JSON.stringify(recommendations, null, 2)}
+
+CRITICAL ANALYSIS REQUIRED:
+1. Drug-supplement interactions based on current medications
+2. Supplement-supplement interactions within the recommended list
+3. Genetic variant contraindications (especially HFE, G6PD, CYP variants)
+4. Biomarker-based contraindications (iron overload, kidney/liver dysfunction, etc.)
+5. Medical condition contraindications
+6. Allergy cross-reactivity
+7. Dosage adjustments needed based on biomarkers, genetics, or conditions
+8. Complex multi-factor interactions unique to this user's profile
+
+For each recommendation, assess:
+- Is it SAFE for this specific user? (consider ALL factors)
+- Are there any dosage adjustments needed?
+- Are there timing considerations with medications?
+- Are there monitoring requirements?
+- What are the specific risks for THIS user?
+
+Return ONLY a JSON object with this exact format:
+{
+  "analysis_summary": "Brief overview of key safety findings",
+  "safe_recommendations": [
+    {
+      "supplement_name": "original name",
+      "is_safe": true/false,
+      "adjusted_dosage_amount": number or null,
+      "adjusted_dosage_unit": "unit" or null,
+      "safety_warnings": ["specific warning for this user"],
+      "monitoring_required": ["what to monitor"],
+      "timing_adjustments": "timing recommendations",
+      "contraindication_reason": "why unsafe if is_safe is false"
+    }
+  ],
+  "interaction_warnings": [
+    "Specific interaction warning with explanation"
+  ],
+  "overall_safety_score": 0.0-1.0
+}`;
+
+  if (anthropicKey) {
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01"
+        },
+        body: JSON.stringify({
+          model: "claude-3-sonnet-20240229",
+          max_tokens: 8000,
+          temperature: 0.1,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const content = result.content[0].text;
+        
+        try {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const analysis = JSON.parse(jsonMatch[0]);
+            
+            // Process AI analysis results
+            const safeRecommendations = [];
+            warnings.push(...(analysis.interaction_warnings || []));
+            
+            for (const rec of recommendations) {
+              const aiAssessment = analysis.safe_recommendations?.find(ar => 
+                ar.supplement_name.toLowerCase() === rec.supplement_name.toLowerCase()
+              );
+              
+              if (aiAssessment) {
+                if (aiAssessment.is_safe) {
+                  // Apply AI-suggested adjustments
+                  if (aiAssessment.adjusted_dosage_amount) {
+                    rec.dosage_amount = aiAssessment.adjusted_dosage_amount;
+                    warnings.push(`🤖 AI DOSAGE ADJUSTMENT: ${rec.supplement_name} dose adjusted based on your unique profile`);
+                  }
+                  
+                  if (aiAssessment.safety_warnings?.length > 0) {
+                    rec.contraindications = [...(rec.contraindications || []), ...aiAssessment.safety_warnings];
+                  }
+                  
+                  if (aiAssessment.timing_adjustments) {
+                    rec.timing = aiAssessment.timing_adjustments;
+                  }
+                  
+                  safeRecommendations.push(rec);
+                } else {
+                  warnings.push(`🚨 AI CONTRAINDICATION: ${rec.supplement_name} - ${aiAssessment.contraindication_reason}`);
+                }
+              } else {
+                // Default to including if AI didn't flag it
+                safeRecommendations.push(rec);
+              }
+            }
+            
+            console.log(`AI Analysis: ${recommendations.length} → ${safeRecommendations.length} safe recommendations`);
+            return { safeRecommendations, warnings };
+          }
+        } catch (parseError) {
+          console.error('Error parsing AI response:', parseError);
+        }
+      }
+    } catch (aiError) {
+      console.error('AI interaction analysis error:', aiError);
+    }
+  }
+
+  // Fallback to basic safety checks if AI fails
+  console.log("Falling back to basic safety checks...");
+  return performBasicSafetyCheck(recommendations, assessment, markers, labs);
+}
+
+// Basic safety fallback function
+function performBasicSafetyCheck(
+  recommendations: any[],
+  assessment: any,
+  markers: any[],
+  labs: any[]
+): { safeRecommendations: any[], warnings: string[] } {
+  
+  const warnings: string[] = [];
+  const allergies = new Set((assessment.allergies ?? []).map((a: string) => a.toLowerCase()));
+  const medications = new Set((assessment.current_medications ?? []).map((m: string) => m.toLowerCase()));
+  const biomarkers = extractBiomarkerValues(labs);
+  
+  const safeRecommendations = recommendations.filter(rec => {
+    const supplementLower = rec.supplement_name.toLowerCase();
+    
+    // Critical allergy check
+    for (const [allergy, conflicts] of Object.entries(allergyConflicts)) {
+      if (allergies.has(allergy)) {
+        for (const conflict of conflicts) {
+          if (supplementLower.includes(conflict.toLowerCase())) {
+            warnings.push(`❌ ALLERGY: Avoiding ${rec.supplement_name} due to ${allergy} allergy`);
+            return false;
+          }
+        }
+      }
+    }
+    
+    // Critical HFE genetic check
+    const hasHFE = markers?.some(m => 
+      ['rs1799945', 'rs1800562'].includes(m.rsid) && 
+      ['CC', 'AA'].includes(m.genotype)
+    );
+    if (hasHFE && supplementLower.includes('iron')) {
+      warnings.push(`🧬 GENETIC SAFETY: Iron supplements contraindicated with HFE variants`);
+      return false;
+    }
+    
+    // Critical iron overload check
+    const ferritin = biomarkers['ferritin'];
+    if (ferritin && ferritin > 200 && supplementLower.includes('iron')) {
+      warnings.push(`🩸 BIOMARKER SAFETY: Iron supplements contraindicated with ferritin ${ferritin} ng/mL`);
+      return false;
+    }
+    
+    return true;
+  });
+  
+  return { safeRecommendations, warnings };
+}

@@ -2,13 +2,14 @@
 import { useState } from 'react';
 import DashboardShell from '../../components/DashboardShell';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Database, Dna, Activity } from 'lucide-react';
 import RecommendationCard, { RecWithProduct } from '../../components/RecommendationCard';
 import FilterBar from '../../components/FilterBar';
 import useSWR from 'swr';
 import RecommendationModal from '../../components/RecommendationModal';
 import { useAdherence } from '../../../utils/useAdherence';
 import AdherenceRing from '../../components/AdherenceRing';
+import Link from 'next/link';
 
 interface Recommendation {
   id: string;
@@ -40,8 +41,33 @@ export default function RecommendationsPage() {
       .limit(1)
       .maybeSingle();
 
-    const { count: markersCount } = await supabase.from('genetic_markers').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
-    const { count: labsCount } = await supabase.from('lab_biomarkers').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+    // Get counts using correct syntax
+    const { data: markersData } = await supabase
+      .from('genetic_markers')
+      .select('*')
+      .eq('user_id', user.id);
+    const markersCount = markersData?.length || 0;
+
+    const { data: labsData } = await supabase
+      .from('lab_biomarkers')
+      .select('*')
+      .eq('user_id', user.id);
+    const labsCount = labsData?.length || 0;
+
+    // Get genetic and lab data counts with SNP/biomarker details
+    const { data: geneticDetails } = await supabase
+      .from('genetic_markers')
+      .select('snp_count, snp_data')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle();
+
+    const { data: labDetails } = await supabase
+      .from('lab_biomarkers')
+      .select('biomarker_count, biomarker_data')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle();
 
     // Get recommendations with their product links
     const { data: recommendations } = await supabase
@@ -69,8 +95,12 @@ export default function RecommendationsPage() {
       analysis_summary: analysis?.analysis_summary || null,
       relevant_genes: analysis?.relevant_genes || [],
       relevant_biomarkers: analysis?.relevant_biomarkers || [],
-      markers_count: markersCount ?? 0, 
-      labs_count: labsCount ?? 0 
+      markers_count: markersCount, 
+      labs_count: labsCount,
+      genetic_snp_count: geneticDetails?.snp_count || 0,
+      analyzed_snps: geneticDetails?.snp_data ? Object.keys(geneticDetails.snp_data).length : 0,
+      lab_biomarker_count: labDetails?.biomarker_count || 0,
+      analyzed_biomarkers: labDetails?.biomarker_data ? Object.keys(labDetails.biomarker_data).length : 0
     };
   };
 
@@ -143,6 +173,13 @@ export default function RecommendationsPage() {
             <h1 className="text-3xl font-bold">Your Supplement Plan</h1>
           </div>
           <div className="flex gap-2">
+            <Link
+              href="/dashboard/analysis"
+              className="px-3 py-1 rounded-md border text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+            >
+              <Database className="w-4 h-4" />
+              View Analysis
+            </Link>
             <button 
               onClick={populateProductLinks} 
               className="px-3 py-1 rounded-md border text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -155,13 +192,62 @@ export default function RecommendationsPage() {
 
         <FilterBar value={filter} onChange={setFilter} />
 
+        {/* Enhanced Data Coverage Display */}
+        {!noUploads && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {(data?.markers_count ?? 0) > 0 && (
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 p-4 rounded-lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <Dna className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-semibold text-purple-800 dark:text-purple-200">Genetic Analysis</h3>
+                </div>
+                <div className="text-sm text-purple-700 dark:text-purple-300">
+                  <div className="flex justify-between">
+                    <span>Total SNPs analyzed:</span>
+                    <span className="font-medium">{(data?.genetic_snp_count ?? 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Known variants found:</span>
+                    <span className="font-medium">{data?.analyzed_snps ?? 0}</span>
+                  </div>
+                  <div className="mt-2 text-xs text-purple-600 dark:text-purple-400">
+                    Covering methylation, detoxification, cardiovascular, vitamin D, iron metabolism & more
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(data?.labs_count ?? 0) > 0 && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <Activity className="w-5 h-5 text-blue-600" />
+                  <h3 className="font-semibold text-blue-800 dark:text-blue-200">Lab Analysis</h3>
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300">
+                  <div className="flex justify-between">
+                    <span>Total biomarkers tested:</span>
+                    <span className="font-medium">{data?.lab_biomarker_count ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Analyzed markers:</span>
+                    <span className="font-medium">{data?.analyzed_biomarkers ?? 0}</span>
+                  </div>
+                  <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                    Including CBC, CMP, lipids, hormones, vitamins, minerals & inflammatory markers
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* AI Analysis Summary */}
         {data?.analysis_summary && (
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 p-6 rounded-lg">
             <h2 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
               🎯 Your Personalized Plan Analysis
             </h2>
-            <p className="text-blue-800 dark:text-blue-200 text-sm leading-relaxed">{data.analysis_summary}</p>
+            <p className="text-blue-800 dark:text-blue-200 text-sm leading-relaxed">{data?.analysis_summary}</p>
           </div>
         )}
 
@@ -182,7 +268,24 @@ export default function RecommendationsPage() {
         {/* accuracy banner */}
         {noUploads && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
-            <p className="text-blue-800 dark:text-blue-200 text-sm">Upload your genetics or recent labs to upgrade plan accuracy and get genotype-specific dosing.</p>
+            <div className="flex items-center gap-3">
+              <Database className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-blue-800 dark:text-blue-200 text-sm font-medium mb-1">
+                  Upgrade to Precision Analysis
+                </p>
+                <p className="text-blue-700 dark:text-blue-300 text-sm">
+                  Upload your genetics or recent labs to get genotype-specific dosing and comprehensive analysis of 22+ genetic variants and 40+ biomarkers.
+                </p>
+                <Link
+                  href="/dashboard/analysis"
+                  className="inline-flex items-center gap-2 mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  <Database className="w-4 h-4" />
+                  Learn More About Our Analysis
+                </Link>
+              </div>
+            </div>
           </div>
         )}
 
@@ -190,8 +293,15 @@ export default function RecommendationsPage() {
           <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 p-4 rounded-lg">
             <h2 className="font-semibold text-purple-800 dark:text-purple-200 mb-1">Key Genetic Insights</h2>
             <p className="text-purple-800 dark:text-purple-200 text-sm">
-              {data.relevant_genes.join(', ')}
+              {data?.relevant_genes?.join(', ')}
             </p>
+            <Link
+              href="/dashboard/analysis"
+              className="inline-flex items-center gap-1 mt-2 text-purple-600 hover:text-purple-700 text-sm"
+            >
+              <Dna className="w-4 h-4" />
+              View detailed genetic analysis
+            </Link>
           </div>
         )}
 
@@ -199,8 +309,15 @@ export default function RecommendationsPage() {
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
             <h2 className="font-semibold text-green-800 dark:text-green-200 mb-1">Key Biomarker Findings</h2>
             <p className="text-green-800 dark:text-green-200 text-sm">
-              {data.relevant_biomarkers.join(', ')}
+              {data?.relevant_biomarkers?.join(', ')}
             </p>
+            <Link
+              href="/dashboard/analysis"
+              className="inline-flex items-center gap-1 mt-2 text-green-600 hover:text-green-700 text-sm"
+            >
+              <Activity className="w-4 h-4" />
+              View detailed biomarker analysis
+            </Link>
           </div>
         )}
 

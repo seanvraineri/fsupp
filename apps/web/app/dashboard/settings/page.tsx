@@ -178,7 +178,7 @@ export default function SettingsPage() {
               {Object.entries(labs).filter(([k,v])=>['vitamin_d','vitamin_b12','iron','ferritin','magnesium','cholesterol_total','hdl','ldl','triglycerides','glucose','hba1c','tsh'].includes(k) && v!==null).map(([k,v])=> (
                 <div key={k} className="flex justify-between">
                   <span className="capitalize">{k.replace(/_/g,' ')}</span>
-                  <span>{v}</span>
+                  <span>{String(v)}</span>
                 </div>
               ))}
             </div>

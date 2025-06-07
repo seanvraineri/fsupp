@@ -1,6 +1,6 @@
 "use client";
 import Image from 'next/image';
-import { Pill } from 'lucide-react';
+import { Pill, Dna, Activity, Clock, AlertTriangle } from 'lucide-react';
 import { useIntake } from '../../utils/useIntake';
 import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -16,6 +16,11 @@ export interface RecWithProduct {
   contraindications: string[] | null;
   priority_score?: number;
   expected_benefits?: string[] | null;
+  timing?: string;
+  interaction_warnings?: string[] | null;
+  monitoring_needed?: string[] | null;
+  genetic_reasoning?: string;
+  biomarker_reasoning?: string;
   product_links?: {
     id?: string;
     product_url: string | null;
@@ -84,8 +89,17 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
 
   const buttonInfo = getButtonInfo();
 
+  // Extract genetic/biomarker insights from reasoning
+  const extractInsights = (reasoning: string) => {
+    const hasGenetic = /\b(MTHFR|COMT|APOE|FADS|VDR|CYP|rs\d+)\b/i.test(reasoning);
+    const hasBiomarker = /\b(vitamin|mineral|cholesterol|glucose|iron|B12|folate|magnesium|omega)\b/i.test(reasoning);
+    return { hasGenetic, hasBiomarker };
+  };
+
+  const insights = extractInsights(rec.recommendation_reason);
+
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col h-full">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col h-full hover:shadow-lg transition-shadow">
       {product?.image_url ? (
         <div className="relative w-full h-40 mb-4">
           <Image 
@@ -98,7 +112,7 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
         </div>
       ) : (
         <div className="flex items-center justify-center w-full h-40 mb-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg">
-          {/* Supplement emoji based on type */}
+          {/* Enhanced supplement emoji based on type */}
           <div className="text-6xl">
             {rec.supplement_name.toLowerCase().includes('vitamin d') ? '☀️' :
              rec.supplement_name.toLowerCase().includes('magnesium') ? '🧲' :
@@ -123,8 +137,8 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
         </div>
       )}
       
-      {/* Priority & Evidence Badges */}
-      <div className="flex gap-2 mb-2">
+      {/* Enhanced Priority & Evidence Badges */}
+      <div className="flex gap-2 mb-3 flex-wrap">
         {rec.priority_score && (
           <span className={`px-2 py-1 text-xs rounded-full font-medium ${
             rec.priority_score >= 5 ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300' :
@@ -143,45 +157,187 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
         </span>
       </div>
 
-      <h3 className="text-lg font-semibold mb-1 flex-1">{rec.supplement_name}</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-        {rec.dosage_amount} {rec.dosage_unit} • {rec.frequency}
-      </p>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">
+      {/* Personalization Indicators */}
+      {(insights.hasGenetic || insights.hasBiomarker) && (
+        <div className="flex gap-1 mb-2">
+          {insights.hasGenetic && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-xs rounded-full">
+              <Dna className="w-3 h-3" />
+              Genetic
+            </span>
+          )}
+          {insights.hasBiomarker && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+              <Activity className="w-3 h-3" />
+              Lab-Based
+            </span>
+          )}
+        </div>
+      )}
+
+      <h3 className="text-lg font-semibold mb-2 flex-1">{rec.supplement_name}</h3>
+      
+      {/* Enhanced dosage display */}
+      <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Dosage</p>
+            <p className="font-semibold text-blue-600 dark:text-blue-400">
+              {rec.dosage_amount} {rec.dosage_unit}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Frequency</p>
+            <p className="text-sm capitalize">{rec.frequency}</p>
+          </div>
+        </div>
+        {rec.timing && (
+          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+            <Clock className="w-3 h-3" />
+            <span>{rec.timing}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Enhanced reasoning display */}
+      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-3 leading-relaxed">
         {rec.recommendation_reason}
       </p>
       
       {/* Timeline from expected_benefits */}
       {rec.expected_benefits && rec.expected_benefits.length > 0 && (
-        <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
-          Timeline: {rec.expected_benefits[0]}
-        </p>
+        <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded-lg mb-3">
+          <p className="text-xs text-green-700 dark:text-green-400 font-medium">
+            ⏱️ {rec.expected_benefits[0]}
+          </p>
+        </div>
       )}
       
-      {rec.contraindications && (
-        <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-2">
-          Caution: {rec.contraindications.join(', ')}
-        </p>
+      {/* Enhanced comprehensive safety warnings display */}
+      {(rec.contraindications && rec.contraindications.length > 0) || (rec.interaction_warnings && rec.interaction_warnings.length > 0) && (
+        <div className="space-y-2 mb-3">
+          {rec.interaction_warnings && rec.interaction_warnings.length > 0 && (
+            rec.interaction_warnings.map((warning, idx) => {
+              // Categorize warnings by type for appropriate styling
+              const isAllergyWarning = warning.includes('❌ ALLERGY') || warning.toLowerCase().includes('allergy');
+              const isDrugInteraction = warning.includes('⚠️ DRUG') || warning.toLowerCase().includes('medication');
+              const isBiomarkerWarning = warning.includes('🩸 BIOMARKER') || warning.toLowerCase().includes('biomarker');
+              const isGeneticWarning = warning.includes('🧬 GENETIC') || warning.toLowerCase().includes('genetic');
+              const isAIWarning = warning.includes('🤖 AI') || warning.toLowerCase().includes('ai ');
+              const isComplexInteraction = warning.includes('🚨 COMPLEX') || warning.toLowerCase().includes('complex');
+              
+              let bgColor = 'bg-yellow-50 dark:bg-yellow-900/20';
+              let borderColor = 'border-yellow-200 dark:border-yellow-800';
+              let textColor = 'text-yellow-700 dark:text-yellow-400';
+              let icon = '⚠️';
+              
+              if (isAllergyWarning) {
+                bgColor = 'bg-red-50 dark:bg-red-900/20';
+                borderColor = 'border-red-200 dark:border-red-800';
+                textColor = 'text-red-700 dark:text-red-400';
+                icon = '❌';
+              } else if (isGeneticWarning) {
+                bgColor = 'bg-purple-50 dark:bg-purple-900/20';
+                borderColor = 'border-purple-200 dark:border-purple-800';
+                textColor = 'text-purple-700 dark:text-purple-400';
+                icon = '🧬';
+              } else if (isBiomarkerWarning) {
+                bgColor = 'bg-blue-50 dark:bg-blue-900/20';
+                borderColor = 'border-blue-200 dark:border-blue-800';
+                textColor = 'text-blue-700 dark:text-blue-400';
+                icon = '🩸';
+              } else if (isAIWarning) {
+                bgColor = 'bg-green-50 dark:bg-green-900/20';
+                borderColor = 'border-green-200 dark:border-green-800';
+                textColor = 'text-green-700 dark:text-green-400';
+                icon = '🤖';
+              } else if (isComplexInteraction) {
+                bgColor = 'bg-orange-50 dark:bg-orange-900/20';
+                borderColor = 'border-orange-200 dark:border-orange-800';
+                textColor = 'text-orange-700 dark:text-orange-400';
+                icon = '🚨';
+              }
+              
+              return (
+                <div key={idx} className={`${bgColor} border ${borderColor} p-2 rounded-lg`}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm flex-shrink-0">{icon}</span>
+                    <p className={`text-xs ${textColor} leading-relaxed`}>
+                      {warning.replace(/^[^A-Z]*([A-Z])/, '$1')}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          
+          {rec.contraindications && rec.contraindications.length > 0 && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">Safety Notes</p>
+                  {rec.contraindications.slice(0, 2).map((contraindication, idx) => (
+                    <p key={idx} className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                      • {contraindication}
+                    </p>
+                  ))}
+                  {rec.contraindications.length > 2 && (
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                      +{rec.contraindications.length - 2} more safety notes
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
-      <p className="text-xs text-gray-500 mb-2">This week: {count} taken</p>
-      <div className="mt-auto flex gap-2">
-        <button
-          onClick={async () => {
-            await fetch('/api/intake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recommendation_id: rec.id }) });
-            mutate();
-          }}
-          className="flex-1 inline-block text-center py-2 text-sm font-medium rounded-lg border border-primary-from text-primary-from hover:bg-primary-from/10"
-        >
-          Taken
-        </button>
-        <button onClick={onDetails} className="flex-1 inline-block text-center py-2 text-sm font-medium rounded-lg border border-primary-from text-primary-from hover:bg-primary-from/10">Details</button>
+
+      {/* Monitoring requirements */}
+      {rec.monitoring_needed && rec.monitoring_needed.length > 0 && (
+        <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 p-2 rounded-lg mb-3">
+          <div className="flex items-center gap-1 mb-1">
+            <span className="text-sm">📊</span>
+            <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400">Monitoring Required</p>
+          </div>
+          <p className="text-xs text-indigo-700 dark:text-indigo-400">
+            {rec.monitoring_needed[0]}
+            {rec.monitoring_needed.length > 1 && <span className="text-indigo-600"> +{rec.monitoring_needed.length - 1} more</span>}
+          </p>
+        </div>
+      )}
+
+      {/* Usage tracking */}
+      <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded-lg mb-4">
+        <p className="text-xs text-gray-600 dark:text-gray-400">This week: <span className="font-medium">{count} taken</span></p>
       </div>
-      {/* Enhanced buy button with better info */}
-      <div className="mt-2">
+
+      {/* Action buttons */}
+      <div className="mt-auto space-y-2">
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              await fetch('/api/intake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recommendation_id: rec.id }) });
+              mutate();
+            }}
+            className="flex-1 inline-block text-center py-2 text-sm font-medium rounded-lg border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+          >
+            ✓ Taken
+          </button>
+          <button 
+            onClick={onDetails} 
+            className="flex-1 inline-block text-center py-2 text-sm font-medium rounded-lg border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+          >
+            📋 Details
+          </button>
+        </div>
+        
+        {/* Enhanced buy button */}
         <button
           onClick={handleBuyClick}
           disabled={isSearching}
-          className="inline-block text-center w-full py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-primary-from to-primary-to text-white hover:opacity-90 disabled:opacity-50"
+          className="inline-block text-center w-full py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all transform hover:scale-[1.02] disabled:hover:scale-100"
         >
           {buttonInfo.text}
         </button>

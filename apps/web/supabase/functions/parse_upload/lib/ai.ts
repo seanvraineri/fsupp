@@ -73,4 +73,23 @@ export async function aiVisionPdf(base64: string): Promise<string> {
     ],
   });
   return res.choices[0].message.content ?? "";
+}
+
+// Vision parsing that returns JSON of biomarkers directly
+export async function aiVisionLabJson(base64: string): Promise<Record<string, number>> {
+  if (!openai) return {};
+  await new Promise(r=>setTimeout(r,300));
+  const res = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    max_tokens: 1024,
+    temperature: 0,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: "Extract all biomarker measurements from the lab PDF image and return JSON mapping { biomarker_snake_case: numeric_value }. Ignore units." },
+      { role: "user", content: [ { type: "image_url", image_url: { url: `data:application/pdf;base64,${base64}` } } ] }
+    ]
+  });
+  try {
+    return JSON.parse(res.choices[0].message.content ?? "{}");
+  } catch { return {}; }
 } 

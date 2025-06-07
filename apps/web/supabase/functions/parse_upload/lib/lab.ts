@@ -49,6 +49,14 @@ export async function processLabFile(format: FileFormat, bytes: ArrayBuffer, tex
     Object.assign(biomarkerMap, aiBio);
   }
 
+  // Vision JSON fallback if still empty and PDF
+  if (Object.keys(biomarkerMap).length === 0 && format === 'pdf') {
+    console.log('Running GPT-4o vision JSON extraction');
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+    const aiVision = await (await import('./ai.ts')).aiVisionLabJson(base64);
+    Object.assign(biomarkerMap, aiVision);
+  }
+
   // DB column check ----------------------------------------------------------
   const { data: cols } = await supabase
     .from("information_schema.columns")

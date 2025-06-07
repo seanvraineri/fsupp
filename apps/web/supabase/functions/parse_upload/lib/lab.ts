@@ -69,6 +69,8 @@ export async function processLabFile(format: FileFormat, bytes: ArrayBuffer, tex
 
   await supabase.from("lab_biomarkers").upsert(mapped, { onConflict: "file_id" });
 
+  // Similar insertion near end of save function (we assume function saveLabData exists) but simpler to append after updating.
+
   return {
     status:"ok",
     file_id: fileRow.id,

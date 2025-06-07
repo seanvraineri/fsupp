@@ -131,6 +131,23 @@ async function saveGeneticData(supabase: any, fileRow: any, snpData: Record<stri
   }
 
   await supabase.from("genetic_markers").upsert(row, { onConflict: "file_id" });
+
+  // --- Vector memory ingestion ------------------------------------------------
+  try {
+    const summary = `Genetic file ${fileRow.file_name} parsed ${Object.keys(snpData).length} SNPs. Key highlights: ${Object.entries(highlights).map(([k,v])=>`${k}:${JSON.stringify(v)}`).join('; ')}`;
+    const items = [
+      { user_id: fileRow.user_id, source_type: 'gene_summary', source_id: fileRow.id, content: summary }
+    ];
+
+    // Also embed individual highlight rows for quick recall
+    for (const [rsid, genotype] of Object.entries(snpData).slice(0,200)) { // cap to 200 embeds per file
+      items.push({ user_id: fileRow.user_id, source_type: 'gene', source_id: fileRow.id, content: `${rsid}: ${genotype}` });
+    }
+
+    await supabase.functions.invoke('embedding_worker', { body: { items } });
+  } catch(err) {
+    console.error('embedding_worker error (genetic)', err);
+  }
 }
 
 function detectSourceCompany(fileName: string): string {

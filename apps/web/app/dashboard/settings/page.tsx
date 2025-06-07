@@ -91,8 +91,22 @@ export default function SettingsPage() {
         const path = `${user.id}/${Date.now()}_${file.name}`;
         const { error: upErr } = await supabase.storage.from('uploads').upload(path, file);
         if (upErr) throw upErr;
+        // create db row so parser can find it
+        const { data: fileRow, error: insErr } = await supabase
+          .from('uploaded_files')
+          .insert({
+            user_id: user.id,
+            storage_path: path,
+            file_name: file.name,
+            file_type: undefined, // parser will set later
+            processing_status: 'queued'
+          })
+          .select()
+          .single();
+        if (insErr) throw insErr;
+
         try {
-          await supabase.functions.invoke('parse_upload', { body: { user_id: user.id, file_path: path } });
+          await supabase.functions.invoke('parse_upload', { body: { file_id: fileRow.id } });
         } catch (_) {}
       }
       alert('Files uploaded and processing started. Refresh later to see results.');

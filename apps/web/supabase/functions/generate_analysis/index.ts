@@ -3,9 +3,9 @@
 import { serve } from "https://deno.land/std@0.201.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 
-// === COMPREHENSIVE SUPPLEMENTATION-RELEVANT GENETIC VARIANTS ===
+// === COMPREHENSIVE SUPPLEMENTATION-RELEVANT GENETIC VARIANTS (60+ SNPs) ===
 export const geneReferences = [
-  // === METHYLATION & FOLATE PATHWAY ===
+  // === METHYLATION & FOLATE PATHWAY (12 variants) ===
   { gene: 'MTHFR', rsids: ['rs1801133'], genotypesOfConcern: ['CT', 'TT'], impact: 'Reduced folate to 5-MTHF conversion, elevated homocysteine', supplement: 'L-Methylfolate', dosage: '400-1000 mcg daily', evidence: 'high', cautions: 'Avoid >800 mcg folic acid' },
   { gene: 'MTHFR', rsids: ['rs1801131'], genotypesOfConcern: ['AC', 'CC'], impact: 'Reduced MTHFR activity, methylation impairment', supplement: 'L-Methylfolate', dosage: '400-800 mcg daily', evidence: 'high', cautions: 'Support methylation cycle' },
   { gene: 'MTR', rsids: ['rs1805087'], genotypesOfConcern: ['AG', 'GG'], impact: 'Impaired methionine synthase activity affecting B12 utilization', supplement: 'Methylcobalamin', dosage: '1-5 mg daily', evidence: 'moderate', cautions: 'Monitor B12 levels' },
@@ -16,64 +16,100 @@ export const geneReferences = [
   { gene: 'DHFR', rsids: ['rs70991108'], genotypesOfConcern: ['del/del'], impact: 'Reduced dihydrofolate reductase activity', supplement: 'L-Methylfolate', dosage: '800-1000 mcg daily', evidence: 'moderate', cautions: 'Bypass DHFR requirement' },
   { gene: 'TYMS', rsids: ['rs34743033'], genotypesOfConcern: ['2R/2R'], impact: 'Low thymidylate synthase expression', supplement: 'L-Methylfolate;B12', dosage: '400 mcg;1000 mcg daily', evidence: 'low', cautions: 'Support DNA synthesis' },
   { gene: 'AHCY', rsids: ['rs819147'], genotypesOfConcern: ['TT'], impact: 'Reduced S-adenosylhomocysteine hydrolase activity', supplement: 'Glycine;Betaine', dosage: '1-3g;500-1000 mg daily', evidence: 'low', cautions: 'Support homocysteine clearance' },
+  { gene: 'RFC1', rsids: ['rs1051266'], genotypesOfConcern: ['AA'], impact: 'Reduced folate transport', supplement: 'L-Methylfolate', dosage: '600-800 mcg daily', evidence: 'moderate', cautions: 'Enhanced folate transport needed' },
+  { gene: 'FOLR1', rsids: ['rs2071010'], genotypesOfConcern: ['GG'], impact: 'Altered folate receptor function', supplement: 'L-Methylfolate;Folinic Acid', dosage: '400-600 mcg daily', evidence: 'low', cautions: 'Support folate uptake' },
 
-  // === NEUROTRANSMITTER & MOOD ===
+  // === NEUROTRANSMITTER & MOOD (15 variants) ===
   { gene: 'COMT', rsids: ['rs4680'], genotypesOfConcern: ['AA'], impact: 'Slow COMT activity; dopamine accumulation', supplement: 'Magnesium;SAMe', dosage: '400-600 mg Mg;200-400 mg SAMe daily', evidence: 'moderate', cautions: 'Avoid high-dose methyl donors if overmethylation' },
   { gene: 'COMT', rsids: ['rs4680'], genotypesOfConcern: ['GG'], impact: 'Fast COMT activity; rapid dopamine breakdown', supplement: 'L-Tyrosine;Green Tea Extract', dosage: '500-1000 mg;300-400 mg EGCG daily', evidence: 'moderate', cautions: 'Support dopamine production' },
   { gene: 'MAO-A', rsids: ['rs6323'], genotypesOfConcern: ['TT'], impact: 'High MAO-A activity; rapid serotonin breakdown', supplement: '5-HTP;Tryptophan', dosage: '100-200 mg;500-1000 mg daily', evidence: 'moderate', cautions: 'Support serotonin production' },
+  { gene: 'MAO-A', rsids: ['rs6323'], genotypesOfConcern: ['GG'], impact: 'Low MAO-A activity; slower monoamine breakdown', supplement: 'B6;Riboflavin', dosage: '25-50 mg;25 mg daily', evidence: 'low', cautions: 'Support MAO cofactors' },
   { gene: 'BDNF', rsids: ['rs6265'], genotypesOfConcern: ['AA'], impact: 'Reduced BDNF production; impaired neuroplasticity', supplement: 'Magnesium;Omega-3;Lion\'s Mane', dosage: '400 mg;1000 mg;500 mg daily', evidence: 'moderate', cautions: 'Support brain health' },
   { gene: 'HTR2A', rsids: ['rs6313'], genotypesOfConcern: ['AA'], impact: 'Altered serotonin receptor function', supplement: 'Tryptophan;Magnesium', dosage: '500-1000 mg;400 mg daily', evidence: 'low', cautions: 'Support serotonin signaling' },
+  { gene: 'HTR1A', rsids: ['rs6295'], genotypesOfConcern: ['GG'], impact: 'Reduced serotonin 1A receptor expression', supplement: '5-HTP;Inositol', dosage: '100-200 mg;500-1000 mg daily', evidence: 'low', cautions: 'Support serotonin system' },
   { gene: 'SLC6A4', rsids: ['rs25531'], genotypesOfConcern: ['SS'], impact: 'Low serotonin transporter expression', supplement: '5-HTP;Omega-3', dosage: '100-200 mg;1000 mg daily', evidence: 'moderate', cautions: 'Support serotonin availability' },
+  { gene: 'SLC6A2', rsids: ['rs5569'], genotypesOfConcern: ['TT'], impact: 'Altered norepinephrine transporter function', supplement: 'L-Tyrosine;B6', dosage: '500-1000 mg;25-50 mg daily', evidence: 'low', cautions: 'Support norepinephrine synthesis' },
+  { gene: 'SLC6A3', rsids: ['rs40184'], genotypesOfConcern: ['TT'], impact: 'Altered dopamine transporter function', supplement: 'L-Tyrosine;Iron', dosage: '500-1000 mg;18 mg daily', evidence: 'low', cautions: 'Support dopamine synthesis' },
   { gene: 'DRD2', rsids: ['rs1800497'], genotypesOfConcern: ['AA'], impact: 'Reduced dopamine receptor density', supplement: 'L-Tyrosine;Rhodiola', dosage: '500-1000 mg;300-400 mg daily', evidence: 'moderate', cautions: 'Support dopamine signaling' },
-  { gene: 'TPH2', rsids: ['rs4570625'], genotypesOfConcern: ['TT'], impact: 'Reduced tryptophan hydroxylase activity', supplement: 'Tryptophan;B6', dosage: '500-1000 mg;25-50 mg daily', evidence: 'moderate', cautions: 'Support serotonin synthesis' },
+  { gene: 'DRD4', rsids: ['rs1800955'], genotypesOfConcern: ['TT'], impact: 'Altered dopamine D4 receptor function', supplement: 'L-Tyrosine;Magnesium', dosage: '500-1000 mg;400 mg daily', evidence: 'low', cautions: 'Support attention and focus' },
+  { gene: 'TPH1', rsids: ['rs1800532'], genotypesOfConcern: ['AA'], impact: 'Reduced peripheral serotonin synthesis', supplement: 'Tryptophan;B6', dosage: '500-1000 mg;25-50 mg daily', evidence: 'low', cautions: 'Support serotonin synthesis' },
+  { gene: 'TPH2', rsids: ['rs4570625'], genotypesOfConcern: ['TT'], impact: 'Reduced brain serotonin synthesis', supplement: 'Tryptophan;B6', dosage: '500-1000 mg;25-50 mg daily', evidence: 'moderate', cautions: 'Support central serotonin' },
   { gene: 'DBH', rsids: ['rs1611115'], genotypesOfConcern: ['TT'], impact: 'Low dopamine beta-hydroxylase activity', supplement: 'Copper;Vitamin C', dosage: '2 mg;500-1000 mg daily', evidence: 'low', cautions: 'Support norepinephrine synthesis' },
 
-  // === DETOXIFICATION & ANTIOXIDANTS ===
+  // === DETOXIFICATION & ANTIOXIDANTS (12 variants) ===
   { gene: 'GSTM1', rsids: ['rs366631'], genotypesOfConcern: ['null'], impact: 'Absent glutathione S-transferase M1; reduced detoxification', supplement: 'NAC;Milk Thistle;Cruciferous Extract', dosage: '600 mg;150 mg;200 mg daily', evidence: 'moderate', cautions: 'Support phase II detoxification' },
   { gene: 'GSTT1', rsids: ['rs17856199'], genotypesOfConcern: ['null'], impact: 'Absent glutathione S-transferase T1', supplement: 'NAC;Alpha-Lipoic Acid', dosage: '600 mg;300 mg daily', evidence: 'moderate', cautions: 'Support glutathione synthesis' },
   { gene: 'GSTP1', rsids: ['rs1695'], genotypesOfConcern: ['GG'], impact: 'Reduced GSTP1 activity', supplement: 'NAC;Selenium', dosage: '600 mg;200 mcg daily', evidence: 'moderate', cautions: 'Support antioxidant defense' },
+  { gene: 'GSTA1', rsids: ['rs3957357'], genotypesOfConcern: ['TT'], impact: 'Reduced glutathione S-transferase A1 activity', supplement: 'NAC;Milk Thistle', dosage: '600 mg;150 mg daily', evidence: 'low', cautions: 'Support liver detoxification' },
   { gene: 'SOD2', rsids: ['rs4880'], genotypesOfConcern: ['AA'], impact: 'Reduced mitochondrial superoxide dismutase activity', supplement: 'Manganese;CoQ10;PQQ', dosage: '5-10 mg;100-200 mg;10-20 mg daily', evidence: 'moderate', cautions: 'Support mitochondrial antioxidant defense' },
+  { gene: 'SOD1', rsids: ['rs4998557'], genotypesOfConcern: ['GG'], impact: 'Altered copper-zinc superoxide dismutase activity', supplement: 'Copper;Zinc;Vitamin C', dosage: '2 mg;15 mg;1000 mg daily', evidence: 'low', cautions: 'Balance copper-zinc ratio' },
   { gene: 'GPX1', rsids: ['rs1050450'], genotypesOfConcern: ['TT'], impact: 'Reduced glutathione peroxidase activity', supplement: 'Selenium;NAC;Glutathione', dosage: '200 mcg;600 mg;250 mg daily', evidence: 'moderate', cautions: 'Support glutathione system' },
   { gene: 'NQO1', rsids: ['rs1800566'], genotypesOfConcern: ['TT'], impact: 'Reduced NAD(P)H quinone oxidoreductase activity', supplement: 'NAC;Alpha-Lipoic Acid;CoQ10', dosage: '600 mg;300 mg;100 mg daily', evidence: 'moderate', cautions: 'Support cellular detoxification' },
   { gene: 'CAT', rsids: ['rs1001179'], genotypesOfConcern: ['TT'], impact: 'Reduced catalase activity', supplement: 'Vitamin C;Vitamin E;Selenium', dosage: '1000 mg;400 IU;200 mcg daily', evidence: 'low', cautions: 'Support antioxidant enzymes' },
   { gene: 'HMOX1', rsids: ['rs2071746'], genotypesOfConcern: ['AA'], impact: 'Low heme oxygenase-1 expression', supplement: 'Curcumin;Green Tea Extract', dosage: '500-1000 mg;400 mg daily', evidence: 'moderate', cautions: 'Support anti-inflammatory pathways' },
+  { gene: 'PON1', rsids: ['rs662'], genotypesOfConcern: ['AA'], impact: 'Reduced paraoxonase 1 activity', supplement: 'Vitamin E;Selenium;Quercetin', dosage: '400 IU;200 mcg;500 mg daily', evidence: 'low', cautions: 'Support lipid antioxidant defense' },
+  { gene: 'EPHX1', rsids: ['rs1051740'], genotypesOfConcern: ['TT'], impact: 'Slow epoxide hydrolase activity', supplement: 'NAC;Milk Thistle;Cruciferous Extract', dosage: '600 mg;150 mg;200 mg daily', evidence: 'low', cautions: 'Support epoxide detoxification' },
 
-  // === VITAMIN METABOLISM & TRANSPORT ===
+  // === VITAMIN METABOLISM & TRANSPORT (15 variants) ===
   { gene: 'VDR', rsids: ['rs2228570'], genotypesOfConcern: ['CC'], impact: 'Reduced vitamin D receptor activity', supplement: 'Vitamin D3;K2', dosage: '3000-5000 IU;100-200 mcg daily', evidence: 'moderate', cautions: 'May need higher doses' },
   { gene: 'VDR', rsids: ['rs1544410'], genotypesOfConcern: ['AA'], impact: 'Altered vitamin D receptor function', supplement: 'Vitamin D3;Magnesium', dosage: '2000-4000 IU;400 mg daily', evidence: 'moderate', cautions: 'Support vitamin D signaling' },
+  { gene: 'VDR', rsids: ['rs7975232'], genotypesOfConcern: ['AA'], impact: 'Reduced vitamin D receptor expression', supplement: 'Vitamin D3;K2;Magnesium', dosage: '3000-4000 IU;100 mcg;400 mg daily', evidence: 'moderate', cautions: 'Higher doses may be needed' },
   { gene: 'CYP2R1', rsids: ['rs10741657'], genotypesOfConcern: ['AA'], impact: 'Reduced 25-hydroxylase activity; lower vitamin D activation', supplement: 'Vitamin D3', dosage: '3000-5000 IU daily', evidence: 'moderate', cautions: 'May need higher doses' },
   { gene: 'CYP27B1', rsids: ['rs10877012'], genotypesOfConcern: ['TT'], impact: 'Reduced 1α-hydroxylase activity', supplement: 'Vitamin D3;Magnesium', dosage: '4000-6000 IU;400 mg daily', evidence: 'low', cautions: 'Monitor vitamin D levels' },
   { gene: 'CYP24A1', rsids: ['rs6013897'], genotypesOfConcern: ['TT'], impact: 'Slow vitamin D degradation; risk of toxicity', supplement: 'Lower dose Vitamin D3', dosage: '1000-2000 IU daily', evidence: 'low', cautions: 'Monitor vitamin D levels closely' },
   { gene: 'GC', rsids: ['rs2282679'], genotypesOfConcern: ['AA'], impact: 'Altered vitamin D binding protein', supplement: 'Vitamin D3;Magnesium', dosage: '3000-4000 IU;400 mg daily', evidence: 'moderate', cautions: 'Support vitamin D transport' },
+  { gene: 'DHCR7', rsids: ['rs12785878'], genotypesOfConcern: ['TT'], impact: 'Reduced vitamin D synthesis capacity', supplement: 'Vitamin D3', dosage: '3000-5000 IU daily', evidence: 'moderate', cautions: 'Cannot synthesize vitamin D efficiently' },
   { gene: 'FUT2', rsids: ['rs601338'], genotypesOfConcern: ['AA'], impact: 'Non-secretor status; reduced B12 absorption', supplement: 'Methylcobalamin (sublingual)', dosage: '1-5 mg daily', evidence: 'moderate', cautions: 'Bypass gut absorption' },
   { gene: 'TCN2', rsids: ['rs1801198'], genotypesOfConcern: ['GG'], impact: 'Reduced transcobalamin II function; B12 transport issues', supplement: 'High-dose Methylcobalamin', dosage: '5-10 mg daily', evidence: 'moderate', cautions: 'May need higher doses' },
   { gene: 'CUBN', rsids: ['rs1801222'], genotypesOfConcern: ['GG'], impact: 'Impaired cubilin function; B12 absorption', supplement: 'Sublingual B12;Intrinsic Factor', dosage: '2-5 mg;1 capsule daily', evidence: 'moderate', cautions: 'Bypass absorption issues' },
+  { gene: 'AMN', rsids: ['rs2287921'], genotypesOfConcern: ['TT'], impact: 'Reduced amnionless function affecting B12 uptake', supplement: 'High-dose B12;Intrinsic Factor', dosage: '5-10 mg;1 capsule daily', evidence: 'low', cautions: 'Support B12 absorption' },
   { gene: 'BCMO1', rsids: ['rs7501331'], genotypesOfConcern: ['AA'], impact: 'Reduced beta-carotene to vitamin A conversion', supplement: 'Preformed Vitamin A (Retinol)', dosage: '5000-10000 IU daily', evidence: 'moderate', cautions: 'Cannot convert beta-carotene efficiently' },
   { gene: 'SLC23A1', rsids: ['rs33972313'], genotypesOfConcern: ['GG'], impact: 'Reduced vitamin C transport', supplement: 'High-dose Vitamin C;Bioflavonoids', dosage: '1000-2000 mg;500 mg daily', evidence: 'moderate', cautions: 'May need higher doses' },
+  { gene: 'SLC23A2', rsids: ['rs6596473'], genotypesOfConcern: ['AA'], impact: 'Altered vitamin C transporter function', supplement: 'Vitamin C;Bioflavonoids', dosage: '1000-1500 mg;500 mg daily', evidence: 'low', cautions: 'Support vitamin C transport' },
 
-  // === IRON METABOLISM ===
+  // === IRON METABOLISM (6 variants) ===
   { gene: 'HFE', rsids: ['rs1800562'], genotypesOfConcern: ['AA'], impact: 'Hemochromatosis C282Y; iron overload risk', supplement: 'AVOID Iron;Lactoferrin', dosage: 'NO iron;200-400 mg Lactoferrin', evidence: 'high', cautions: 'NEVER supplement iron; monitor ferritin' },
   { gene: 'HFE', rsids: ['rs1799945'], genotypesOfConcern: ['CC'], impact: 'Hemochromatosis H63D; mild iron overload risk', supplement: 'AVOID Iron;IP6', dosage: 'NO iron;800 mg IP6', evidence: 'high', cautions: 'Monitor ferritin levels' },
   { gene: 'TMPRSS6', rsids: ['rs855791'], genotypesOfConcern: ['GG'], impact: 'Increased hepcidin; reduced iron absorption', supplement: 'Iron with Vitamin C', dosage: '18-25 mg iron;500 mg C daily', evidence: 'moderate', cautions: 'Take with vitamin C' },
   { gene: 'TF', rsids: ['rs3811647'], genotypesOfConcern: ['GG'], impact: 'Altered transferrin function', supplement: 'Iron;Copper', dosage: '18 mg;2 mg daily', evidence: 'low', cautions: 'Support iron transport' },
+  { gene: 'TFRC', rsids: ['rs7385804'], genotypesOfConcern: ['AA'], impact: 'Altered transferrin receptor function', supplement: 'Iron;Vitamin C', dosage: '18-25 mg;500 mg daily', evidence: 'low', cautions: 'Support iron uptake' },
+  { gene: 'SLC40A1', rsids: ['rs11568350'], genotypesOfConcern: ['TT'], impact: 'Altered ferroportin function; iron export issues', supplement: 'Lactoferrin;Vitamin C', dosage: '200-400 mg;500 mg daily', evidence: 'low', cautions: 'Support iron regulation' },
 
-  // === CARDIOVASCULAR & LIPIDS ===
+  // === CARDIOVASCULAR & LIPIDS (10 variants) ===
   { gene: 'APOE', rsids: ['rs429358'], genotypesOfConcern: ['CT', 'CC'], impact: 'APOE4 variant; increased cardiovascular & Alzheimer risk', supplement: 'DHA;Curcumin;PQQ', dosage: '1000 mg;500-1000 mg;20 mg daily', evidence: 'high', cautions: 'Avoid high saturated fat' },
+  { gene: 'APOE', rsids: ['rs7412'], genotypesOfConcern: ['CT', 'TT'], impact: 'APOE2 variant; altered lipid metabolism', supplement: 'Omega-3;Niacin', dosage: '1000-2000 mg;500 mg daily', evidence: 'moderate', cautions: 'Monitor lipid levels' },
   { gene: 'FADS1', rsids: ['rs174547'], genotypesOfConcern: ['TT'], impact: 'Reduced delta-6-desaturase; poor omega-3 conversion', supplement: 'EPA/DHA (preformed)', dosage: '1-2g EPA+DHA daily', evidence: 'high', cautions: 'Cannot convert ALA efficiently' },
   { gene: 'FADS2', rsids: ['rs174575'], genotypesOfConcern: ['GG'], impact: 'Reduced fatty acid desaturase activity', supplement: 'Fish Oil (EPA/DHA)', dosage: '1-2g EPA+DHA daily', evidence: 'high', cautions: 'Need preformed omega-3s' },
   { gene: 'LDLR', rsids: ['rs6511720'], genotypesOfConcern: ['GG'], impact: 'Reduced LDL receptor function', supplement: 'Plant Sterols;Red Yeast Rice', dosage: '2g;600 mg daily', evidence: 'moderate', cautions: 'Support cholesterol clearance' },
+  { gene: 'PCSK9', rsids: ['rs11591147'], genotypesOfConcern: ['GG'], impact: 'Increased PCSK9 activity; higher LDL', supplement: 'Plant Sterols;Berberine', dosage: '2g;500 mg daily', evidence: 'moderate', cautions: 'Support cholesterol metabolism' },
   { gene: 'CETP', rsids: ['rs708272'], genotypesOfConcern: ['GG'], impact: 'Increased cholesteryl ester transfer protein activity', supplement: 'Niacin;Plant Sterols', dosage: '500 mg;2g daily', evidence: 'moderate', cautions: 'Support HDL cholesterol' },
+  { gene: 'LIPC', rsids: ['rs1800588'], genotypesOfConcern: ['TT'], impact: 'Reduced hepatic lipase activity', supplement: 'Omega-3;Niacin', dosage: '1000-2000 mg;500 mg daily', evidence: 'low', cautions: 'Support lipid metabolism' },
   { gene: 'ACE', rsids: ['rs4646994'], genotypesOfConcern: ['DD'], impact: 'Higher ACE activity; increased cardiovascular risk', supplement: 'Magnesium;Potassium;Hawthorn', dosage: '400 mg;99 mg;300 mg daily', evidence: 'moderate', cautions: 'Support cardiovascular health' },
-  
-  // === DRUG/SUPPLEMENT METABOLISM ===
+  { gene: 'AGT', rsids: ['rs699'], genotypesOfConcern: ['TT'], impact: 'Increased angiotensinogen; higher blood pressure risk', supplement: 'Magnesium;Potassium;CoQ10', dosage: '400 mg;99 mg;100 mg daily', evidence: 'moderate', cautions: 'Support blood pressure' },
+
+  // === DRUG/SUPPLEMENT METABOLISM (8 variants) ===
   { gene: 'CYP1A2', rsids: ['rs762551'], genotypesOfConcern: ['AA'], impact: 'Slow caffeine metabolism; increased sensitivity', supplement: 'L-Theanine;Magnesium', dosage: '200 mg;400 mg daily', evidence: 'moderate', cautions: 'Limit caffeine intake' },
   { gene: 'CYP2D6', rsids: ['rs1065852'], genotypesOfConcern: ['AA'], impact: 'Poor CYP2D6 metabolizer; drug sensitivity', supplement: 'Milk Thistle;NAC', dosage: '150 mg;600 mg daily', evidence: 'low', cautions: 'Support liver function' },
+  { gene: 'CYP2C19', rsids: ['rs4244285'], genotypesOfConcern: ['AA'], impact: 'Poor CYP2C19 metabolizer; drug sensitivity', supplement: 'Milk Thistle;NAC;Quercetin', dosage: '150 mg;600 mg;500 mg daily', evidence: 'moderate', cautions: 'Support drug metabolism' },
+  { gene: 'CYP3A4', rsids: ['rs2740574'], genotypesOfConcern: ['AA'], impact: 'Altered CYP3A4 activity; drug metabolism changes', supplement: 'Milk Thistle;St John\'s Wort (avoid)', dosage: '150 mg daily;AVOID', evidence: 'low', cautions: 'Many drug interactions' },
+  { gene: 'UGT1A1', rsids: ['rs8175347'], genotypesOfConcern: ['TA7/TA7'], impact: 'Reduced glucuronidation capacity', supplement: 'Milk Thistle;NAC;Gluconic Acid', dosage: '150 mg;600 mg;500 mg daily', evidence: 'moderate', cautions: 'Support phase II detox' },
   { gene: 'SLCO1B1', rsids: ['rs4149056'], genotypesOfConcern: ['CC'], impact: 'Reduced statin transport; increased myopathy risk', supplement: 'CoQ10;Red Yeast Rice', dosage: '100-200 mg;600 mg daily', evidence: 'moderate', cautions: 'Essential if taking statins' },
+  { gene: 'ABCB1', rsids: ['rs1045642'], genotypesOfConcern: ['TT'], impact: 'Reduced P-glycoprotein function; altered drug transport', supplement: 'Quercetin;Green Tea Extract', dosage: '500 mg;300 mg daily', evidence: 'low', cautions: 'May affect drug absorption' },
+  { gene: 'NAT2', rsids: ['rs1801280'], genotypesOfConcern: ['TT'], impact: 'Slow N-acetyltransferase; drug sensitivity', supplement: 'NAC;Milk Thistle', dosage: '600 mg;150 mg daily', evidence: 'low', cautions: 'Support acetylation pathways' },
 
-  // === OTHER IMPORTANT PATHWAYS ===
+  // === INFLAMMATION & IMMUNE (5 variants) ===
+  { gene: 'IL6', rsids: ['rs1800795'], genotypesOfConcern: ['GG'], impact: 'Increased IL-6 production; higher inflammation', supplement: 'Curcumin;Omega-3;Quercetin', dosage: '500-1000 mg;1000 mg;500 mg daily', evidence: 'moderate', cautions: 'Anti-inflammatory support' },
+  { gene: 'IL1B', rsids: ['rs16944'], genotypesOfConcern: ['AA'], impact: 'Increased IL-1β production; inflammation', supplement: 'Curcumin;Boswellia;Omega-3', dosage: '500 mg;300 mg;1000 mg daily', evidence: 'moderate', cautions: 'Reduce inflammatory response' },
+  { gene: 'TNF', rsids: ['rs1800629'], genotypesOfConcern: ['AA'], impact: 'Increased TNF-α production; chronic inflammation', supplement: 'Curcumin;Resveratrol;Green Tea', dosage: '500-1000 mg;250 mg;400 mg daily', evidence: 'moderate', cautions: 'Strong anti-inflammatory needed' },
+  { gene: 'CRP', rsids: ['rs1205'], genotypesOfConcern: ['TT'], impact: 'Elevated C-reactive protein baseline', supplement: 'Omega-3;Curcumin;Magnesium', dosage: '1000-2000 mg;500 mg;400 mg daily', evidence: 'moderate', cautions: 'Monitor inflammatory markers' },
+  { gene: 'PTGS2', rsids: ['rs20417'], genotypesOfConcern: ['GG'], impact: 'Increased COX-2 expression; inflammation', supplement: 'Curcumin;Boswellia;White Willow', dosage: '500 mg;300 mg;240 mg daily', evidence: 'moderate', cautions: 'Natural COX-2 support' },
+
+  // === OTHER IMPORTANT PATHWAYS (5 variants) ===
   { gene: 'CBS', rsids: ['rs234706'], genotypesOfConcern: ['GG'], impact: 'Upregulated transsulfuration pathway', supplement: 'Molybdenum;Vitamin B6', dosage: '150-300 mcg;25-50 mg daily', evidence: 'low', cautions: 'Avoid high-sulfur supplements if sensitive' },
   { gene: 'PEMT', rsids: ['rs7946'], genotypesOfConcern: ['GG'], impact: 'Reduced phosphatidylethanolamine N-methyltransferase', supplement: 'Choline;Phosphatidylcholine', dosage: '500 mg;1200 mg daily', evidence: 'moderate', cautions: 'Essential for women' },
-  { gene: 'ALDH2', rsids: ['rs671'], genotypesOfConcern: ['AG', 'AA'], impact: 'Reduced aldehyde dehydrogenase; alcohol sensitivity', supplement: 'NAD+;Milk Thistle;B-Complex', dosage: '100 mg;150 mg;1 capsule daily', evidence: 'low', cautions: 'Support liver detoxification' }
+  { gene: 'ALDH2', rsids: ['rs671'], genotypesOfConcern: ['AG', 'AA'], impact: 'Reduced aldehyde dehydrogenase; alcohol sensitivity', supplement: 'NAD+;Milk Thistle;B-Complex', dosage: '100 mg;150 mg;1 capsule daily', evidence: 'low', cautions: 'Support liver detoxification' },
+  { gene: 'ADORA2A', rsids: ['rs5751876'], genotypesOfConcern: ['TT'], impact: 'Increased adenosine receptor sensitivity; caffeine sensitivity', supplement: 'L-Theanine;Magnesium;Taurine', dosage: '200 mg;400 mg;1000 mg daily', evidence: 'low', cautions: 'Limit caffeine intake' },
+  { gene: 'CLOCK', rsids: ['rs1801260'], genotypesOfConcern: ['TT'], impact: 'Altered circadian rhythm; sleep issues', supplement: 'Melatonin;Magnesium;L-Theanine', dosage: '3 mg;400 mg;200 mg daily', evidence: 'moderate', cautions: 'Support circadian rhythm' }
 ];
 
 export const allergyConflicts = {
@@ -845,7 +881,7 @@ function generateSpecificGeneticReasoning(gene: string, rsid: string, genotype: 
   return `Your ${gene} ${rsid} (${genotype}) variant affects ${impact.toLowerCase()}. We specifically chose ${supplement} because research shows this exact combination works best for people with your genetic profile. This isn't a standard dose - it's precisely calibrated for how your variant affects this biological pathway.`;
 }
 
-// Comprehensive biomarker analysis function - covers 300+ biomarkers
+// Comprehensive biomarker analysis function - covers 50+ biomarkers
 function analyzeBiomarker(normalizedName: string, numericValue: number, displayName: string): any | null {
   // Skip non-numeric values
   if (isNaN(numericValue)) return null;
@@ -891,7 +927,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
         dosage_unit: 'IU',
         frequency: 'daily',
         timing: 'with meals',
-        recommendation_reason: `Your vitamin A level of ${numericValue} mcg/dL indicates deficiency (optimal: 30-65 mcg/dL).`,
+        recommendation_reason: `Your vitamin A level of ${numericValue} mcg/dL indicates deficiency (optimal: 30-65 mcg/dL). Because many people can't convert beta-carotene efficiently, we're recommending preformed vitamin A (retinol) to directly address your deficiency. This active form will restore your vitamin A status for better immune function, vision, and skin health.`,
         evidence_quality: 'high',
         priority_score: 7,
         expected_benefits: ['Improved vision within 4-8 weeks', 'Better immune function', 'Enhanced skin health'],
@@ -909,7 +945,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
         dosage_unit: 'IU',
         frequency: 'daily',
         timing: 'with meals',
-        recommendation_reason: `Your vitamin E level of ${numericValue} mg/L is below optimal (12-20 mg/L).`,
+        recommendation_reason: `Your vitamin E level of ${numericValue} mg/L is below optimal (12-20 mg/L). We're choosing mixed tocopherols rather than just alpha-tocopherol because your body needs all eight forms of vitamin E for complete antioxidant protection. This comprehensive approach will provide better cellular protection than synthetic vitamin E.`,
         evidence_quality: 'moderate',
         priority_score: 6,
         expected_benefits: ['Enhanced antioxidant protection', 'Improved cardiovascular health'],
@@ -919,7 +955,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
     }
   }
   
-  if (normalizedName.includes('vitamin_k')) {
+  if (normalizedName.includes('vitamin_k') || normalizedName.includes('phylloquinone')) {
     if (numericValue < 0.4) {
       return {
         supplement_name: 'Vitamin K2 (MK-7)',
@@ -927,7 +963,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
         dosage_unit: 'mcg',
         frequency: 'daily',
         timing: 'with meals',
-        recommendation_reason: `Your vitamin K level of ${numericValue} ng/mL indicates deficiency.`,
+        recommendation_reason: `Your vitamin K level of ${numericValue} ng/mL indicates deficiency. We're specifically choosing K2 (MK-7) over K1 because K2 is more effective for bone and cardiovascular health. While K1 is mainly for blood clotting, K2 activates proteins that direct calcium to bones and away from arteries - exactly what you need for optimal health.`,
         evidence_quality: 'moderate',
         priority_score: 6,
         expected_benefits: ['Better bone health', 'Improved cardiovascular function'],
@@ -946,7 +982,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
         dosage_unit: 'mg',
         frequency: 'twice daily',
         timing: 'with meals',
-        recommendation_reason: `Your vitamin C level of ${numericValue} mg/L is below optimal (11-20 mg/L).`,
+        recommendation_reason: `Your vitamin C level of ${numericValue} mg/L is below optimal (11-20 mg/L). We're combining vitamin C with bioflavonoids because they work synergistically to enhance absorption and provide additional antioxidant benefits. This combination is more effective than vitamin C alone for immune support and collagen synthesis.`,
         evidence_quality: 'high',
         priority_score: 7,
         expected_benefits: ['Enhanced immune function', 'Improved antioxidant protection', 'Better iron absorption'],
@@ -956,59 +992,8 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
     }
   }
 
-  // === B-VITAMINS ===
-  if (normalizedName.includes('b12') || normalizedName.includes('cobalamin')) {
-    if (numericValue < 400) {
-      let dosage = 1000;
-      let form = 'Methylcobalamin';
-      let reasoning = '';
-      
-      if (numericValue < 200) {
-        dosage = 5000;
-        reasoning = `Your B12 level of ${numericValue} pg/mL indicates severe deficiency (optimal: 500-900 pg/mL). Because you're this low, we're recommending 5000 mcg of methylcobalamin daily. We chose methylcobalamin over cyanocobalamin because it's the active form your cells can use immediately - no conversion needed. At your current level, your cells are starved for B12, and this high dose will rapidly restore your energy, cognitive function, and nerve health within 4-6 weeks.`;
-      } else if (numericValue < 300) {
-        dosage = 2000;
-        reasoning = `Your B12 at ${numericValue} pg/mL is deficient (optimal: 500-900 pg/mL). We're recommending 2000 mcg of methylcobalamin because your level indicates your cells aren't getting enough active B12. Methylcobalamin bypasses the conversion step that many people struggle with, especially as we age. This dose will restore your levels and should eliminate fatigue, brain fog, and any tingling sensations within 6-8 weeks.`;
-      } else {
-        dosage = 1000;
-        reasoning = `Your B12 level of ${numericValue} pg/mL is below optimal (ideal: 500-900 pg/mL). We're recommending 1000 mcg of methylcobalamin for gentle restoration. Even though you're not severely deficient, this suboptimal level can cause subtle energy and cognitive issues. Methylcobalamin is the active form that works immediately at the cellular level.`;
-      }
-      
-      return {
-        supplement_name: 'Methylcobalamin (B12)',
-        dosage_amount: dosage,
-        dosage_unit: 'mcg',
-        frequency: 'daily',
-        timing: 'morning sublingual',
-        recommendation_reason: reasoning,
-        evidence_quality: 'high',
-        priority_score: numericValue < 200 ? 9 : 7,
-        expected_benefits: ['Increased energy within 2-4 weeks', 'Improved cognitive function', 'Better nerve health'],
-        contraindications: ['Use methylated form for better absorption'],
-        concern: 'B12 deficiency'
-      };
-    }
-  }
-  
-  if (normalizedName.includes('folate') || normalizedName.includes('folic')) {
-    if (numericValue < 6) {
-      return {
-        supplement_name: 'L-Methylfolate (Active B9)',
-        dosage_amount: 400,
-        dosage_unit: 'mcg',
-        frequency: 'daily',
-        timing: 'morning on empty stomach',
-        recommendation_reason: `Your folate level of ${numericValue} ng/mL is below optimal (6-20 ng/mL).`,
-        evidence_quality: 'high',
-        priority_score: 8,
-        expected_benefits: ['Improved DNA synthesis', 'Better homocysteine metabolism', 'Enhanced energy'],
-        contraindications: ['Use active form to bypass MTHFR issues'],
-        concern: 'folate deficiency'
-      };
-    }
-  }
-  
-  if (normalizedName.includes('thiamine') || normalizedName.includes('b1')) {
+  // === B-VITAMINS (Enhanced Coverage) ===
+  if (normalizedName.includes('thiamine') || normalizedName.includes('b1') || normalizedName.includes('vitamin_b1')) {
     if (numericValue < 70) {
       return {
         supplement_name: 'Thiamine (B1)',
@@ -1016,17 +1001,107 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
         dosage_unit: 'mg',
         frequency: 'daily',
         timing: 'with meals',
-        recommendation_reason: `Your thiamine level indicates deficiency affecting energy metabolism.`,
+        recommendation_reason: `Your thiamine level indicates deficiency affecting your energy metabolism. Because thiamine is crucial for converting carbohydrates to energy, we're recommending a therapeutic dose to restore your levels. This B1 deficiency could be causing fatigue, brain fog, and poor stress tolerance - symptoms that should improve within 2-4 weeks.`,
         evidence_quality: 'moderate',
         priority_score: 6,
-        expected_benefits: ['Improved energy metabolism', 'Better nerve function'],
+        expected_benefits: ['Improved energy metabolism', 'Better nerve function', 'Enhanced mental clarity'],
         contraindications: ['Water-soluble, excess excreted'],
         concern: 'thiamine deficiency'
       };
     }
   }
+  
+  if (normalizedName.includes('riboflavin') || normalizedName.includes('b2') || normalizedName.includes('vitamin_b2')) {
+    if (numericValue < 6.2) {
+      return {
+        supplement_name: 'Riboflavin (B2)',
+        dosage_amount: 25,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'with meals',
+        recommendation_reason: `Your riboflavin level indicates deficiency affecting your cellular energy production. B2 is essential for mitochondrial function and converting other B vitamins to their active forms. This deficiency could be limiting your energy production at the cellular level and affecting your ability to utilize other B vitamins effectively.`,
+        evidence_quality: 'moderate',
+        priority_score: 6,
+        expected_benefits: ['Improved cellular energy', 'Better B vitamin utilization', 'Enhanced antioxidant function'],
+        contraindications: ['May turn urine bright yellow (harmless)'],
+        concern: 'riboflavin deficiency'
+      };
+    }
+  }
+  
+  if (normalizedName.includes('niacin') || normalizedName.includes('b3') || normalizedName.includes('vitamin_b3') || normalizedName.includes('nicotinic')) {
+    if (numericValue < 14) {
+      return {
+        supplement_name: 'Niacinamide (B3)',
+        dosage_amount: 500,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'with meals',
+        recommendation_reason: `Your niacin level indicates deficiency affecting your energy metabolism and cellular repair. We're choosing niacinamide over regular niacin because it provides the same benefits without the flushing side effect. This form supports energy production, DNA repair, and healthy cholesterol metabolism.`,
+        evidence_quality: 'moderate',
+        priority_score: 6,
+        expected_benefits: ['Improved energy metabolism', 'Better cholesterol levels', 'Enhanced DNA repair'],
+        contraindications: ['Monitor liver function with high doses'],
+        concern: 'niacin deficiency'
+      };
+    }
+  }
+  
+  if (normalizedName.includes('pantothenic') || normalizedName.includes('b5') || normalizedName.includes('vitamin_b5')) {
+    if (numericValue < 1.8) {
+      return {
+        supplement_name: 'Pantothenic Acid (B5)',
+        dosage_amount: 250,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'with meals',
+        recommendation_reason: `Your pantothenic acid level indicates deficiency affecting your adrenal function and stress response. B5 is crucial for cortisol production and energy metabolism. This deficiency could be causing fatigue, poor stress tolerance, and adrenal dysfunction - all of which should improve with supplementation.`,
+        evidence_quality: 'moderate',
+        priority_score: 6,
+        expected_benefits: ['Better stress response', 'Improved adrenal function', 'Enhanced energy production'],
+        contraindications: ['Generally well tolerated'],
+        concern: 'pantothenic acid deficiency'
+      };
+    }
+  }
+  
+  if (normalizedName.includes('pyridoxine') || normalizedName.includes('b6') || normalizedName.includes('vitamin_b6') || normalizedName.includes('pyridoxal')) {
+    if (numericValue < 20) {
+      return {
+        supplement_name: 'Pyridoxal-5-Phosphate (P5P)',
+        dosage_amount: 25,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'with meals',
+        recommendation_reason: `Your B6 level of ${numericValue} ng/mL indicates deficiency (optimal: 20-50 ng/mL). We're recommending P5P, the active form of B6, because it bypasses the conversion step and works immediately. This deficiency could be affecting your neurotransmitter production, hormone metabolism, and homocysteine levels.`,
+        evidence_quality: 'high',
+        priority_score: 7,
+        expected_benefits: ['Better neurotransmitter function', 'Improved hormone balance', 'Lower homocysteine'],
+        contraindications: ['Avoid >100mg daily long-term'],
+        concern: 'B6 deficiency'
+      };
+    }
+  }
+  
+  if (normalizedName.includes('biotin') || normalizedName.includes('b7') || normalizedName.includes('vitamin_b7') || normalizedName.includes('vitamin_h')) {
+    if (numericValue < 400) {
+      return {
+        supplement_name: 'Biotin (B7)',
+        dosage_amount: 5000,
+        dosage_unit: 'mcg',
+        frequency: 'daily',
+        timing: 'with meals',
+        recommendation_reason: `Your biotin level indicates deficiency affecting your hair, skin, nail health and metabolism. Biotin is crucial for fatty acid synthesis, gene regulation, and cell growth. This therapeutic dose will support your metabolic function and should improve hair and nail strength within 8-12 weeks.`,
+        evidence_quality: 'moderate',
+        priority_score: 5,
+        expected_benefits: ['Stronger hair and nails', 'Better metabolism', 'Improved skin health'],
+        contraindications: ['May interfere with lab tests'],
+        concern: 'biotin deficiency'
+      };
+    }
+  }
 
-  // === MINERALS (Macrominerals) ===
+  // === MINERALS (Comprehensive Coverage) ===
   if (normalizedName.includes('magnesium')) {
     if (normalizedName.includes('rbc')) {
       // RBC Magnesium - more accurate
@@ -1037,7 +1112,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
           dosage_unit: 'mg',
           frequency: 'daily',
           timing: 'evening with dinner',
-          recommendation_reason: `Your RBC magnesium of ${numericValue} mg/dL indicates intracellular deficiency (optimal: 4.2-6.8 mg/dL).`,
+          recommendation_reason: `Your RBC magnesium of ${numericValue} mg/dL indicates intracellular deficiency (optimal: 4.2-6.8 mg/dL). We're choosing magnesium glycinate because it's the most bioavailable form and won't cause digestive upset. This form crosses cell membranes easily and will restore your cellular magnesium stores more effectively than cheaper forms like magnesium oxide.`,
           evidence_quality: 'high',
           priority_score: 8,
           expected_benefits: ['Better sleep quality', 'Reduced muscle cramps', 'Improved stress resilience'],
@@ -1054,7 +1129,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
           dosage_unit: 'mg',
           frequency: 'daily',
           timing: 'evening with dinner',
-          recommendation_reason: `Your serum magnesium of ${numericValue} mg/dL is below optimal (1.8-2.6 mg/dL).`,
+          recommendation_reason: `Your serum magnesium of ${numericValue} mg/dL is below optimal (1.8-2.6 mg/dL). While serum levels don't always reflect cellular status, this low level suggests you need magnesium supplementation. We're using glycinate form for superior absorption and tolerability.`,
           evidence_quality: 'moderate',
           priority_score: 7,
           expected_benefits: ['Better sleep quality', 'Reduced muscle tension', 'Improved energy'],
@@ -1073,7 +1148,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
         dosage_unit: 'mg',
         frequency: 'twice daily',
         timing: 'between meals',
-        recommendation_reason: `Your calcium level of ${numericValue} mg/dL is below optimal (8.5-10.5 mg/dL).`,
+        recommendation_reason: `Your calcium level of ${numericValue} mg/dL is below optimal (8.5-10.5 mg/dL). We're combining calcium citrate with D3 and K2 because calcium alone can be harmful. D3 helps you absorb calcium, while K2 ensures it goes to bones instead of arteries. This combination provides comprehensive bone support while protecting your cardiovascular system.`,
         evidence_quality: 'moderate',
         priority_score: 6,
         expected_benefits: ['Improved bone health', 'Better muscle function'],
@@ -1082,346 +1157,39 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
       };
     }
   }
-
-  // === MINERALS (Trace Elements) ===
-  if (normalizedName.includes('iron') && !normalizedName.includes('tibc') && !normalizedName.includes('transferrin')) {
-    if (numericValue < 60) {
+  
+  if (normalizedName.includes('potassium')) {
+    if (numericValue < 3.5) {
       return {
-        supplement_name: 'Iron Bisglycinate + Vitamin C',
-        dosage_amount: 25,
+        supplement_name: 'Potassium Citrate',
+        dosage_amount: 99,
         dosage_unit: 'mg',
-        frequency: 'daily',
-        timing: 'morning on empty stomach',
-        recommendation_reason: `Your serum iron of ${numericValue} mcg/dL indicates deficiency (optimal: 60-170 mcg/dL).`,
+        frequency: 'three times daily',
+        timing: 'with meals',
+        recommendation_reason: `Your potassium level of ${numericValue} mEq/L is below optimal (3.5-5.0 mEq/L). Low potassium affects muscle function, blood pressure, and heart rhythm. We're recommending potassium citrate because it's well absorbed and helps alkalize the body. Note: supplements are limited to 99mg by law - dietary sources are equally important.`,
         evidence_quality: 'high',
         priority_score: 8,
-        expected_benefits: ['Improved energy within 4-8 weeks', 'Better oxygen transport', 'Reduced fatigue'],
-        contraindications: ['Take with vitamin C', 'Monitor ferritin levels'],
-        concern: 'iron deficiency'
+        expected_benefits: ['Better blood pressure', 'Improved muscle function', 'Enhanced heart health'],
+        contraindications: ['Monitor if kidney disease', 'Avoid with ACE inhibitors'],
+        concern: 'potassium deficiency'
       };
     }
   }
   
-  if (normalizedName.includes('ferritin')) {
-    if (numericValue < 30) {
-      let dosage = 25;
-      let reasoning = '';
-      
-      if (numericValue < 15) {
-        dosage = 50;
-        reasoning = `Your ferritin level of ${numericValue} ng/mL indicates severe iron depletion (optimal: 50-150 ng/mL for women, 100-300 ng/mL for men). Because your iron stores are critically low, we're recommending 50 mg of iron bisglycinate daily. We chose bisglycinate because it's chelated to amino acids, making it 3-4 times more absorbable than ferrous sulfate and much gentler on your stomach. We're pairing it with vitamin C because it increases absorption by 300%. This aggressive approach will rebuild your depleted iron stores over 3-4 months.`;
-      } else {
-        dosage = 25;
-        reasoning = `Your ferritin at ${numericValue} ng/mL shows iron deficiency (optimal: 50-150 ng/mL for women, 100-300 ng/mL for men). We're recommending 25 mg of iron bisglycinate with vitamin C because your body needs to rebuild iron stores gradually. The bisglycinate form is chelated for maximum absorption without the constipation and nausea that comes with cheaper iron forms. Taking it with vitamin C on an empty stomach maximizes absorption - this combination will restore your energy and exercise tolerance over 8-12 weeks.`;
-      }
-      
+  if (normalizedName.includes('phosphorus') || normalizedName.includes('phosphate')) {
+    if (numericValue < 2.5) {
       return {
-        supplement_name: 'Iron Bisglycinate + Vitamin C',
-        dosage_amount: dosage,
-        dosage_unit: 'mg',
-        frequency: 'daily',
-        timing: 'morning on empty stomach with vitamin C',
-        recommendation_reason: reasoning,
-        evidence_quality: 'high',
-        priority_score: 8,
-        expected_benefits: ['Improved energy within 4-8 weeks', 'Better exercise tolerance', 'Reduced fatigue'],
-        contraindications: ['Take with vitamin C', 'Avoid with calcium', 'Monitor levels'],
-        concern: 'iron deficiency'
-      };
-    }
-    
-    if (numericValue > 200) {
-      return {
-        supplement_name: 'Lactoferrin + IP6',
-        dosage_amount: 200,
+        supplement_name: 'Phosphorus Complex',
+        dosage_amount: 250,
         dosage_unit: 'mg',
         frequency: 'daily',
         timing: 'with meals',
-        recommendation_reason: `Your ferritin level of ${numericValue} ng/mL is elevated (optimal: 50-150 ng/mL for women, 100-300 ng/mL for men). High ferritin indicates iron overload, which creates oxidative stress and increases disease risk. We're specifically recommending lactoferrin + IP6 instead of iron because lactoferrin helps regulate iron absorption and transport, while IP6 chelates excess iron. This combination will help your body manage iron more effectively and reduce inflammatory oxidative stress - this is the opposite of what most people need, but exactly right for your elevated levels.`,
-        evidence_quality: 'moderate',
-        priority_score: 7,
-        expected_benefits: ['Iron regulation within 8-12 weeks', 'Reduced oxidative stress'],
-        contraindications: ['AVOID iron supplements', 'Monitor ferritin levels', 'Check for hemochromatosis'],
-        concern: 'iron overload'
-      };
-    }
-  }
-  
-  if (normalizedName.includes('zinc')) {
-    if (normalizedName.includes('rbc')) {
-      if (numericValue < 12) {
-        return {
-          supplement_name: 'Zinc Picolinate',
-          dosage_amount: 15,
-          dosage_unit: 'mg',
-          frequency: 'daily',
-          timing: 'between meals',
-          recommendation_reason: `Your RBC zinc indicates intracellular deficiency affecting immune function and wound healing.`,
-          evidence_quality: 'high',
-          priority_score: 7,
-          expected_benefits: ['Improved immune function', 'Better wound healing', 'Enhanced taste/smell'],
-          contraindications: ['Take away from calcium', 'Monitor copper levels'],
-          concern: 'zinc deficiency'
-        };
-      }
-    } else {
-      if (numericValue < 70) {
-        return {
-          supplement_name: 'Zinc Picolinate',
-          dosage_amount: 15,
-          dosage_unit: 'mg',
-          frequency: 'daily',
-          timing: 'between meals',
-          recommendation_reason: `Your serum zinc of ${numericValue} mcg/dL is below optimal (70-120 mcg/dL).`,
-          evidence_quality: 'moderate',
-          priority_score: 6,
-          expected_benefits: ['Enhanced immune function', 'Better skin health'],
-          contraindications: ['Balance with copper'],
-          concern: 'zinc deficiency'
-        };
-      }
-    }
-  }
-  
-  if (normalizedName.includes('selenium')) {
-    if (numericValue < 95) {
-      return {
-        supplement_name: 'Selenomethionine',
-        dosage_amount: 200,
-        dosage_unit: 'mcg',
-        frequency: 'daily',
-        timing: 'with meals',
-        recommendation_reason: `Your selenium level of ${numericValue} mcg/L is below optimal (95-165 mcg/L).`,
+        recommendation_reason: `Your phosphorus level of ${numericValue} mg/dL is below optimal (2.5-4.5 mg/dL). Phosphorus is crucial for bone health, energy metabolism, and cellular function. Low levels can cause weakness, bone pain, and metabolic dysfunction.`,
         evidence_quality: 'moderate',
         priority_score: 6,
-        expected_benefits: ['Enhanced antioxidant protection', 'Better thyroid function'],
-        contraindications: ['Do not exceed 400 mcg daily'],
-        concern: 'selenium deficiency'
-      };
-    }
-  }
-
-  // === HORMONES (Thyroid) ===
-  if (normalizedName.includes('tsh')) {
-    if (numericValue > 3.0) {
-      return {
-        supplement_name: 'Thyroid Support Complex',
-        dosage_amount: 1,
-        dosage_unit: 'capsule',
-        frequency: 'daily',
-        timing: 'morning on empty stomach',
-        recommendation_reason: `Your TSH of ${numericValue} mIU/L suggests subclinical hypothyroidism (optimal: 0.5-2.5 mIU/L).`,
-        evidence_quality: 'moderate',
-        priority_score: 7,
-        expected_benefits: ['Improved energy', 'Better metabolism', 'Enhanced mood'],
-        contraindications: ['Monitor thyroid hormones', 'Take away from other medications'],
-        concern: 'elevated TSH'
-      };
-    }
-  }
-  
-  if (normalizedName.includes('free_t3') || normalizedName.includes('ft3')) {
-    if (numericValue < 3.0) {
-      return {
-        supplement_name: 'Tyrosine + Selenium + Zinc',
-        dosage_amount: 500,
-        dosage_unit: 'mg',
-        frequency: 'daily',
-        timing: 'morning between meals',
-        recommendation_reason: `Your free T3 of ${numericValue} pg/mL is below optimal (3.0-4.2 pg/mL).`,
-        evidence_quality: 'moderate',
-        priority_score: 7,
-        expected_benefits: ['Improved energy and metabolism', 'Better temperature regulation'],
-        contraindications: ['Monitor thyroid function'],
-        concern: 'low T3'
-      };
-    }
-  }
-
-  // === HORMONES (Sex Hormones) ===
-  if (normalizedName.includes('testosterone') && !normalizedName.includes('free')) {
-    if (numericValue < 350) {
-      return {
-        supplement_name: 'Testosterone Support Complex',
-        dosage_amount: 1,
-        dosage_unit: 'capsule',
-        frequency: 'twice daily',
-        timing: 'with meals',
-        recommendation_reason: `Your total testosterone of ${numericValue} ng/dL is below optimal (400-900 ng/dL for men).`,
-        evidence_quality: 'moderate',
-        priority_score: 8,
-        expected_benefits: ['Improved energy and libido', 'Better muscle mass', 'Enhanced mood'],
-        contraindications: ['Monitor hormone levels', 'Check PSA if over 40'],
-        concern: 'low testosterone'
-      };
-    }
-  }
-  
-  if (normalizedName.includes('estradiol')) {
-    if (numericValue < 15) { // Assuming male or postmenopausal female
-      return {
-        supplement_name: 'Phytoestrogen Complex',
-        dosage_amount: 40,
-        dosage_unit: 'mg',
-        frequency: 'daily',
-        timing: 'with meals',
-        recommendation_reason: `Your estradiol level of ${numericValue} pg/mL may benefit from phytoestrogen support.`,
-        evidence_quality: 'moderate',
-        priority_score: 5,
-        expected_benefits: ['Hormonal balance support', 'Bone health'],
-        contraindications: ['Avoid with hormone-sensitive conditions'],
-        concern: 'low estradiol'
-      };
-    }
-  }
-
-  // === LIPIDS ===
-  if (normalizedName.includes('ldl') && !normalizedName.includes('particle')) {
-    if (numericValue > 100) {
-      return {
-        supplement_name: 'Plant Sterols + Red Yeast Rice',
-        dosage_amount: 2000,
-        dosage_unit: 'mg',
-        frequency: 'daily',
-        timing: 'with dinner',
-        recommendation_reason: `Your LDL cholesterol of ${numericValue} mg/dL is above optimal (<100 mg/dL).`,
-        evidence_quality: 'high',
-        priority_score: numericValue > 130 ? 8 : 6,
-        expected_benefits: ['Improved lipid profile within 8-12 weeks', 'Reduced cardiovascular risk'],
-        contraindications: ['Monitor liver function', 'Avoid with statins'],
-        concern: 'elevated LDL cholesterol'
-      };
-    }
-  }
-  
-  if (normalizedName.includes('hdl')) {
-    if (numericValue < 50) {
-      return {
-        supplement_name: 'Niacin + Omega-3',
-        dosage_amount: 500,
-        dosage_unit: 'mg',
-        frequency: 'daily',
-        timing: 'with meals',
-        recommendation_reason: `Your HDL cholesterol of ${numericValue} mg/dL is below optimal (>50 mg/dL for women, >40 mg/dL for men).`,
-        evidence_quality: 'moderate',
-        priority_score: 6,
-        expected_benefits: ['Increased HDL within 8-12 weeks', 'Better cholesterol transport'],
-        contraindications: ['Monitor for flushing', 'Start with lower dose'],
-        concern: 'low HDL cholesterol'
-      };
-    }
-  }
-  
-  if (normalizedName.includes('triglycerides')) {
-    if (numericValue > 150) {
-      return {
-        supplement_name: 'High-EPA Fish Oil + Berberine',
-        dosage_amount: 2000,
-        dosage_unit: 'mg',
-        frequency: 'daily',
-        timing: 'with meals',
-        recommendation_reason: `Your triglycerides of ${numericValue} mg/dL are above optimal (<150 mg/dL).`,
-        evidence_quality: 'high',
-        priority_score: numericValue > 200 ? 8 : 6,
-        expected_benefits: ['Reduced triglycerides within 4-8 weeks', 'Improved metabolic health'],
-        contraindications: ['Monitor blood sugar', 'May interact with medications'],
-        concern: 'elevated triglycerides'
-      };
-    }
-  }
-
-  // === METABOLIC ===
-  if (normalizedName.includes('glucose') && !normalizedName.includes('tolerance')) {
-    if (numericValue > 99) {
-      return {
-        supplement_name: 'Berberine + Chromium',
-        dosage_amount: 500,
-        dosage_unit: 'mg',
-        frequency: 'twice daily',
-        timing: 'before meals',
-        recommendation_reason: `Your fasting glucose of ${numericValue} mg/dL is above optimal (<100 mg/dL).`,
-        evidence_quality: 'high',
-        priority_score: numericValue > 125 ? 9 : 7,
-        expected_benefits: ['Improved glucose metabolism', 'Better insulin sensitivity'],
-        contraindications: ['Monitor blood sugar closely', 'May interact with diabetes medications'],
-        concern: 'elevated glucose'
-      };
-    }
-  }
-  
-  if (normalizedName.includes('hba1c') || normalizedName.includes('hemoglobin_a1c')) {
-    if (numericValue > 5.6) {
-      return {
-        supplement_name: 'Alpha-Lipoic Acid + Chromium',
-        dosage_amount: 300,
-        dosage_unit: 'mg',
-        frequency: 'twice daily',
-        timing: 'before meals',
-        recommendation_reason: `Your HbA1c of ${numericValue}% indicates prediabetes or poor glucose control (optimal: <5.7%).`,
-        evidence_quality: 'high',
-        priority_score: 8,
-        expected_benefits: ['Improved glucose control', 'Reduced diabetes risk'],
-        contraindications: ['Monitor blood sugar', 'Coordinate with healthcare provider'],
-        concern: 'elevated HbA1c'
-      };
-    }
-  }
-
-  // === INFLAMMATION ===
-  if (normalizedName.includes('crp') || normalizedName.includes('c_reactive')) {
-    if (normalizedName.includes('hs') || numericValue < 10) { // hs-CRP
-      if (numericValue > 3.0) {
-        return {
-          supplement_name: 'Curcumin + Omega-3',
-          dosage_amount: 500,
-          dosage_unit: 'mg',
-          frequency: 'twice daily',
-          timing: 'with meals',
-          recommendation_reason: `Your hs-CRP of ${numericValue} mg/L indicates elevated inflammation (optimal: <1.0 mg/L).`,
-          evidence_quality: 'high',
-          priority_score: 7,
-          expected_benefits: ['Reduced inflammation within 4-8 weeks', 'Lower cardiovascular risk'],
-          contraindications: ['May interact with blood thinners'],
-          concern: 'elevated inflammation'
-        };
-      }
-    }
-  }
-
-  // === AMINO ACIDS ===
-  if (normalizedName.includes('homocysteine')) {
-    if (numericValue > 10) {
-      return {
-        supplement_name: 'B-Complex + TMG',
-        dosage_amount: 1,
-        dosage_unit: 'capsule',
-        frequency: 'daily',
-        timing: 'morning with breakfast',
-        recommendation_reason: `Your homocysteine of ${numericValue} μmol/L is elevated (optimal: <10 μmol/L), indicating poor methylation.`,
-        evidence_quality: 'high',
-        priority_score: 8,
-        expected_benefits: ['Improved methylation within 4-6 weeks', 'Reduced cardiovascular risk'],
-        contraindications: ['Use methylated B vitamins if MTHFR variants'],
-        concern: 'elevated homocysteine'
-      };
-    }
-  }
-
-  // === FATTY ACIDS ===
-  if (normalizedName.includes('omega_3') || (normalizedName.includes('epa') && normalizedName.includes('dha'))) {
-    if (numericValue < 4.0) { // Omega-3 Index
-      return {
-        supplement_name: 'High-Quality Fish Oil (EPA/DHA)',
-        dosage_amount: 2000,
-        dosage_unit: 'mg',
-        frequency: 'daily',
-        timing: 'with meals',
-        recommendation_reason: `Your Omega-3 Index of ${numericValue}% is below optimal (>8%) for cardiovascular protection.`,
-        evidence_quality: 'high',
-        priority_score: 7,
-        expected_benefits: ['Improved cardiovascular health', 'Better brain function', 'Reduced inflammation'],
-        contraindications: ['Monitor if on blood thinners'],
-        concern: 'omega-3 deficiency'
+        expected_benefits: ['Improved bone health', 'Better energy metabolism'],
+        contraindications: ['Balance with calcium'],
+        concern: 'phosphorus deficiency'
       };
     }
   }

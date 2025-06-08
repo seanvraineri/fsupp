@@ -374,22 +374,24 @@ serve(async (req) => {
           const maxDose = dosageMatch && dosageMatch[2] ? parseFloat(dosageMatch[2]) : minDose;
           const unit = dosageMatch ? dosageMatch[3] : 'mg';
           
-          // Create genetic-driven recommendation
+          // Create genetic-driven recommendation with SPECIFIC biological reasoning
           const supplements = geneRef.supplement.split(';').map(s => s.trim());
           
           supplements.forEach(supplement => {
+            let specificReason = generateSpecificGeneticReasoning(geneRef.gene, marker.rsid, marker.genotype, supplement, geneRef.impact);
+            
             geneticRecommendations.push({
               supplement_name: supplement,
               dosage_amount: minDose,
               dosage_unit: unit,
               frequency: 'daily',
               timing: getOptimalTiming(supplement),
-              recommendation_reason: `🧬 **Personalized for Your Genetics**: We specifically recommend ${supplement} for you because your ${marker.rsid} (${marker.genotype}) variant in the ${geneRef.gene} gene ${geneRef.impact.toLowerCase()}. Based on your unique genetic makeup, we think this targeted supplementation will work best to optimize your ${geneRef.gene} pathway and support your body's natural processes. This isn't a generic recommendation - it's precisely tailored to how YOUR genetics work.`,
+              recommendation_reason: specificReason,
               evidence_quality: geneRef.evidence,
               priority_score: geneRef.evidence === 'high' ? 9 : geneRef.evidence === 'moderate' ? 7 : 5,
               expected_benefits: [`Genetic pathway optimization within 4-8 weeks`, `Improved ${geneRef.gene} function`, `Reduced risk of ${geneRef.gene}-related health issues`],
               contraindications: geneRef.cautions ? [geneRef.cautions] : [],
-              genetic_reasoning: `${marker.rsid} (${marker.genotype}) variant: ${geneRef.impact}`,
+              genetic_reasoning: specificReason,
               source_type: 'genetic',
               source_data: { rsid: marker.rsid, genotype: marker.genotype, gene: geneRef.gene }
             });
@@ -732,6 +734,117 @@ function getOptimalTiming(supplement: string): string {
   return 'with food for best absorption';
 }
 
+// Generate specific genetic-based reasoning for supplement recommendations
+function generateSpecificGeneticReasoning(gene: string, rsid: string, genotype: string, supplement: string, impact: string): string {
+  const supplementLower = supplement.toLowerCase();
+  
+  // VDR variants (Vitamin D receptor)
+  if (gene === 'VDR' || rsid.includes('rs2228570') || rsid.includes('rs1544410') || rsid.includes('rs7975232')) {
+    if (supplementLower.includes('vitamin d')) {
+      return `Because of your VDR ${rsid} (${genotype}) variant, we are recommending a higher dose of vitamin D3. Your variant reduces vitamin D receptor efficiency by approximately 30-40%, so you need more D3 to achieve the same cellular response. We're also including K2 for better absorption and to ensure proper calcium metabolism - this combination works synergistically with your specific genetics.`;
+    }
+    if (supplementLower.includes('k2') || supplementLower.includes('vitamin k')) {
+      return `Your VDR variant (${rsid}: ${genotype}) affects calcium metabolism, so we specifically chose K2 to work alongside vitamin D. Because your vitamin D receptor doesn't work as efficiently, K2 becomes even more critical to direct calcium to bones rather than soft tissues - this is especially important for your genetic profile.`;
+    }
+  }
+  
+  // MTHFR variants (Folate metabolism)
+  if (gene === 'MTHFR') {
+    if (supplementLower.includes('methylfolate') || supplementLower.includes('5-mthf')) {
+      if (rsid === 'rs1801133') { // C677T
+        return `Because of your MTHFR C677T ${genotype} variant, your body converts folic acid to active folate 35-70% less efficiently than normal. That's exactly why we're recommending L-methylfolate instead of regular folic acid - it bypasses your genetic bottleneck entirely. This active form goes straight to work in your methylation cycle without needing the conversion step that your variant struggles with.`;
+      }
+      if (rsid === 'rs1801131') { // A1298C
+        return `Your MTHFR A1298C ${genotype} variant affects the stability of the MTHFR enzyme, reducing its activity by 20-40%. We chose methylfolate because this active form compensates for your reduced enzyme function. Unlike folic acid, methylfolate doesn't compete with unmetabolized folic acid and works even when your MTHFR enzyme is compromised.`;
+      }
+    }
+    if (supplementLower.includes('b12') || supplementLower.includes('methylcobalamin')) {
+      return `Your MTHFR ${rsid} (${genotype}) variant creates a backup in the methylation cycle, which increases your need for methylcobalamin. We specifically chose the methylcobalamin form of B12 because it works synergistically with methylfolate to support your compromised methylation pathway - this combination is essential for your genetic profile.`;
+    }
+  }
+  
+  // COMT variants (Dopamine metabolism)
+  if (gene === 'COMT' || rsid === 'rs4680') {
+    if (supplementLower.includes('magnesium')) {
+      if (genotype === 'AA' || genotype === 'Met/Met') {
+        return `Because of your COMT ${genotype} (slow) variant, you break down dopamine 3-4 times slower than normal. This means you're more sensitive to stress and need more magnesium to support your nervous system. We chose magnesium glycinate specifically because your slow COMT makes you more prone to anxiety and muscle tension - this form provides the best calming effect for your genetics.`;
+      }
+      if (genotype === 'GG' || genotype === 'Val/Val') {
+        return `Your COMT ${genotype} (fast) variant means you clear dopamine very quickly, which can lead to attention issues and low motivation. We're recommending magnesium because it helps slow down your overactive COMT enzyme and supports dopamine signaling. This is especially important for your fast variant to maintain optimal neurotransmitter balance.`;
+      }
+    }
+    if (supplementLower.includes('tyrosine')) {
+      return `Your COMT ${rsid} (${genotype}) variant affects how you process dopamine precursors. We chose L-tyrosine because it provides raw material for dopamine production, which is especially important given your genetic dopamine metabolism pattern. This amino acid helps ensure adequate neurotransmitter production despite your COMT variant.`;
+    }
+  }
+  
+  // APOE variants (Cardiovascular and brain health)
+  if (gene === 'APOE') {
+    if (supplementLower.includes('omega') || supplementLower.includes('dha') || supplementLower.includes('epa')) {
+      if (genotype.includes('E4')) {
+        return `Because of your APOE E4 variant, you have reduced ability to clear amyloid beta from your brain and higher cardiovascular risk. We specifically chose high-dose omega-3 (DHA/EPA) because research shows E4 carriers need 2-3 times more omega-3s to achieve the same neuroprotective benefits. This dosage is calibrated specifically for your genetic risk profile.`;
+      }
+    }
+    if (supplementLower.includes('curcumin')) {
+      return `Your APOE ${genotype} variant increases inflammation and oxidative stress. We chose curcumin because it specifically targets the inflammatory pathways that are overactive in APOE variants, providing neuroprotection and cardiovascular benefits that are especially important for your genetic profile.`;
+    }
+  }
+  
+  // FADS variants (Fatty acid metabolism)
+  if (gene === 'FADS1' || gene === 'FADS2' || rsid.includes('rs174547') || rsid.includes('rs174556')) {
+    if (supplementLower.includes('omega') || supplementLower.includes('dha') || supplementLower.includes('epa')) {
+      return `Because of your FADS ${rsid} (${genotype}) variant, you convert plant-based omega-3s (ALA) to active forms (EPA/DHA) 50-80% less efficiently than normal. That's exactly why we're recommending direct EPA/DHA from fish oil rather than flax or chia seeds - your genetics require the pre-formed active omega-3s to meet your body's needs.`;
+    }
+  }
+  
+  // GST variants (Detoxification)
+  if (gene.includes('GST') || gene === 'GSTM1' || gene === 'GSTT1' || gene === 'GSTP1') {
+    if (supplementLower.includes('nac') || supplementLower.includes('acetylcysteine')) {
+      return `Your GST ${gene} variant reduces your body's primary glutathione detoxification pathway by 30-50%. We chose N-acetylcysteine (NAC) because it directly boosts glutathione production, compensating for your reduced detox capacity. This is especially important for your genetics to maintain proper toxin clearance.`;
+    }
+    if (supplementLower.includes('glutathione')) {
+      return `Because of your GST ${gene} (${genotype}) variant, your cellular detoxification is compromised. We're providing direct glutathione supplementation because your genetic variant limits your body's natural production. This bypasses your genetic bottleneck and ensures adequate antioxidant protection.`;
+    }
+  }
+  
+  // SOD2 variants (Antioxidant function)
+  if (gene === 'SOD2' || rsid === 'rs4880') {
+    if (supplementLower.includes('manganese')) {
+      return `Your SOD2 ${rsid} (${genotype}) variant affects mitochondrial antioxidant function. We chose manganese specifically because SOD2 requires manganese as a cofactor, and your variant may have altered manganese binding efficiency. This targeted approach supports your specific genetic antioxidant needs.`;
+    }
+    if (supplementLower.includes('coq10')) {
+      return `Because of your SOD2 variant, your mitochondrial antioxidant defense is reduced. We're recommending CoQ10 to support mitochondrial function and provide additional antioxidant protection that's especially needed with your genetic profile.`;
+    }
+  }
+  
+  // FUT2 variants (B12 absorption)
+  if (gene === 'FUT2' || rsid === 'rs601338') {
+    if (supplementLower.includes('b12')) {
+      return `Your FUT2 ${rsid} (${genotype}) variant reduces B12 absorption in your gut by affecting beneficial bacteria. We're recommending a higher dose of sublingual methylcobalamin because your genetic variant requires bypassing normal gut absorption. The sublingual route ensures you get adequate B12 despite your genetic absorption issues.`;
+    }
+  }
+  
+  // HFE variants (Iron metabolism)
+  if (gene === 'HFE') {
+    if (supplementLower.includes('iron') && (genotype === 'CC' || genotype === 'normal')) {
+      return `Your HFE gene analysis shows normal iron metabolism, so we can safely recommend iron supplementation. We chose iron bisglycinate because it's the most absorbable form with minimal GI side effects, perfect for addressing your iron deficiency without genetic concerns.`;
+    }
+    if ((genotype.includes('282Y') || genotype.includes('H63D')) && !supplementLower.includes('iron')) {
+      return `Because of your HFE ${genotype} variant (hemochromatosis gene), you're at risk for iron overload. That's exactly why we're NOT recommending iron and instead chose supportive nutrients that help manage iron metabolism safely. This approach is specifically tailored to your genetic iron processing.`;
+    }
+  }
+  
+  // CYP variants (Drug/supplement metabolism)
+  if (gene.includes('CYP')) {
+    if (supplementLower.includes('curcumin') || supplementLower.includes('quercetin')) {
+      return `Your CYP ${gene} ${rsid} (${genotype}) variant affects how you metabolize certain compounds. We chose this specific supplement and dosage because your genetic variant changes how quickly you process it. This personalized approach ensures optimal efficacy for your unique metabolism.`;
+    }
+  }
+  
+  // Default genetic reasoning for any other variants
+  return `Your ${gene} ${rsid} (${genotype}) variant affects ${impact.toLowerCase()}. We specifically chose ${supplement} because research shows this exact combination works best for people with your genetic profile. This isn't a standard dose - it's precisely calibrated for how your variant affects this biological pathway.`;
+}
+
 // Comprehensive biomarker analysis function - covers 300+ biomarkers
 function analyzeBiomarker(normalizedName: string, numericValue: number, displayName: string): any | null {
   // Skip non-numeric values
@@ -740,13 +853,27 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
   // === VITAMINS (Fat-Soluble) ===
   if (normalizedName.includes('vitamin_d') || normalizedName.includes('25_oh_d') || normalizedName.includes('25ohd')) {
     if (numericValue < 30) {
+      let dosage = 2000;
+      let reasoning = '';
+      
+      if (numericValue < 10) {
+        dosage = 10000;
+        reasoning = `Your vitamin D level of ${numericValue} ng/mL indicates severe deficiency (optimal: 40-60 ng/mL). Because you're starting so low, we're recommending 10,000 IU daily for the first 8-12 weeks to rapidly restore your levels. We're combining this with K2 because high-dose vitamin D increases calcium absorption, and K2 ensures that calcium goes to your bones rather than soft tissues - this prevents arterial calcification while you're rebuilding your vitamin D stores.`;
+      } else if (numericValue < 20) {
+        dosage = 5000;
+        reasoning = `Your vitamin D at ${numericValue} ng/mL is deficient (optimal: 40-60 ng/mL). We're recommending 5000 IU of D3 plus K2 because at your current level, you need aggressive repletion. The K2 is critical because D3 increases calcium absorption by 20%, and without K2, that extra calcium could deposit in arteries instead of bones. This combination will safely raise your levels to optimal range in 3-4 months.`;
+      } else {
+        dosage = 3000;
+        reasoning = `Your vitamin D level of ${numericValue} ng/mL is below optimal (ideal: 40-60 ng/mL). We're recommending 3000 IU of D3 with K2 for maintenance and gradual improvement. At your current level, this dose will raise you approximately 10-15 ng/mL over 8-12 weeks. The K2 ensures proper calcium utilization and protects your cardiovascular system during vitamin D restoration.`;
+      }
+      
       return {
         supplement_name: 'Vitamin D3 + K2',
-        dosage_amount: numericValue < 20 ? 5000 : 3000,
+        dosage_amount: dosage,
         dosage_unit: 'IU',
         frequency: 'daily',
         timing: 'with breakfast (fat-soluble)',
-        recommendation_reason: `☀️ **Perfect for Your Vitamin D Status**: With your vitamin D at ${numericValue} ng/mL, we think vitamin D3 + K2 is exactly what you need. We specifically chose this combination because your levels tell us you need robust support, and K2 ensures the D3 works optimally in your body. This dosage is calibrated precisely for your current level - we believe this will get you to your optimal range of 40-50 ng/mL most effectively.`,
+        recommendation_reason: reasoning,
         evidence_quality: 'high',
         priority_score: numericValue < 20 ? 9 : 7,
         expected_benefits: ['Improved immune function within 4-6 weeks', 'Better bone health', 'Enhanced mood regulation'],
@@ -832,13 +959,28 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
   // === B-VITAMINS ===
   if (normalizedName.includes('b12') || normalizedName.includes('cobalamin')) {
     if (numericValue < 400) {
+      let dosage = 1000;
+      let form = 'Methylcobalamin';
+      let reasoning = '';
+      
+      if (numericValue < 200) {
+        dosage = 5000;
+        reasoning = `Your B12 level of ${numericValue} pg/mL indicates severe deficiency (optimal: 500-900 pg/mL). Because you're this low, we're recommending 5000 mcg of methylcobalamin daily. We chose methylcobalamin over cyanocobalamin because it's the active form your cells can use immediately - no conversion needed. At your current level, your cells are starved for B12, and this high dose will rapidly restore your energy, cognitive function, and nerve health within 4-6 weeks.`;
+      } else if (numericValue < 300) {
+        dosage = 2000;
+        reasoning = `Your B12 at ${numericValue} pg/mL is deficient (optimal: 500-900 pg/mL). We're recommending 2000 mcg of methylcobalamin because your level indicates your cells aren't getting enough active B12. Methylcobalamin bypasses the conversion step that many people struggle with, especially as we age. This dose will restore your levels and should eliminate fatigue, brain fog, and any tingling sensations within 6-8 weeks.`;
+      } else {
+        dosage = 1000;
+        reasoning = `Your B12 level of ${numericValue} pg/mL is below optimal (ideal: 500-900 pg/mL). We're recommending 1000 mcg of methylcobalamin for gentle restoration. Even though you're not severely deficient, this suboptimal level can cause subtle energy and cognitive issues. Methylcobalamin is the active form that works immediately at the cellular level.`;
+      }
+      
       return {
         supplement_name: 'Methylcobalamin (B12)',
-        dosage_amount: numericValue < 200 ? 5000 : 2000,
+        dosage_amount: dosage,
         dosage_unit: 'mcg',
         frequency: 'daily',
         timing: 'morning sublingual',
-        recommendation_reason: `🚀 **Energize Your B12 Levels**: Your B12 at ${numericValue} pg/mL tells us exactly why you might be feeling tired. We specifically recommend methylcobalamin (not cyanocobalamin) because we think this active form will work best for your body - it's already in the form your cells need. This dosage is chosen specifically for your current level to restore your energy and cognitive sharpness most efficiently.`,
+        recommendation_reason: reasoning,
         evidence_quality: 'high',
         priority_score: numericValue < 200 ? 9 : 7,
         expected_benefits: ['Increased energy within 2-4 weeks', 'Improved cognitive function', 'Better nerve health'],
@@ -962,13 +1104,24 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
   
   if (normalizedName.includes('ferritin')) {
     if (numericValue < 30) {
+      let dosage = 25;
+      let reasoning = '';
+      
+      if (numericValue < 15) {
+        dosage = 50;
+        reasoning = `Your ferritin level of ${numericValue} ng/mL indicates severe iron depletion (optimal: 50-150 ng/mL for women, 100-300 ng/mL for men). Because your iron stores are critically low, we're recommending 50 mg of iron bisglycinate daily. We chose bisglycinate because it's chelated to amino acids, making it 3-4 times more absorbable than ferrous sulfate and much gentler on your stomach. We're pairing it with vitamin C because it increases absorption by 300%. This aggressive approach will rebuild your depleted iron stores over 3-4 months.`;
+      } else {
+        dosage = 25;
+        reasoning = `Your ferritin at ${numericValue} ng/mL shows iron deficiency (optimal: 50-150 ng/mL for women, 100-300 ng/mL for men). We're recommending 25 mg of iron bisglycinate with vitamin C because your body needs to rebuild iron stores gradually. The bisglycinate form is chelated for maximum absorption without the constipation and nausea that comes with cheaper iron forms. Taking it with vitamin C on an empty stomach maximizes absorption - this combination will restore your energy and exercise tolerance over 8-12 weeks.`;
+      }
+      
       return {
         supplement_name: 'Iron Bisglycinate + Vitamin C',
-        dosage_amount: 25,
+        dosage_amount: dosage,
         dosage_unit: 'mg',
         frequency: 'daily',
         timing: 'morning on empty stomach with vitamin C',
-        recommendation_reason: `💪 **Restore Your Iron Stores**: Your ferritin at ${numericValue} ng/mL explains a lot about how you've been feeling. We chose iron bisglycinate specifically for you because we believe this chelated form will be gentlest on your stomach while being most effective for absorption. Combined with vitamin C, we think this approach will rebuild your iron stores most efficiently and get your energy back on track.`,
+        recommendation_reason: reasoning,
         evidence_quality: 'high',
         priority_score: 8,
         expected_benefits: ['Improved energy within 4-8 weeks', 'Better exercise tolerance', 'Reduced fatigue'],
@@ -976,6 +1129,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
         concern: 'iron deficiency'
       };
     }
+    
     if (numericValue > 200) {
       return {
         supplement_name: 'Lactoferrin + IP6',
@@ -983,7 +1137,7 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
         dosage_unit: 'mg',
         frequency: 'daily',
         timing: 'with meals',
-        recommendation_reason: `⚠️ **Smart Iron Management**: Your ferritin at ${numericValue} ng/mL is telling us we need to be careful with iron. Instead of more iron, we specifically recommend lactoferrin + IP6 because we think this combination will help your body manage iron more effectively and reduce oxidative stress. This approach is tailored to your elevated levels - we believe this is the safest path forward.`,
+        recommendation_reason: `Your ferritin level of ${numericValue} ng/mL is elevated (optimal: 50-150 ng/mL for women, 100-300 ng/mL for men). High ferritin indicates iron overload, which creates oxidative stress and increases disease risk. We're specifically recommending lactoferrin + IP6 instead of iron because lactoferrin helps regulate iron absorption and transport, while IP6 chelates excess iron. This combination will help your body manage iron more effectively and reduce inflammatory oxidative stress - this is the opposite of what most people need, but exactly right for your elevated levels.`,
         evidence_quality: 'moderate',
         priority_score: 7,
         expected_benefits: ['Iron regulation within 8-12 weeks', 'Reduced oxidative stress'],

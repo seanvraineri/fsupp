@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get the Supabase project URL
+    // Get the Supabase project URL and service role key
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Configuration error' }, { status: 500 });
     }
 
-    // Call the Edge Function - use fast processing version
-    const response = await fetch(`${supabaseUrl}/functions/v1/parse_upload_fast`, {
+    // Call the Edge Function using service role key
+    const response = await fetch(`${supabaseUrl}/functions/v1/parse_upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${serviceRoleKey}`,

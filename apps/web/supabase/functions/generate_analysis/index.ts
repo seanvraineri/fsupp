@@ -575,12 +575,10 @@ serve(async (req) => {
     const analysisData = { 
       user_id, 
       assessment_id: assessment.id, 
-      model_name: aiAnalysisSuccessful ? (ANTHROPIC_API_KEY ? 'claude-3-haiku' : 'gpt-3.5-turbo') : 'rule-based', 
-      analysis_summary, 
+      analysis_type: aiAnalysisSuccessful ? (ANTHROPIC_API_KEY ? 'claude-3-haiku' : 'gpt-3.5-turbo') : 'rule-based', 
+      content: analysis_summary, 
       interaction_warnings: interaction_warnings || [],
-      overall_confidence: aiAnalysisSuccessful ? 0.9 : 0.6,
-      relevant_genes: relevant_genes || [],
-      relevant_biomarkers: relevant_biomarkers || []
+      confidence_score: aiAnalysisSuccessful ? 0.9 : 0.6
     };
     
     console.log("Analysis data:", JSON.stringify(analysisData, null, 2));

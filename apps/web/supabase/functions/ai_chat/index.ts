@@ -267,18 +267,18 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(20);
 
-      // Get genetic markers data
+      // Get genetic markers data - FIXED SCHEMA
       const { data: geneticData } = await supabase
         .from("genetic_markers")
-        .select("mthfr_c677t, mthfr_a1298c, apoe_variant, vdr_variants, comt_variants, snp_data, source_company, chip_version, created_at")
+        .select("mthfr_c677t, mthfr_a1298c, apoe_variant, snp_data, source_company, created_at, rs1801133, rs1801131, rs4680, rs2228570, rs1544410, rs429358, rs7412, snp_count")
         .eq("user_id", db_user_id)
         .order("created_at", { ascending: false })
         .limit(3);
 
-      // Get lab biomarkers data
+      // Get lab biomarkers data - FIXED SCHEMA
       const { data: labData } = await supabase
         .from("lab_biomarkers")
-        .select("vitamin_d, vitamin_b12, iron, ferritin, magnesium, cholesterol_total, hdl, ldl, triglycerides, glucose, hba1c, tsh, biomarker_data, test_date, lab_name, created_at")
+        .select("biomarker_data, created_at, biomarker_count")
         .eq("user_id", db_user_id)
         .order("created_at", { ascending: false })
         .limit(3);
@@ -361,11 +361,14 @@ serve(async (req) => {
           if (genetic.apoe_variant) {
             personalizedContext += `\n- APOE Variant: ${genetic.apoe_variant}`;
           }
-          if (genetic.comt_variants && typeof genetic.comt_variants === 'object') {
-            personalizedContext += `\n- COMT Variants: ${JSON.stringify(genetic.comt_variants)}`;
+          if (genetic.rs4680) {
+            personalizedContext += `\n- COMT (rs4680): ${genetic.rs4680}`;
           }
-          if (genetic.vdr_variants && typeof genetic.vdr_variants === 'object') {
-            personalizedContext += `\n- VDR Variants: ${JSON.stringify(genetic.vdr_variants)}`;
+          if (genetic.rs2228570) {
+            personalizedContext += `\n- VDR FokI (rs2228570): ${genetic.rs2228570}`;
+          }
+          if (genetic.rs1544410) {
+            personalizedContext += `\n- VDR BsmI (rs1544410): ${genetic.rs1544410}`;
           }
           
           // Show comprehensive SNP data if available
@@ -420,8 +423,8 @@ serve(async (req) => {
       if (labData && labData.length > 0) {
         personalizedContext += `\n\n### YOUR LAB RESULTS:`;
         labData.forEach(lab => {
-          const testDate = lab.test_date || new Date(lab.created_at).toLocaleDateString();
-          personalizedContext += `\n**Lab Results from ${lab.lab_name || 'Unknown'} (${testDate}):**`;
+          const testDate = new Date(lab.created_at).toLocaleDateString();
+          personalizedContext += `\n**Lab Results (${testDate}) - ${lab.biomarker_count || 'Multiple'} biomarkers:**`;
           
           // Show ALL biomarkers from comprehensive extraction (biomarker_data JSON)
           if (lab.biomarker_data && Object.keys(lab.biomarker_data).length > 0) {
@@ -489,19 +492,8 @@ serve(async (req) => {
               personalizedContext += `\n  FULL DATASET: ${biomarkerCount.toLocaleString()} total biomarkers available for analysis`;
             }
           } else {
-            // Fallback to individual columns if biomarker_data is empty
-            if (lab.vitamin_d) personalizedContext += `\n- Vitamin D: ${lab.vitamin_d} ng/mL`;
-            if (lab.vitamin_b12) personalizedContext += `\n- Vitamin B12: ${lab.vitamin_b12} pg/mL`;
-            if (lab.iron) personalizedContext += `\n- Iron: ${lab.iron} μg/dL`;
-            if (lab.ferritin) personalizedContext += `\n- Ferritin: ${lab.ferritin} ng/mL`;
-            if (lab.magnesium) personalizedContext += `\n- Magnesium: ${lab.magnesium} mg/dL`;
-            if (lab.cholesterol_total) personalizedContext += `\n- Total Cholesterol: ${lab.cholesterol_total} mg/dL`;
-            if (lab.hdl) personalizedContext += `\n- HDL: ${lab.hdl} mg/dL`;
-            if (lab.ldl) personalizedContext += `\n- LDL: ${lab.ldl} mg/dL`;
-            if (lab.triglycerides) personalizedContext += `\n- Triglycerides: ${lab.triglycerides} mg/dL`;
-            if (lab.glucose) personalizedContext += `\n- Glucose: ${lab.glucose} mg/dL`;
-            if (lab.hba1c) personalizedContext += `\n- HbA1c: ${lab.hba1c}%`;
-            if (lab.tsh) personalizedContext += `\n- TSH: ${lab.tsh} mIU/L`;
+            // No comprehensive biomarker data available for this lab result
+            personalizedContext += `\n- Lab data available but not in detailed format`;
           }
         });
       }

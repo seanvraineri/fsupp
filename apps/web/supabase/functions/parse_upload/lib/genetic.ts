@@ -322,4 +322,66 @@ async function queueAdvancedPDFProcessing(fileId: string, bytes: ArrayBuffer, su
           })
           .eq("file_id", fileId);
         
-        console.log(`
+        console.log(`Updated genetic_markers with ${Object.keys(allSnps).length} additional SNPs from advanced PDF processing`);
+      }
+    }
+  } catch (err) {
+    console.error("Advanced PDF processing failed:", err);
+  }
+}
+
+async function splitPDFIntoChunks(bytes: ArrayBuffer): Promise<string[]> {
+  // Simple chunking - in production, you might want more sophisticated PDF parsing
+  const text = new TextDecoder().decode(bytes);
+  const chunkSize = 5000; // Adjust based on your needs
+  const chunks: string[] = [];
+  
+  for (let i = 0; i < text.length; i += chunkSize) {
+    chunks.push(text.slice(i, i + chunkSize));
+  }
+  
+  return chunks;
+}
+
+async function processChunkWithAI(chunk: string, openaiApiKey: string): Promise<Record<string, string>> {
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "Extract SNP data from genetic test results. Return as JSON object with rsid as key and genotype as value."
+          },
+          {
+            role: "user",
+            content: `Extract SNPs from this genetic data:\n${chunk}`
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const content = result.choices?.[0]?.message?.content;
+    
+    if (content) {
+      return JSON.parse(content);
+    }
+    
+    return {};
+  } catch (err) {
+    console.error("AI chunk processing error:", err);
+    return {};
+  }
+}

@@ -5,6 +5,8 @@ export interface Citation {
   pmid: string;
   title: string | null;
   summary: string | null;
+  year?: number;
+  relevance_score?: number;
 }
 
 export function useCitations(recId: string) {

@@ -3,24 +3,14 @@
 import { serve } from "https://deno.land/std@0.201.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 import OpenAI from "npm:openai@4.18.0";
+import { detectFileType } from "./lib/detectFileType.ts";
+import { processGeneticFile } from "./lib/genetic.ts";
+import { processLabFile } from "./lib/lab.ts";
 
-function parseGeneticText(content: string) {
-  const snpData: Record<string, string> = {};
-  for (const line of content.split(/\r?\n/)) {
-    if (!line.trim() || line.startsWith('#')) continue;
-    const [rsid, , , genotype] = line.split(/\s+/);
-    if (rsid && genotype) snpData[rsid] = genotype;
-  }
-  return {
-    snpData,
-    mthfr_c677t: snpData['rs1801133'] ?? null,
-    mthfr_a1298c: snpData['rs1801131'] ?? null,
-    apoe_variant: snpData['rs429358'] && snpData['rs7412'] ? `${snpData['rs429358']}/${snpData['rs7412']}` : null,
-    vdr_variants: {
-      rs2228570: snpData['rs2228570'] ?? null,
-      rs1544410: snpData['rs1544410'] ?? null,
-    },
-  } as const;
+export interface ProcessResult {
+  status: "ok" | "error";
+  file_id: string;
+  [key: string]: any;
 }
 
 serve(async (req) => {
@@ -32,7 +22,6 @@ serve(async (req) => {
     // Validate environment variables
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     
     if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
       console.error('Missing required environment variables', { 
@@ -42,81 +31,164 @@ serve(async (req) => {
       return new Response('Server configuration error', { status: 500 });
     }
 
-    let body: { path: string; bucket?: string; file_type: 'genetic' | 'lab_results' };
+    let body: { path?: string; file_id?: string; bucket?: string; file_type?: 'genetic' | 'lab_results' };
     try {
       body = await req.json();
     } catch (_) {
       return new Response('Invalid JSON', { status: 400 });
     }
-    const { path, bucket = 'uploads', file_type } = body;
-    if (!path || !file_type) return new Response('Missing path or file_type', { status: 400 });
+    
+    const { path, file_id, bucket = 'uploads', file_type } = body;
+    
+    // Support both path and file_id parameters
+    if (!path && !file_id) {
+      return new Response('Missing path or file_id parameter', { status: 400 });
+    }
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const supabase = createClient(
+      SUPABASE_URL,
+      SERVICE_ROLE_KEY,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`
+          }
+        }
+      }
+    );
+    
+    // Get file row - either by path or by file_id
+    let fileRow: any;
+    let storagePath: string;
+    
+    if (file_id) {
+      // Look up by file_id
+      const { data: fileData, error: frErr } = await supabase
+        .from('uploaded_files')
+        .select('*')
+        .eq('id', file_id)
+        .single();
+      
+      if (frErr || !fileData) {
+        return new Response(`File not found by file_id | err=${JSON.stringify(frErr)} | data=${JSON.stringify(fileData)}`, { status: 404 });
+      }
+      
+      fileRow = fileData;
+      storagePath = fileRow.storage_path;
+    } else {
+      // Look up by path (legacy behavior)
+      const { data: fileData, error: frErr } = await supabase
+        .from('uploaded_files')
+        .select('*')
+        .eq('storage_path', path)
+        .single();
+      
+      if (frErr || !fileData) {
+        return new Response('File not found by path', { status: 404 });
+      }
+      
+      fileRow = fileData;
+      storagePath = path!;
+    }
+    
+    // Determine file_type if not provided
+    const determinedFileType = file_type || fileRow.file_type;
+    if (!determinedFileType) {
+      return new Response('Unable to determine file_type', { status: 400 });
+    }
 
-    const { data: fileRow, error: frErr } = await supabase
+    // Mark as processing
+    await supabase
       .from('uploaded_files')
-      .select('*')
-      .eq('storage_path', path)
-      .single();
-    if (frErr || !fileRow) return new Response('upload row not found', { status: 404 });
+      .update({ 
+        processing_status: 'processing', 
+        processing_started_at: new Date().toISOString() 
+      })
+      .eq('id', fileRow.id);
 
-    const { data: download, error: dlErr } = await supabase.storage.from(bucket).download(path);
-    if (dlErr || !download) return new Response('download failed', { status: 500 });
+    const { data: download, error: dlErr } = await supabase.storage
+      .from(bucket)
+      .download(storagePath);
+    
+    if (dlErr || !download) {
+      await supabase.from('uploaded_files').update({ 
+        processing_status: 'failed', 
+        processing_error: `Download failed: ${dlErr?.message || 'Unknown error'}`,
+        processing_completed_at: new Date().toISOString()
+      }).eq('id', fileRow.id);
+      return new Response('Download failed', { status: 500 });
+    }
 
     const arrayBuf = await download.arrayBuffer();
     
-    if (file_type === 'genetic') {
-      const parsed = parseGeneticText(new TextDecoder().decode(arrayBuf));
-      await supabase.from('genetic_markers').insert({
-        user_id: fileRow.user_id,
-        file_id: fileRow.id,
-        snp_data: parsed.snpData,
-        mthfr_c677t: parsed.mthfr_c677t,
-        mthfr_a1298c: parsed.mthfr_a1298c,
-        apoe_variant: parsed.apoe_variant,
-        vdr_variants: parsed.vdr_variants,
-      });
+    // Detect file type and extract text content
+    const detected = await detectFileType(arrayBuf, fileRow.file_name);
+    
+    let result: ProcessResult;
+    
+    console.log('Processing file type:', determinedFileType, 'format:', detected.format);
+    
+    if (determinedFileType === 'genetic') {
+      result = await processGeneticFile(detected.textContent, supabase, fileRow, detected.format, arrayBuf);
     } else {
-      // Lab results require OpenAI
-      if (!OPENAI_API_KEY) {
-        console.error('Missing OPENAI_API_KEY for lab parsing');
-        await supabase.from('uploaded_files').update({ 
-          processing_status: 'failed', 
-          processing_error: 'OpenAI API key not configured' 
-        }).eq('id', fileRow.id);
-        return new Response('OpenAI API key required for lab parsing', { status: 500 });
-      }
-      
-      const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuf)));
-      const resp = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: 'extract biomarkers json' },
-          { role: 'user', content: [{ type: 'image_url', image_url: { url: `data:application/octet-stream;base64,${base64}` } }] },
-        ],
-      });
-      let biomarker = {} as Record<string, unknown>;
-      try { biomarker = JSON.parse(resp.choices[0].message.content ?? '{}'); } catch {}
-      const num = (k: string) => (typeof biomarker[k] === 'number' ? biomarker[k] : null);
-      await supabase.from('lab_biomarkers').insert({
-        user_id: fileRow.user_id,
-        file_id: fileRow.id,
-        biomarker_data: biomarker,
-        vitamin_d: num('vitamin_d'),
-        vitamin_b12: num('vitamin_b12'),
-        iron: num('iron'),
-        ferritin: num('ferritin'),
-      });
+      result = await processLabFile(detected.format, arrayBuf, detected.textContent, supabase, fileRow);
     }
-    await supabase.from('uploaded_files').update({ processing_status: 'completed' }).eq('id', fileRow.id);
-    return new Response('Processed', { status: 200 });
+    
+    // 🔄  Send content to embedding_worker for vector memory
+    try {
+      const items = [{
+        user_id: fileRow.user_id,
+        source_type: determinedFileType === 'genetic' ? 'gene' : 'lab',
+        source_id: fileRow.id,
+        content: detected.textContent.slice(0, 15000) // avoid huge payloads
+      }];
+      await supabase.functions.invoke('embedding_worker', { body: { items } });
+    } catch (embedErr) {
+      console.error('embedding_worker error', embedErr);
+    }
+    
+    await supabase.from('uploaded_files').update({ 
+      processing_status: 'completed',
+      processing_completed_at: new Date().toISOString()
+    }).eq('id', fileRow.id);
+    
+    // Update file_type if we inferred it
+    await supabase.from('uploaded_files').update({ file_type: determinedFileType }).eq('id', fileRow.id);
+    
+    return new Response(JSON.stringify(result), { 
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (err) {
     console.error('Error in parse_upload:', err);
-    await supabase.from('uploaded_files').update({ 
-      processing_status: 'failed', 
-      processing_error: String(err) 
-    }).eq('id', fileRow.id);
-    return new Response('Processing failed', { status: 500 });
+    
+    // Try to update the file status if we have the identifier
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      
+      const body = await req.json();
+      const { path, file_id } = body;
+      
+      if (file_id) {
+        await supabase.from('uploaded_files').update({ 
+          processing_status: 'failed', 
+          processing_error: String(err),
+          processing_completed_at: new Date().toISOString()
+        }).eq('id', file_id);
+      } else if (path) {
+        await supabase.from('uploaded_files').update({ 
+          processing_status: 'failed', 
+          processing_error: String(err),
+          processing_completed_at: new Date().toISOString()
+        }).eq('storage_path', path);
+      }
+    } catch (updateErr) {
+      console.error('Failed to update file status:', updateErr);
+    }
+    
+    return new Response(`Processing failed: ${err}`, { status: 500 });
   }
 }); 

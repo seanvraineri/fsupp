@@ -3,8 +3,8 @@
 Product Search Scraper
 Alternative to paid APIs - uses web scraping to find supplement products
 """
-import requests
-from bs4 import BeautifulSoup
+import requests # type: ignore
+from bs4 import BeautifulSoup # type: ignore
 import json
 import time
 from urllib.parse import quote_plus

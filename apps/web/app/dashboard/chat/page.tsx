@@ -1,42 +1,37 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import useSWR, { mutate } from 'swr';
-import { Plus, Sparkles, Trash2, Send, User, Bot, Paperclip, X, FileText, MessageSquare, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Sparkles, Paperclip, X, FileText, User, Bot, Loader2, Brain } from 'lucide-react';
 import DashboardShell from '../../components/DashboardShell';
-import DOMPurify from 'dompurify';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-// Helper for conditional class names (simplified replacement for cn)
-const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  file_name?: string;
+}
 
 export default function ChatPage() {
   const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [optimisticMessages, setOptimisticMessages] = useState<any[]>([]);
-  const [pendingAssistantMessage, setPendingAssistantMessage] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollViewportRef = useRef<HTMLDivElement>(null);
-  const fileInputActualRef = useRef<HTMLInputElement>(null);
-
-  const fetcher = (url: string) => fetch(url).then(r => r.json());
-  const { data, isLoading: dataLoading, error: dataError } = useSWR('/api/chat/messages', fetcher);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
-    if (scrollViewportRef.current) {
-      scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    setTimeout(scrollToBottom, 100);
-  }, [data?.messages, optimisticMessages, pendingAssistantMessage]);
+    scrollToBottom();
+  }, [messages]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,130 +41,105 @@ export default function ChatPage() {
         setAttachedFile(file);
       } else {
         alert('Please upload a PDF, TXT, or image file');
-        if (fileInputActualRef.current) fileInputActualRef.current.value = '';
+        if (fileInputRef.current) fileInputRef.current.value = '';
       }
     }
   };
 
   const removeFile = () => {
     setAttachedFile(null);
-    if (fileInputActualRef.current) {
-      fileInputActualRef.current.value = '';
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
   const sendMessage = async () => {
     if ((!input.trim() && !attachedFile) || isLoading) return;
     
-    const convo = data?.conversation_id;
-    const messageText = input;
-    const tempId = `temp-${Date.now()}`;
+    const messageText = input.trim();
+    const currentFile = attachedFile;
     
-    const optimisticUserMessage = {
-      id: tempId,
+    // Add user message immediately
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
       role: 'user',
-      content: messageText || `File: ${attachedFile?.name}`,
-      created_at: new Date().toISOString(),
-      isOptimistic: true,
-      file_name: attachedFile?.name,
-      file_type: attachedFile?.type,
+      content: messageText || `📎 ${currentFile?.name}`,
+      timestamp: new Date().toISOString(),
+      file_name: currentFile?.name,
     };
     
-    setOptimisticMessages(prev => [...prev, optimisticUserMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
-    const currentFile = attachedFile;
     removeFile();
     setIsLoading(true);
-    setPendingAssistantMessage(true);
 
     try {
-      const formData = new FormData();
-      formData.append('message', messageText || `Please analyze this file: ${currentFile?.name}`);
-      if (convo) formData.append('conversation_id', convo);
-      if (currentFile) formData.append('file', currentFile);
+      let requestBody: any = {
+        message: messageText,
+      };
+
+      if (currentFile) {
+        const base64File = await new Promise<string | ArrayBuffer | null>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(currentFile);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (error) => reject(error);
+        });
+        
+        if (base64File) {
+          requestBody.filePayload = {
+            name: currentFile.name,
+            type: currentFile.type,
+            content: (base64File as string).split(',')[1],
+          };
+        }
+      }
+
+      if (!requestBody.message && requestBody.filePayload) {
+        requestBody.message = `Please analyze this file: ${requestBody.filePayload.name}`;
+      }
 
       const response = await fetch('/api/chat/send', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Failed to send message' }));
-        throw new Error(errorData.detail || 'Failed to send message');
+        throw new Error('Failed to send message');
       }
 
-      await response.json();
+      const result = await response.json();
       
-      setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
-      setPendingAssistantMessage(false);
-      await mutate('/api/chat/messages');
+      // Add assistant message
+      const assistantMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: result.content || 'I apologize, but I encountered an issue processing your request.',
+        timestamp: new Date().toISOString(),
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
       
     } catch (error: any) {
       console.error('Error sending message:', error);
-      setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
-      setPendingAssistantMessage(false);
-      setInput(messageText);
-      if (currentFile) setAttachedFile(currentFile);
       
-      const errorMessageContent = error.message || 'Sorry, I encountered an error. Please try again.';
-      const errorMessage = {
+      // Add error message
+      const errorMessage: Message = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: errorMessageContent,
-        created_at: new Date().toISOString(),
-        isError: true
+        content: 'I apologize, but I encountered an error. Please try again.',
+        timestamp: new Date().toISOString(),
       };
-      setOptimisticMessages(prev => [...prev, errorMessage]);
+      
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const startNewConversation = async () => {
-    try {
-      setOptimisticMessages([]);
-      setPendingAssistantMessage(false);
-      setIsLoading(false);
-      removeFile();
-      setInput('');
-      await mutate('/api/chat/messages', { messages: [], conversation_id: null }, true);
-    } catch (error) {
-      console.error('Error starting new conversation:', error);
-    }
-  };
-
-  const clearConversation = async () => {
-    if (!data?.conversation_id && allMessages.length === 0) return;
-    
-    try {
-      if (data?.conversation_id) {
-        await fetch(`/api/chat/clear?conversation_id=${data.conversation_id}`, {
-          method: 'DELETE',
-        });
-      }
-      setOptimisticMessages([]);
-      setPendingAssistantMessage(false);
-      setIsLoading(false);
-      removeFile();
-      setInput('');
-      await mutate('/api/chat/messages', { messages: [], conversation_id: data?.conversation_id }, true);
-    } catch (error) {
-      console.error('Error clearing conversation:', error);
-    }
-  };
-
-  const preProcessForMarkdown = (content: string): string => {
-    let processedContent = content;
-    // Keep specific pre-processing for things ReactMarkdown won't naturally handle or needs help with
-    // Example: Custom PMID link format if AI doesn't output standard Markdown links for them
-    processedContent = processedContent.replace(/PMID:\s*(\d+)/gi, '<a href="https://pubmed.ncbi.nlm.nih.gov/$1" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">PMID: $1</a>');
-    // Example: Custom dosage notation (this might be better handled by AI outputting actual multiplication symbol)
-    // processedContent = processedContent.replace(/\s+x\s+(\d+)\b/g, ' × $1/day');
-    return processedContent;
-  };
-
-  const allMessages = [...(data?.messages || []), ...optimisticMessages];
-  
   const quickPrompts = [
     "What's the best magnesium for sleep?",
     "Can I take vitamin D with calcium?",
@@ -177,227 +147,241 @@ export default function ChatPage() {
     "Review my current supplement stack"
   ];
 
-  // Custom components for ReactMarkdown
   const markdownComponents = {
-    h3: ({node, ...props}: any) => <h3 className="text-lg font-semibold mt-4 mb-2" {...props} />,
-    p: ({node, ...props}: any) => <p className="mb-2 leading-relaxed" {...props} />,
+    h3: ({node, ...props}: any) => <h3 className="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-gray-100" {...props} />,
+    p: ({node, ...props}: any) => <p className="mb-2 leading-relaxed text-gray-800 dark:text-gray-200" {...props} />,
     ul: ({node, ...props}: any) => <ul className="list-disc pl-5 mb-2 space-y-1" {...props} />,
     ol: ({node, ...props}: any) => <ol className="list-decimal pl-5 mb-2 space-y-1" {...props} />,
-    li: ({node, ...props}: any) => <li className="leading-snug" {...props} />,
-    a: ({node, ...props}: any) => <a className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
-    // strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
-    // em: ({node, ...props}) => <em className="italic" {...props} />,
-    // del: ({node, ...props}) => <del className="line-through" {...props} />,
+    li: ({node, ...props}: any) => <li className="leading-snug text-gray-800 dark:text-gray-200" {...props} />,
+    a: ({node, ...props}: any) => <a className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer" {...props} />,
+    strong: ({node, ...props}: any) => <strong className="font-semibold text-gray-900 dark:text-gray-100" {...props} />,
   };
-
-  if (dataLoading && !data) {
-    return (
-      <DashboardShell>
-        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
-          <Loader2 className="w-12 h-12 animate-spin text-primary" />
-          <p className="mt-4 text-lg text-muted-foreground">Loading chat...</p>
-        </div>
-      </DashboardShell>
-    );
-  }
 
   return (
     <DashboardShell>
       <div className="flex flex-col h-[calc(100vh-8rem)]">
-        <div className="flex-shrink-0 border-b bg-background shadow-sm">
-          <div className="px-4 md:px-6 py-3 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600 rounded-lg flex items-center justify-center shadow">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">SupplementScribe AI</h1>
-                <p className="text-xs text-muted-foreground">
-                  Personalized supplement guidance
-                  {(isLoading || pendingAssistantMessage) && <span className="ml-2 text-purple-500 animate-pulse"> Typing...</span>}
-                </p>
-              </div>
+        {/* Header */}
+        <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={startNewConversation}
-                disabled={isLoading}
-                className="hidden sm:flex items-center gap-1.5"
-              >
-                <Plus className="w-4 h-4" />
-                New Chat
-              </Button>
-              {allMessages.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearConversation}
-                  disabled={isLoading}
-                  className="text-muted-foreground hover:text-destructive flex items-center gap-1.5"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Clear
-                </Button>
-              )}
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                SupplementScribe AI
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Your personalized supplement expert
+                {isLoading && (
+                  <span className="ml-2 text-purple-600 dark:text-purple-400 animate-pulse">
+                    • Thinking...
+                  </span>
+                )}
+              </p>
             </div>
           </div>
         </div>
 
-        <div ref={scrollViewportRef} className="flex-grow overflow-y-auto bg-muted/10">
-          <div className="px-4 md:px-6 py-6 space-y-4">
-            {allMessages.length === 0 && !pendingAssistantMessage && (
-              <div className="text-center py-12">
-                <MessageSquare className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                <h2 className="text-xl font-semibold text-foreground mb-2">Start a Conversation</h2>
-                <p className="text-muted-foreground mb-6">How can SupplementScribe AI help you today?</p>
-                <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
-                  {quickPrompts.map(prompt => (
-                    <Button 
-                      key={prompt} 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {setInput(prompt); /* Consider calling sendMessage here or letting user hit send */}}
-                      className="bg-background hover:bg-muted text-sm"
+        {/* Messages */}
+        <div className="flex-grow overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4">
+          <div className="max-w-4xl mx-auto space-y-4">
+            {messages.length === 0 && !isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-12"
+              >
+                <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                  Ask me anything about supplements
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Get personalized recommendations, interaction checks, and evidence-based guidance.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-lg mx-auto">
+                  {quickPrompts.map((prompt, index) => (
+                    <motion.button
+                      key={prompt}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      onClick={() => setInput(prompt)}
+                      className="p-3 text-sm text-left bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-colors"
                     >
                       {prompt}
-                    </Button>
+                    </motion.button>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             )}
-            {allMessages.map((msg, index) => {
-              const processedContent = msg.role === 'assistant' && msg.content ? preProcessForMarkdown(msg.content) : msg.content;
-              const sanitizedHtml = msg.role === 'assistant' && processedContent && !msg.isError ? DOMPurify.sanitize(processedContent) : null;
-              const markdownToRender = msg.isError ? msg.content : (processedContent || '');
 
-              return (
-                <div
-                  key={msg.id || index}
-                  className={cn(
-                    "flex items-end gap-2.5 w-full", // Reduced gap slightly
-                    msg.role === 'user' ? "justify-end" : "justify-start"
-                  )}
+            <AnimatePresence>
+              {messages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {msg.role === 'assistant' && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
-                      <Bot className="w-5 h-5 text-white" />
+                  {message.role === 'assistant' && (
+                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <Bot className="w-4 h-4 text-white" />
                     </div>
                   )}
+                  
                   <div
-                    className={cn(
-                      "p-3.5 rounded-lg max-w-[75%] shadow-md text-sm leading-relaxed prose prose-sm dark:prose-invert", // Added prose for markdown styling
-                      msg.role === 'user'
-                        ? "bg-primary text-primary-foreground rounded-br-none"
-                        : "bg-background text-foreground rounded-bl-none border border-border", // Added border for AI bubble
-                      msg.isOptimistic && "opacity-80",
-                      msg.isError && "bg-destructive text-destructive-foreground prose-p:text-destructive-foreground prose-strong:text-destructive-foreground"
-                    )}
+                    className={`max-w-[80%] p-4 rounded-2xl ${
+                      message.role === 'user'
+                        ? 'bg-purple-600 text-white rounded-br-none'
+                        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-bl-none'
+                    }`}
                   >
-                    {msg.content || msg.file_name ? (
-                       <ReactMarkdown
+                    {message.role === 'assistant' ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeRaw]} // CAUTION: Ensure AI output is trusted or further sanitized if it can inject script tags etc.
                           components={markdownComponents}
-                          children={markdownToRender}
-                        />
-                    ) : null}
-                    {msg.file_name && msg.role === 'user' && !msg.content && (
-                      <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-primary-foreground/30">
-                        <FileText className="w-4 h-4 text-primary-foreground/80" /> 
-                        <span>{msg.file_name}</span>
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm">{message.content}</p>
+                        {message.file_name && (
+                          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-purple-400 opacity-80">
+                            <FileText className="w-3 h-3" />
+                            <span className="text-xs">{message.file_name}</span>
+                          </div>
+                        )}
                       </div>
                     )}
-                     {msg.isError && !msg.content && <p className='text-xs mt-1 opacity-90'>An error occurred.</p>} {/* Fallback for error with no content */}
                   </div>
-                  {msg.role === 'user' && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center border border-border shadow-md">
-                      <User className="w-5 h-5 text-muted-foreground" />
+                  
+                  {message.role === 'user' && (
+                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </div>
                   )}
-                </div>
-              );
-            })}
-            {pendingAssistantMessage && (
-              <div className="flex items-end gap-2.5 justify-start">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
-                  <Bot className="w-5 h-5 text-white" />
-                </div>
-                <div className="p-3.5 rounded-lg bg-background text-foreground rounded-bl-none border border-border shadow-md">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Thinking...</span>
+                </motion.div>
+              ))}
+
+              {isLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex gap-3 justify-start"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <Bot className="w-4 h-4 text-white" />
                   </div>
-                </div>
-              </div>
-            )}
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Analyzing your request...
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
             <div ref={messagesEndRef} />
           </div>
         </div>
 
-        <div className="flex-shrink-0 border-t bg-background p-3 md:p-4">
-          {attachedFile && (
-            <div className="mb-2 px-3 py-2 text-sm bg-muted rounded-md flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground font-medium">{attachedFile.name}</span> 
-                <span className="text-muted-foreground">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
-              </div>
-              <Button variant="ghost" size="icon" onClick={removeFile} className="w-6 h-6 text-muted-foreground hover:text-destructive">
-                <X className="w-4 h-4" />
+        {/* Input */}
+        <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
+          <div className="max-w-6xl mx-auto">
+            {attachedFile && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {attachedFile.name}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {(attachedFile.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeFile}
+                  className="text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            )}
+            
+            <form 
+              onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
+              className="flex items-end gap-4"
+            >
+              <Button 
+                variant="outline"
+                size="icon"
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="flex-shrink-0 h-12 w-12"
+              >
+                <Paperclip className="w-4 h-4" />
               </Button>
-            </div>
-          )}
-          <form 
-            onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
-            className="flex items-center gap-2 md:gap-3"
-          >
-            <Button 
-              variant="outline"
-              size="icon"
-              type="button"
-              onClick={() => fileInputActualRef.current?.click()}
-              disabled={isLoading}
-              className="flex-shrink-0 w-10 h-10 md:w-11 md:h-11"
-              aria-label="Attach file"
-            >
-              <Paperclip className="w-5 h-5" />
-            </Button>
-            <input
-              ref={fileInputActualRef}
-              type="file"
-              onChange={handleFileSelect}
-              accept=".pdf,.txt,.jpg,.jpeg,.png"
-              className="hidden"
-            />
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about supplements, interactions, or health goals..."
-              disabled={isLoading}
-              className="flex-grow h-10 md:h-11 text-sm md:text-base focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-            />
-            <Button 
-              type="submit" 
-              size="icon" 
-              disabled={isLoading || (!input.trim() && !attachedFile)}
-              className="flex-shrink-0 w-10 h-10 md:w-11 md:h-11 bg-primary hover:bg-primary/90"
-              aria-label="Send message"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
-          </form>
-          <p className="text-xs text-muted-foreground text-center mt-3">
-            AI recommendations are for educational purposes only. Always consult your healthcare provider.
-          </p>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileSelect}
+                accept=".pdf,.txt,.jpg,.jpeg,.png"
+                className="hidden"
+              />
+              
+              <div className="flex-grow relative">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask about supplements, interactions, or health goals..."
+                  disabled={isLoading}
+                  className="pr-16 h-12 text-base w-full min-w-0"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                />
+                <Button 
+                  type="submit" 
+                  size="icon" 
+                  disabled={isLoading || (!input.trim() && !attachedFile)}
+                  className="absolute right-1 top-1 h-10 w-10 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </form>
+            
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-3">
+              AI recommendations are for educational purposes only. Always consult your healthcare provider.
+            </p>
+          </div>
         </div>
       </div>
     </DashboardShell>

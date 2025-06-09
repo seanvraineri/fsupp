@@ -2,10 +2,10 @@
 import { ToggleGroup, ToggleGroupItem } from "@radix-ui/react-toggle-group";
 
 const options = [
-  { value: 'all', label: 'All' },
-  { value: 'core', label: 'Core' },
-  { value: 'optional', label: 'Optional' },
-  { value: 'experimental', label: 'Experimental' },
+  { value: 'all', label: 'All Supplements' },
+  { value: 'high', label: 'High Priority' },
+  { value: 'medium', label: 'Medium Priority' },
+  { value: 'low', label: 'Low Priority' },
 ];
 
 export default function FilterBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {

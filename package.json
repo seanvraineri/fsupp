@@ -1,16 +1,9 @@
 {
-  "devDependencies": {
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^4.1.7"
-  },
+  "name": "product-checker-test",
+  "version": "1.0.0",
+  "description": "Test script for product checker edge function",
+  "main": "test-product-checker.js",
   "dependencies": {
-    "lucide-react": "^0.511.0"
-  },
-  "scripts": {
-    "dev": "npm --workspace apps/web run dev"
-  },
-  "workspaces": [
-    "apps/web"
-  ]
+    "node-fetch": "^2.6.1"
+  }
 }

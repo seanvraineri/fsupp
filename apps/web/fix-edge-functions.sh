@@ -10,24 +10,15 @@ sed -i.bak "s/Deno\.env\.get('SERVICE_ROLE_KEY')!/Deno.env.get('SERVICE_ROLE_KEY
 echo "Fixing parse_upload..."
 sed -i.bak "s/Deno\.env\.get('SERVICE_ROLE_KEY')!/Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!/g" supabase/functions/parse_upload/index.ts
 
-# Fix process_upload
-echo "Fixing process_upload..."
-sed -i.bak "s/Deno\.env\.get('SERVICE_ROLE_KEY')!/Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!/g" supabase/functions/process_upload/index.ts
+# process_upload was removed - duplicate of parse_upload
 
-# Fix product_search
-echo "Fixing product_search..."
-sed -i.bak "s/Deno\.env\.get('SERVICE_ROLE_KEY')!/Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!/g" supabase/functions/product_search/index.ts
-
-# Fix pubmed_citations
-echo "Fixing pubmed_citations..."
-sed -i.bak "s/Deno\.env\.get('SERVICE_ROLE_KEY')!/Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!/g" supabase/functions/pubmed_citations/index.ts
+# product_search and pubmed_citations were removed - unnecessary complexity
 
 # Deploy all functions
 echo "Deploying fixed functions..."
 npx supabase functions deploy generate_analysis --project-ref tcptynohlpggtufqanqg
-npx supabase functions deploy parse_upload --project-ref tcptynohlpggtufqanqg  
-npx supabase functions deploy process_upload --project-ref tcptynohlpggtufqanqg
-npx supabase functions deploy product_search --project-ref tcptynohlpggtufqanqg
-npx supabase functions deploy pubmed_citations --project-ref tcptynohlpggtufqanqg
+npx supabase functions deploy parse_upload --project-ref tcptynohlpggtufqanqg
+npx supabase functions deploy ai_chat --project-ref tcptynohlpggtufqanqg
+npx supabase functions deploy embedding_worker --project-ref tcptynohlpggtufqanqg
 
 echo "Done! All Edge Functions have been fixed and redeployed." 

@@ -47,14 +47,8 @@ export default function RecommendationModal({ rec, open, onOpenChange }: { rec: 
       if (citations.length === 0 && !loadingCitations) {
         setLoadingCitations(true);
         try {
-          await supabase.functions.invoke('pubmed_citations', {
-            body: {
-              recommendation_id: rec.id,
-              supplement_name: rec.supplement_name,
-              health_condition: 'general health',
-              genetic_variant: extractGeneticInfo(rec.recommendation_reason)
-            }
-          });
+          // pubmed_citations function removed for simplicity
+          console.log('Citation function removed for maintenance simplicity');
         } catch (error) {
           console.error('Error generating citations:', error);
         } finally {
@@ -77,20 +71,22 @@ export default function RecommendationModal({ rec, open, onOpenChange }: { rec: 
     if (product?.product_url) {
       window.open(product.product_url, '_blank');
     } else {
-      // Use product search to find a product
+      // Use AI-powered supplement matching from CSV
       try {
-        const { data } = await supabase.functions.invoke('product_search', {
-          body: { supplement_name: rec.supplement_name }
-        });
+        const { getCachedSupplementLink } = await import('../../utils/supplementUtils');
+        const match = await getCachedSupplementLink(rec.supplement_name);
         
-        if (data?.success && data.product_url) {
-          window.open(data.product_url, '_blank');
-        } else {
-          // Fallback to generic search
-          window.open(`https://www.vitacost.com/search?t=${encodeURIComponent(rec.supplement_name)}`, '_blank');
+        if (match && match.url) {
+          console.log(`🛒 Opening AI-matched purchase link for ${rec.supplement_name}: ${match.brand}`);
+          window.open(match.url, '_blank');
+          return;
         }
+        
+        // Fallback to search if no match found
+        console.log(`⚠️ No AI match found for ${rec.supplement_name}, falling back to search`);
+        window.open(`https://www.vitacost.com/search?t=${encodeURIComponent(rec.supplement_name)}`, '_blank');
       } catch (error) {
-        console.error('Product search error:', error);
+        console.error('AI supplement matching error:', error);
         window.open(`https://www.vitacost.com/search?t=${encodeURIComponent(rec.supplement_name)}`, '_blank');
       }
     }
@@ -141,7 +137,7 @@ export default function RecommendationModal({ rec, open, onOpenChange }: { rec: 
                   className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 text-sm font-medium"
                 >
                   <ShoppingCart className="w-4 h-4" />
-                  {product?.brand ? `Buy from ${product.brand}` : 'Find Best Price'}
+                  {product?.brand ? `Buy from ${product.brand}` : 'Purchase'}
                   {product?.price && <span className="text-blue-100">${product.price}</span>}
                 </button>
                 <Dialog.Close asChild>

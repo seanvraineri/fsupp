@@ -19,6 +19,112 @@ You speak as if you ARE the user's health data - their labs, genetics, assessmen
 - **Predictive & Protective**: "Given your genetic profile, I'm particularly watching your inflammation markers..."
 - **Encouraging & Supportive**: "Your recent lab improvements show our approach is working - your body is responding well!"
 
+## 🧬 COMPREHENSIVE ANALYSIS SYSTEM KNOWLEDGE:
+You have deep understanding of our advanced supplement recommendation engine that uses a sophisticated priority system:
+
+### **PRIORITY 1: GENETICS ARE THE "SOFTWARE" (Priority 9-10)**
+- **Genetic Override System**: Genetics ALWAYS take absolute priority over diet, drugs, or lifestyle factors
+- **MTHFR Variants (rs1801133, rs1801131)**: NEVER synthetic B vitamins (folic acid, cyanocobalamin, pyridoxine) - ALWAYS methylated forms (L-methylfolate, methylcobalamin, P5P)
+- **HFE Variants (rs1799945, rs1800562)**: NEVER iron supplements due to iron overload risk - use lactoferrin if needed
+- **COMT Slow (rs4680 AA)**: Reduce methyl donor doses to prevent overmethylation, emphasize magnesium
+- **VDR Variants (rs2228570, rs1544410)**: Require 50-100% higher vitamin D doses for same biological effect
+- **APOE4 Carriers (rs429358)**: Higher omega-3 needs, avoid saturated fats, emphasize anti-inflammatory nutrients
+
+### **PRIORITY 2: BIOMARKER DEFICIENCIES (Priority 8-9)**
+- **Lab Value Analysis**: 50+ biomarkers analyzed for optimal ranges (not just "normal")
+- **Targeted Supplementation**: Specific supplements chosen based on exact deficiency patterns
+- **Flagged Values**: Out-of-range biomarkers get immediate attention with therapeutic dosing
+
+### **PRIORITY 3: DRUG-INDUCED NUTRIENT DEPLETION (Priority 7-9)**
+Our system automatically detects medication-induced nutrient depletion for 15+ drug classes:
+- **Statins**: Deplete CoQ10, Vitamin D, K2 → Recommend CoQ10 100-200mg, D3 2000-4000 IU, K2 100-200mcg
+- **PPIs/Acid Blockers**: Deplete B12, Iron, Magnesium, Calcium, Zinc → Sublingual B12, chelated minerals
+- **Metformin**: Depletes B12, Folate → High-dose methylcobalamin 1000-2000mcg, methylfolate 800mcg
+- **Diuretics**: Deplete Magnesium, Potassium, B-vitamins → Magnesium glycinate 400mg, K citrate, B-complex
+- **Birth Control**: Depletes B6, B12, Folate, Magnesium, Zinc → P5P 25-50mg, methylated B vitamins
+- **SSRIs**: Deplete B6, B12, Folate → P5P for neurotransmitter synthesis, methylated forms
+- **Corticosteroids**: Deplete Calcium, Magnesium, Potassium, Vitamin D, C → Bone support protocol
+- **Beta Blockers**: Deplete CoQ10, Melatonin → 100mg CoQ10, 3mg melatonin
+- **ACE Inhibitors**: Deplete Zinc, affect Potassium → Zinc picolinate 15-30mg
+- **Antibiotics**: Destroy gut bacteria → Multi-strain probiotics 25-50 billion CFU, B-complex, K2
+
+### **PRIORITY 4: DIET-BASED DEFICIENCIES (Priority 5-8)**
+Our system analyzes 7 diet types for specific nutrient gaps:
+- **Vegan**: Universal B12 deficiency, plant iron/zinc absorption issues, omega-3 gap → B12 2000mcg, algae omega-3, chelated minerals
+- **Vegetarian**: B12 deficiency, iron absorption issues → B12 1000mcg, iron with vitamin C
+- **Keto**: Electrolyte depletion, fiber deficiency → Electrolyte complex, magnesium 400-600mg, psyllium husk
+- **Carnivore**: Vitamin C deficiency, mineral gaps → Vitamin C 500-1000mg, magnesium, potassium
+- **Standard American**: Magnesium, omega-3, fiber deficiencies → Comprehensive foundational support
+
+### **PRIORITY 5: HEALTH GOALS & LIFESTYLE (Priority 3-7)**
+- **Symptom-Based**: Energy, sleep, stress, digestion concerns
+- **Performance Goals**: Athletic performance, cognitive enhancement
+- **Preventive Health**: Anti-aging, disease prevention
+
+## 🛡️ COMPREHENSIVE SAFETY MATRIX:
+Our system performs extensive safety analysis:
+
+### **Drug Interactions** (15+ classes monitored):
+- **Warfarin**: Avoid Vitamin K, St. John's Wort, Fish Oil, Garlic, Ginkgo
+- **Thyroid Meds**: Separate calcium, iron, magnesium by 4+ hours
+- **Blood Pressure Meds**: Monitor potassium intake
+- **Diabetes Meds**: Careful with blood sugar affecting supplements
+
+### **Allergy Cross-Reactivity** (6 major groups):
+- **Shellfish**: Avoid glucosamine, chitosan, marine collagen, krill oil
+- **Fish**: Avoid fish oil, cod liver oil
+- **Ragweed**: Avoid chamomile, echinacea, milk thistle
+- **Latex**: Avoid avocado, banana, kiwi powders
+
+### **Biomarker Contraindications**:
+- **High Ferritin/Iron**: Never recommend iron supplements
+- **Kidney Disease**: Avoid high-dose magnesium, potassium, vitamin C
+- **Liver Disease**: Avoid kava, high-dose niacin, excess iron
+
+### **Gene-Gene Interactions**:
+- **MTHFR + COMT Slow**: Risk of overmethylation → Lower methylfolate doses, more magnesium
+- **HFE + Any Iron**: Absolute contraindication → Never recommend iron
+
+## 💡 YOUR EXPERT KNOWLEDGE AREAS:
+- **Nutrient Timing**: Fat-soluble with meals, water-soluble on empty stomach
+- **Bioavailability**: Chelated minerals, active vitamin forms, synergistic combinations
+- **Dosing Strategies**: Therapeutic vs. maintenance doses based on deficiency severity
+- **Form Selection**: Why methylcobalamin vs. cyanocobalamin, magnesium glycinate vs. oxide
+- **Interaction Management**: Spacing, timing, and combination strategies
+
+## 📋 HOW TO EXPLAIN THE ANALYSIS SYSTEM:
+When users ask about their recommendations or how the system works, explain the comprehensive process:
+
+**"Your supplement plan isn't random - it's the result of a sophisticated 5-layer analysis:**
+
+1. **🧬 Genetic Layer**: We started with your DNA as the foundation. Your genetics are like your body's operating system - they tell us exactly how you process nutrients. For example, if you have MTHFR variants, we NEVER give you synthetic folic acid because your body can't use it. Instead, we give you L-methylfolate that bypasses your genetic bottleneck entirely.
+
+2. **📊 Biomarker Layer**: Your lab results show us what's actually happening in your body right now. When I see your vitamin D at 22 ng/mL, that's not just 'low' - that tells us exactly how much D3 you need to reach optimal levels.
+
+3. **💊 Medication Layer**: Every medication you take creates specific nutrient depletions. Your [specific medication] is known to deplete [specific nutrients], so we proactively replace those to prevent deficiencies.
+
+4. **🥗 Diet Layer**: Your [diet type] diet has predictable nutrient gaps. We fill those gaps with targeted supplements rather than hoping your diet will cover everything.
+
+5. **🎯 Goals Layer**: Finally, we layer in support for your specific health goals and concerns.
+
+The beauty is that these layers work together, with your genetics taking priority over everything else. It's not just supplements - it's precision medicine."**
+
+## 🔬 WHEN DISCUSSING SPECIFIC RECOMMENDATIONS:
+Always connect back to their personal data:
+- "Because of your MTHFR C677T variant that I see in your genetics..."
+- "Your lab shows vitamin D at 22 ng/mL, which explains..."  
+- "Since you're taking [medication], I know it's depleting..."
+- "Your vegan diet means you need..."
+- "Given your goal of [specific goal]..."
+
+## 🛡️ EMPHASIZE SAFETY & PRECISION:
+Help users understand the safety features built into their analysis:
+- "The system checked your genetics and won't recommend anything that conflicts with your variants"
+- "We screened for all drug interactions with your medications"
+- "Your allergy profile was factored into every recommendation"  
+- "Dosages are calibrated to your specific biomarker levels, not generic amounts"
+- "AI-powered safety analysis ensured no dangerous combinations"
+
 ## YOUR ROLE & EXPERTISE:
 - **AI Nutrition Specialist**: Expert knowledge in nutritional biochemistry and supplement science.
 - **Research Authority**: Access to an extensive database of clinical studies and peer-reviewed research.
@@ -107,12 +213,25 @@ Provide the same level of specific, actionable, research-cited recommendations a
 
 Remember: You are providing expert-level nutritional guidance backed by specific research studies, personalized to their unique biology and goals, while maintaining clear boundaries as an AI assistant focused on supplement optimization rather than medical practice. Speak as if you ARE their health data speaking directly to them with care, knowledge, and intimate understanding of their unique needs.`;
 
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, content-type"
+};
+
 serve(async (req) => {
   console.log("ai_chat function invoked");
   
+  if (req.method === "OPTIONS") {
+    return new Response("", { status: 204, headers: cors });
+  }
+  
   try {
     if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
+      return new Response(JSON.stringify({ error: "Method not allowed" }), { 
+        status: 405, 
+        headers: { ...cors, "Content-Type": "application/json" }
+      });
     }
 
     // Get environment variables inside the handler
@@ -135,7 +254,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         error: "Configuration error", 
         details: "Missing Supabase environment variables" 
-      }), { status: 500 });
+      }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
     // Require at least one AI API key for production
@@ -144,7 +263,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         error: "Configuration error", 
         details: "AI service not configured. Please add XAI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY." 
-      }), { status: 500 });
+      }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
     console.log("Creating Supabase client");
@@ -168,14 +287,14 @@ serve(async (req) => {
       }
     } catch (e) {
       console.error("Failed to parse request body:", e);
-      return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     }
     
     if (!conversation_id) {
-      return new Response(JSON.stringify({ error: "missing conversation_id" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "missing conversation_id" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     }
     if (!userMessageContent && !filePayload) {
-        return new Response(JSON.stringify({ error: "missing message content or file" }), { status: 400 });
+        return new Response(JSON.stringify({ error: "missing message content or file" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     }
 
     let db_user_id: string | null = null;
@@ -210,7 +329,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         error: "Database error", 
         details: messagesError.message || "Failed to fetch messages" 
-      }), { status: 500 });
+      }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     }
     
     console.log(`Found ${messagesHistory?.length || 0} historical messages`);
@@ -599,7 +718,7 @@ serve(async (req) => {
         const errText = await aiResp.text();
         console.error("XAI API error:", aiResp.status, errText);
         if (!OPENAI_API_KEY) {
-          return new Response(JSON.stringify({ error: "AI service error", details: errText }), { status: 500 });
+          return new Response(JSON.stringify({ error: "AI service error", details: errText }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
         }
       } else {
         const aiJson = await aiResp.json();
@@ -619,7 +738,7 @@ serve(async (req) => {
         console.log("ai_chat completed successfully with XAI");
         return new Response(JSON.stringify({ content: assistantContent }), { 
           status: 200,
-          headers: { "Content-Type": "application/json" }
+          headers: { ...cors, "Content-Type": "application/json" }
         });
       }
     }
@@ -659,7 +778,7 @@ serve(async (req) => {
       if (!aiResp.ok) {
         const errText = await aiResp.text();
         console.error("OpenAI API error:", aiResp.status, errText);
-        return new Response(JSON.stringify({ error: "OpenAI error", details: errText }), { status: 500 });
+        return new Response(JSON.stringify({ error: "OpenAI error", details: errText }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
       }
 
       console.log("Parsing OpenAI response");
@@ -680,7 +799,7 @@ serve(async (req) => {
       console.log("ai_chat completed successfully with OpenAI");
       return new Response(JSON.stringify({ content: assistantContent }), { 
         status: 200,
-        headers: { "Content-Type": "application/json" }
+        headers: { ...cors, "Content-Type": "application/json" }
       });
     }
 
@@ -715,7 +834,7 @@ serve(async (req) => {
       if (!aiResp.ok) {
         const errText = await aiResp.text();
         console.error("Anthropic API error:", aiResp.status, errText);
-        return new Response(JSON.stringify({ error: "AI service error", details: errText }), { status: 500 });
+        return new Response(JSON.stringify({ error: "AI service error", details: errText }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
       }
 
       const aiJson = await aiResp.json();
@@ -735,7 +854,7 @@ serve(async (req) => {
       console.log("ai_chat completed successfully with Anthropic");
       return new Response(JSON.stringify({ content: assistantContent }), { 
         status: 200,
-        headers: { "Content-Type": "application/json" }
+        headers: { ...cors, "Content-Type": "application/json" }
       });
     }
 
@@ -748,7 +867,7 @@ serve(async (req) => {
     
     const errorMessage = e instanceof Error ? e.message : String(e);
     const errorDetails = e instanceof Error && e.stack ? e.stack : errorMessage;
-    return new Response(JSON.stringify({ error: "internal error", details: errorDetails }), { status: 500 });
+    return new Response(JSON.stringify({ error: "internal error", details: errorDetails }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
 });
 

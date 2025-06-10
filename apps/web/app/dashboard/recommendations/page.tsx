@@ -42,97 +42,102 @@ export default function RecommendationsPage() {
       .limit(1)
       .maybeSingle();
 
-    // Get counts using correct syntax
-    const { data: markersData } = await supabase
-      .from('genetic_markers')
-      .select('*')
+    // Get counts using proper count queries with error handling
+    const { count: markersCount, error: markersCountError } = await supabase
+      .from('genetic_data')
+      .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id);
-    const markersCount = markersData?.length || 0;
 
-    const { data: labsData } = await supabase
-      .from('lab_biomarkers')
-      .select('*')
+    if (markersCountError) {
+      console.error('Error counting genetic data:', markersCountError);
+    }
+
+    const { count: labsCount, error: labsCountError } = await supabase
+      .from('lab_data')
+      .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id);
-    const labsCount = labsData?.length || 0;
+
+    if (labsCountError) {
+      console.error('Error counting lab data:', labsCountError);
+    }
 
     // Get genetic and lab data counts with SNP/biomarker details
-    const { data: geneticDetails } = await supabase
-      .from('genetic_markers')
+    const { data: geneticDetails, error: geneticError } = await supabase
+      .from('genetic_data')
       .select('snp_count, snp_data')
       .eq('user_id', user.id)
       .limit(1)
       .maybeSingle();
 
-    const { data: labDetails } = await supabase
-      .from('lab_biomarkers')
+    if (geneticError) {
+      console.error('Error fetching genetic details:', geneticError);
+    }
+
+    const { data: labDetails, error: labError } = await supabase
+      .from('lab_data')
       .select('biomarker_count, biomarker_data')
       .eq('user_id', user.id)
       .limit(1)
       .maybeSingle();
 
-    // Get recommendations with their product links
-    const { data: recommendations } = await supabase
-      .from('supplement_recommendations')
-      .select(`
-        *,
-        product_links:product_links!recommendation_id(
-          id,
-          product_name,
-          brand,
-          product_url,
-          image_url,
-          price,
-          verified
-        )
-      `)
-      .eq('user_id', user.id)
-      .eq('analysis_id', analysis?.id || '')
-      .eq('is_active', true)
-      .order('priority_score', { ascending: false });
+    if (labError) {
+      console.error('Error fetching lab details:', labError);
+    }
+
+    // Get recommendations for this user
+    let recommendations = [];
+    try {
+      const { data: recs, error } = await supabase
+        .from('supplement_recommendations')
+        .select(`
+          *,
+          product_links!recommendation_id(
+            id,
+            product_name,
+            brand,
+            product_url,
+            image_url,
+            price,
+            verified
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('priority', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching recommendations:', error);
+        recommendations = [];
+      } else {
+        recommendations = recs || [];
+      }
+    } catch (err) {
+      console.error('Exception fetching recommendations:', err);
+      recommendations = [];
+    }
 
     return { 
-      recs: recommendations ?? [], 
+      recs: recommendations, 
       warnings: analysis?.interaction_warnings ?? [], 
       analysis_summary: analysis?.analysis_summary || null,
       relevant_genes: analysis?.relevant_genes || [],
       relevant_biomarkers: analysis?.relevant_biomarkers || [],
-      markers_count: markersCount, 
-      labs_count: labsCount,
+      markers_count: markersCount || 0, 
+      labs_count: labsCount || 0,
       genetic_snp_count: geneticDetails?.snp_count || 0,
-      analyzed_snps: geneticDetails?.snp_data ? Object.keys(geneticDetails.snp_data).length : 0,
+      analyzed_snps: geneticDetails?.snp_count || 0, // Use the direct count instead of calculating from JSON
       lab_biomarker_count: labDetails?.biomarker_count || 0,
-      analyzed_biomarkers: labDetails?.biomarker_data ? Object.keys(labDetails.biomarker_data).length : 0
+      analyzed_biomarkers: labDetails?.biomarker_count || 0 // Use the direct count instead of calculating from JSON
     };
-  };
-
-  const populateProductLinks = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    
-    try {
-      console.log('Populating product links for existing recommendations...');
-      const { data, error } = await supabase.functions.invoke('populate_recommendation_links', {
-        body: { user_id: user.id }
-      });
-      
-      if (error) {
-        console.error('Error populating product links:', error);
-      } else {
-        console.log('Product links populated:', data);
-        mutate(); // Refresh the data
-      }
-    } catch (error) {
-      console.error('Error calling populate_recommendation_links:', error);
-    }
   };
 
   const { data, isLoading, mutate } = useSWR('recommendations', fetcher);
   const warnings = data?.warnings ?? [];
   const recsFiltered = (data?.recs ?? []).filter((r: any) => {
     if (filter === 'all') return true;
-    if (filter === 'high') return r.priority_score >= 5;
-    if (filter === 'medium') return r.priority_score >= 3 && r.priority_score < 5;
-    if (filter === 'low') return r.priority_score < 3;
+    if (filter === 'high') return r.priority >= 3;
+    if (filter === 'medium') return r.priority == 2;
+    if (filter === 'low') return r.priority == 1;
     return true;
   });
 
@@ -182,10 +187,15 @@ export default function RecommendationsPage() {
               View Analysis
             </Link>
             <button 
-              onClick={populateProductLinks} 
+              onClick={async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+                await supabase.functions.invoke('generate_analysis', { body: { user_id: user.id } });
+                mutate();
+              }}
               className="px-3 py-1 rounded-md border text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              Link Products
+              Refresh Analysis
             </button>
             <button onClick={() => mutate()} className="px-3 py-1 rounded-md border text-sm">Refresh Plan</button>
           </div>
@@ -209,13 +219,13 @@ export default function RecommendationsPage() {
                 {(data?.markers_count ?? 0) > 0 && (
                   <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
                     <Dna className="w-4 h-4" />
-                    <span>{data?.analyzed_snps ?? 0} genetic variants analyzed</span>
+                    <span>{data?.analyzed_snps?.toLocaleString() ?? 0} genetic variants analyzed from your file</span>
                   </div>
                 )}
                 {(data?.labs_count ?? 0) > 0 && (
                   <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
                     <Activity className="w-4 h-4" />
-                    <span>{data?.analyzed_biomarkers ?? 0} biomarkers analyzed</span>
+                    <span>{data?.analyzed_biomarkers ?? 0} biomarkers analyzed from your labs</span>
                   </div>
                 )}
               </div>
@@ -225,7 +235,7 @@ export default function RecommendationsPage() {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
             {recsFiltered.map((rec) => (
               <RecommendationCard key={rec.id} rec={rec} onDetails={() => setSelected(rec)} />
             ))}
@@ -287,7 +297,7 @@ export default function RecommendationsPage() {
                           <span className="font-medium">{data?.analyzed_snps ?? 0}</span>
                         </div>
                         <div className="mt-2 text-xs text-purple-600 dark:text-purple-400">
-                          Covering methylation, detoxification, cardiovascular, vitamin D, iron metabolism & more
+                          Comprehensive analysis: 113+ variants across methylation, detoxification, neurotransmitters, cardiovascular, vitamin metabolism, iron metabolism, drug metabolism & more
                         </div>
                       </div>
                     </div>
@@ -309,7 +319,7 @@ export default function RecommendationsPage() {
                           <span className="font-medium">{data?.analyzed_biomarkers ?? 0}</span>
                         </div>
                         <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-                          Including CBC, CMP, lipids, hormones, vitamins, minerals & inflammatory markers
+                          Comprehensive analysis: CBC, CMP, lipid panels, thyroid, hormones, vitamins (D,B12,folate), minerals, inflammatory markers, liver function, kidney function & more
                         </div>
                       </div>
                     </div>

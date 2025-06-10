@@ -13,16 +13,9 @@ npx supabase functions deploy generate_analysis --project-ref tcptynohlpggtufqan
 echo "2. Deploying parse_upload..."
 npx supabase functions deploy parse_upload --project-ref tcptynohlpggtufqanqg
 
-echo "3. Deploying process_upload..."
-npx supabase functions deploy process_upload --project-ref tcptynohlpggtufqanqg
+# process_upload was removed - duplicate of parse_upload
 
-echo "4. Deploying product_search..."
-npx supabase functions deploy product_search --project-ref tcptynohlpggtufqanqg
-
-echo "5. Deploying pubmed_citations..."
-npx supabase functions deploy pubmed_citations --project-ref tcptynohlpggtufqanqg
-
-echo "6. Deploying ai_chat..."
+echo "4. Deploying ai_chat..."
 npx supabase functions deploy ai_chat --project-ref tcptynohlpggtufqanqg
 
 echo ""

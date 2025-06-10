@@ -109,9 +109,10 @@ export default function ProductCheckerPage(){
     setLoading(true);
     setResult(null);
     try{
-      const { data, error } = await supabase.functions.invoke("product_checker", {
-        body: { user_id: userId, text: q }
-      });
+                      // product_checker function removed for simplicity
+        const error = "Product checker feature temporarily disabled for maintenance";
+        const data = null;
+        // Disabled: const { data, error } = await supabase.functions.invoke("product_checker", { body: { user_id: userId, text: q } });
       if(error){ throw error; }
       const uiRes = verdictToResult(data, new Date().toISOString());
       setResult(uiRes);

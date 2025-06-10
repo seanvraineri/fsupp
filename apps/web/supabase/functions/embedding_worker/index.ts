@@ -1,4 +1,6 @@
+// @ts-nocheck
 // deno-lint-ignore-file no-explicit-any
+declare const Deno: any;
 import { serve } from "https://deno.land/std@0.201.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 
@@ -35,7 +37,8 @@ interface Item {
   user_id: string;
   source_type: string; // gene | lab | assessment | chat | plan | other
   source_id: string;
-  content: string;
+  content?: string;
+  text?: string; // Support both content and text fields
 }
 
 serve(async (req) => {
@@ -52,8 +55,14 @@ serve(async (req) => {
     const inserts: any[] = [];
 
     for (const item of items) {
+      // Get content from either content or text field
+      const content = item.content || item.text || '';
+      if (!content) {
+        continue; // Skip items without content
+      }
+      
       // naive chunking – split by 1500 characters (≈600 tokens)
-      const chunks = item.content.match(/.{1,1500}(?:\s|$)/gs) || [item.content];
+      const chunks = content.match(/.{1,1500}(?:\s|$)/gs) || [content];
       let chunkIndex = 0;
       for (const chunk of chunks) {
         const emb = await getEmbedding(chunk);

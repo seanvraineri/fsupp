@@ -202,6 +202,26 @@ CREATE TABLE supplement_recommendations (
 );
 
 -- Product search results from xAI
+CREATE TABLE supplement_products (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    supplement_name TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    brand TEXT NOT NULL,
+    product_url TEXT NOT NULL,
+    image_url TEXT,
+    price NUMERIC,
+    search_query TEXT,
+    relevance_score NUMERIC,
+    matches_dosage BOOLEAN DEFAULT FALSE,
+    third_party_tested BOOLEAN DEFAULT FALSE,
+    gmp_certified BOOLEAN DEFAULT FALSE,
+    serving_size TEXT,
+    servings_per_container INTEGER,
+    is_direct_purchase BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Product links (linked to specific recommendations)
 CREATE TABLE product_links (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     recommendation_id UUID NOT NULL REFERENCES supplement_recommendations(id) ON DELETE CASCADE,
@@ -266,6 +286,8 @@ CREATE INDEX idx_genetic_markers_user_id ON genetic_markers(user_id);
 CREATE INDEX idx_ai_analyses_user_id ON ai_analyses(user_id);
 CREATE INDEX idx_supplement_recommendations_user_id ON supplement_recommendations(user_id);
 CREATE INDEX idx_supplement_recommendations_active ON supplement_recommendations(user_id, is_active);
+CREATE INDEX idx_supplement_products_name ON supplement_products(supplement_name);
+CREATE INDEX idx_supplement_products_relevance ON supplement_products(relevance_score DESC);
 CREATE INDEX idx_product_links_recommendation_id ON product_links(recommendation_id);
 CREATE INDEX idx_chat_conversations_user_id ON chat_conversations(user_id);
 CREATE INDEX idx_chat_messages_conversation_id ON chat_messages(conversation_id);
@@ -279,6 +301,7 @@ ALTER TABLE lab_biomarkers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE genetic_markers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_analyses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE supplement_recommendations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE supplement_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
@@ -300,6 +323,8 @@ CREATE POLICY "Users can view own genetic data" ON genetic_markers FOR SELECT US
 CREATE POLICY "Users can view own analyses" ON ai_analyses FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can view own recommendations" ON supplement_recommendations FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Public can view supplement products" ON supplement_products FOR SELECT USING (true);
 
 CREATE POLICY "Users can view linked products" ON product_links FOR SELECT 
     USING (EXISTS (

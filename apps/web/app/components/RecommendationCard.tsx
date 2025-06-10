@@ -41,29 +41,22 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
   const handleBuyClick = async () => {
     setIsSearching(true);
     try {
-      // First, try to use existing product links if available
-      if (product?.product_url && product.verified !== false) {
-        console.log(`Using existing product link: ${product.brand} - ${product.product_url}`);
-        window.open(product.product_url, '_blank');
+      // Use AI-powered supplement matching from CSV
+      const { getCachedSupplementLink } = await import('../../utils/supplementUtils');
+      const match = await getCachedSupplementLink(rec.supplement_name);
+      
+      if (match && match.url) {
+        console.log(`🛒 Opening AI-matched purchase link for ${rec.supplement_name}: ${match.brand}`);
+        window.open(match.url, '_blank');
         return;
       }
-
-      // If no product links exist, call the product_search function
-      console.log(`No existing links found, searching for: ${rec.supplement_name}`);
-      const { data, error } = await supabase.functions.invoke('product_search', {
-        body: { supplement_name: rec.supplement_name }
-      });
       
-      if (!error && data?.success && data?.product_url) {
-        console.log(`Found via search: ${data.brand} - ${data.product_url}`);
-        window.open(data.product_url, '_blank');
-      } else {
-        console.log('Search failed, using generic fallback');
-        // Fallback to generic search
-        window.open(`https://www.vitacost.com/search?t=${encodeURIComponent(rec.supplement_name)}`, '_blank');
-      }
+      // Fallback to search if no match found
+      console.log(`⚠️ No AI match found for ${rec.supplement_name}, falling back to search`);
+      window.open(`https://www.vitacost.com/search?t=${encodeURIComponent(rec.supplement_name)}`, '_blank');
+      
     } catch (error) {
-      console.error('Product search error:', error);
+      console.error('AI supplement matching error:', error);
       // Fallback to generic search
       window.open(`https://www.vitacost.com/search?t=${encodeURIComponent(rec.supplement_name)}`, '_blank');
     } finally {
@@ -73,26 +66,48 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
 
   // Get button text and subtitle based on what's available
   const getButtonInfo = () => {
-    if (isSearching) return { text: 'Finding Best Price...', subtitle: null };
+    if (isSearching) return { text: 'Finding Products...', subtitle: null };
     
+    // If we have verified product links
     if (product?.product_url && product.verified !== false) {
       const brandText = product.brand || 'Shop Now';
       const priceText = product.price ? ` - $${product.price}` : '';
       return { 
         text: `Buy from ${brandText}`, 
-        subtitle: product.price ? `$${product.price}` : null 
+        subtitle: product.price ? `$${product.price}` : 'Verified retailer' 
       };
     }
     
-    return { text: 'Find Best Price', subtitle: 'Multiple retailers' };
+    // If we have multiple product options
+    if (rec.product_links && rec.product_links.length > 1) {
+      const verifiedCount = rec.product_links.filter(p => p.verified).length;
+      return { 
+        text: `${rec.product_links.length} Product Options`, 
+        subtitle: `${verifiedCount} verified retailers` 
+      };
+    }
+    
+    // If we have at least one product link
+    if (rec.product_links && rec.product_links.length === 1) {
+      const singleProduct = rec.product_links[0];
+      if (singleProduct.brand) {
+        return { 
+          text: `Buy from ${singleProduct.brand}`, 
+          subtitle: singleProduct.price ? `$${singleProduct.price}` : 'Available now' 
+        };
+      }
+    }
+    
+    // Fallback to search
+    return { text: 'Purchase', subtitle: 'Compare retailers' };
   };
 
   const buttonInfo = getButtonInfo();
 
   // Extract specific genetic variants and biomarkers from reasoning
   const extractPersonalizationDetails = () => {
-    const geneticVariants = [];
-    const biomarkerFindings = [];
+    const geneticVariants: string[] = [];
+    const biomarkerFindings: string[] = [];
 
     // Extract genetic variants from genetic_reasoning or recommendation_reason
     const geneticText = rec.genetic_reasoning || rec.recommendation_reason || '';
@@ -335,7 +350,11 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
           // For all other variants
           const [fullMatch] = match;
           if (fullMatch) {
-            geneticVariants.push(fullMatch.trim());
+            const clean = fullMatch.trim();
+            // Skip very short matches like 'th pl' that are not meaningful ( <5 chars without numbers )
+            if (/rs\d+/i.test(clean) || /\d/.test(clean) || /[A-Z]{2,}\d/.test(clean) || clean.includes('/') || clean.includes(':')) {
+              geneticVariants.push(clean);
+            }
           }
         }
       }
@@ -674,10 +693,13 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
       });
     }
 
+    // remove trivial entries like 'this: high'
+    const filteredFindings = biomarkerFindings.filter(b => !/^this/i.test(b));
+
     // Remove duplicates and return
     return { 
       geneticVariants: [...new Set(geneticVariants)], 
-      biomarkerFindings: [...new Set(biomarkerFindings)] 
+      biomarkerFindings: [...new Set(filteredFindings)] 
     };
   };
 
@@ -744,97 +766,7 @@ export default function RecommendationCard({ rec, onDetails }: { rec: RecWithPro
 
       <h3 className="text-lg font-semibold mb-3 flex-1">{rec.supplement_name}</h3>
 
-      {/* 🎯 ENHANCED PERSONALIZATION SHOWCASE - Make the personalized reasoning more prominent */}
-      {(geneticVariants.length > 0 || biomarkerFindings.length > 0) && (
-        <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-green-50 dark:from-purple-900/20 dark:via-blue-900/20 dark:to-green-900/20 border-2 border-purple-200 dark:border-purple-800 p-4 rounded-xl mb-4 shadow-sm">
-          <div className="text-sm font-bold text-purple-800 dark:text-purple-200 mb-3 flex items-center gap-2">
-            <span className="text-lg">🎯</span>
-            <span>Specifically Chosen For YOU</span>
-          </div>
-          
-          {geneticVariants.length > 0 && (
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Dna className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">Your Unique Genetics:</span>
-              </div>
-              <div className="grid gap-2">
-                {geneticVariants.slice(0, 3).map((variant, idx) => (
-                  <div key={idx} className="bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-700 px-3 py-2 rounded-lg">
-                    <div className="font-mono text-xs text-purple-800 dark:text-purple-200 font-medium">
-                      {variant}
-                    </div>
-                  </div>
-                ))}
-                {geneticVariants.length > 3 && (
-                  <div className="text-xs text-purple-600 dark:text-purple-400 font-medium px-3">
-                    +{geneticVariants.length - 3} more genetic variants analyzed
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
-          {biomarkerFindings.length > 0 && (
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Activity className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">Your Current Lab Results:</span>
-              </div>
-              <div className="grid gap-2">
-                {biomarkerFindings.slice(0, 3).map((finding, idx) => (
-                  <div key={idx} className="bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 px-3 py-2 rounded-lg">
-                    <div className="font-mono text-xs text-blue-800 dark:text-blue-200 font-medium">
-                      {finding}
-                    </div>
-                  </div>
-                ))}
-                {biomarkerFindings.length > 3 && (
-                  <div className="text-xs text-blue-600 dark:text-blue-400 font-medium px-3">
-                    +{biomarkerFindings.length - 3} more biomarkers analyzed
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 border border-green-200 dark:border-green-700 p-3 rounded-lg">
-            <div className="text-xs text-green-800 dark:text-green-200 font-medium leading-relaxed">
-              💡 <strong>Why This Works Best For You:</strong> This recommendation is precisely tailored to your unique biology - not a generic suggestion.
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Enhanced reasoning display with personalized highlighting */}
-      <div className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-800 border border-slate-200 dark:border-slate-700 p-4 rounded-lg mb-4">
-        <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1">
-          <span>💬</span>
-          <span>Our Personalized Recommendation</span>
-        </div>
-        <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-          {rec.recommendation_reason?.split('.').map((sentence, idx) => {
-            // Highlight key personalization phrases
-            const isPersonalizedSentence = sentence.includes('we think') || 
-                                         sentence.includes('we believe') || 
-                                         sentence.includes('we chose') || 
-                                         sentence.includes('we specifically') ||
-                                         sentence.includes('for you') ||
-                                         sentence.includes('your unique') ||
-                                         sentence.includes('precisely tailored') ||
-                                         sentence.includes('specifically chosen');
-            
-            if (isPersonalizedSentence && sentence.trim()) {
-              return (
-                <span key={idx} className="bg-yellow-100 dark:bg-yellow-900/30 px-1 py-0.5 rounded font-medium">
-                  {sentence.trim()}.
-                </span>
-              );
-            }
-            return sentence.trim() ? <span key={idx}>{sentence.trim()}. </span> : null;
-          })}
-        </div>
-      </div>
       
       {/* Enhanced dosage display */}
       <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-3">

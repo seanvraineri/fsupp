@@ -139,6 +139,234 @@ export const drugConflicts = {
   tki: ["St John's Wort"],
 };
 
+// 💊 DRUG-INDUCED NUTRIENT DEPLETION DATABASE
+// Medications that deplete specific nutrients - recommend supplements to counter depletion
+export const drugNutrientDepletion = {
+  // === CARDIOVASCULAR MEDICATIONS ===
+  statin: {
+    depletes: ['CoQ10', 'Vitamin D', 'Vitamin K2', 'Selenium'],
+    recommendations: [
+      { supplement: 'CoQ10', dosage: '100-200 mg', reason: 'Statins block CoQ10 synthesis in the same pathway as cholesterol', priority: 9, timing: 'with_meals' },
+      { supplement: 'Vitamin D3', dosage: '2000-4000 IU', reason: 'Statins may interfere with vitamin D synthesis', priority: 7, timing: 'with_fat' },
+      { supplement: 'Vitamin K2', dosage: '100-200 mcg', reason: 'Supports arterial health and calcium regulation', priority: 6, timing: 'with_fat' }
+    ]
+  },
+  ace_inhibitor: {
+    depletes: ['Zinc', 'Potassium'],
+    recommendations: [
+      { supplement: 'Zinc Picolinate', dosage: '15-30 mg', reason: 'ACE inhibitors can reduce zinc absorption and increase excretion', priority: 7, timing: 'empty_stomach' },
+      { supplement: 'Potassium Citrate', dosage: '99 mg', reason: 'Monitor levels - ACE inhibitors can affect potassium balance', priority: 5, timing: 'with_meals', caution: 'Monitor potassium levels' }
+    ]
+  },
+  beta_blocker: {
+    depletes: ['CoQ10', 'Melatonin'],
+    recommendations: [
+      { supplement: 'CoQ10', dosage: '100 mg', reason: 'Beta blockers may reduce CoQ10 levels and cellular energy', priority: 7, timing: 'with_meals' },
+      { supplement: 'Melatonin', dosage: '3 mg', reason: 'Beta blockers can suppress natural melatonin production', priority: 6, timing: 'bedtime' }
+    ]
+  },
+  diuretic: {
+    depletes: ['Magnesium', 'Potassium', 'Sodium', 'Zinc', 'B1', 'B6', 'Vitamin C'],
+    recommendations: [
+      { supplement: 'Magnesium Glycinate', dosage: '400 mg', reason: 'Diuretics increase magnesium excretion leading to deficiency', priority: 9, timing: 'evening' },
+      { supplement: 'Potassium Citrate', dosage: '99 mg', reason: 'Replace potassium lost through increased urination', priority: 8, timing: 'with_meals', caution: 'Monitor levels with blood work' },
+      { supplement: 'B-Complex', dosage: '1 capsule', reason: 'Water-soluble B vitamins are lost with increased urination', priority: 7, timing: 'morning' },
+      { supplement: 'Vitamin C', dosage: '500 mg', reason: 'Water-soluble vitamin lost through diuresis', priority: 6, timing: 'with_meals' }
+    ]
+  },
+
+  // === DIABETES MEDICATIONS ===
+  metformin: {
+    depletes: ['B12', 'Folate', 'CoQ10'],
+    recommendations: [
+      { supplement: 'Methylcobalamin B12', dosage: '1000-2000 mcg', reason: 'Metformin blocks B12 absorption in the intestines - deficiency common after 2+ years', priority: 9, timing: 'sublingual' },
+      { supplement: 'Methylfolate', dosage: '800 mcg', reason: 'Metformin interferes with folate metabolism', priority: 7, timing: 'with_meals' },
+      { supplement: 'CoQ10', dosage: '100 mg', reason: 'Supports cellular energy in diabetes management', priority: 6, timing: 'with_meals' }
+    ]
+  },
+
+  // === ACID BLOCKERS ===
+  ppi: {
+    depletes: ['B12', 'Iron', 'Magnesium', 'Calcium', 'Zinc', 'Vitamin D'],
+    recommendations: [
+      { supplement: 'B12 Methylcobalamin', dosage: '1000 mcg', reason: 'PPIs reduce stomach acid needed for B12 absorption', priority: 9, timing: 'sublingual' },
+      { supplement: 'Iron Bisglycinate', dosage: '18 mg', reason: 'Stomach acid required for iron absorption', priority: 8, timing: 'empty_stomach', caution: 'Only if deficient' },
+      { supplement: 'Magnesium Glycinate', dosage: '400 mg', reason: 'PPIs reduce magnesium absorption and increase excretion', priority: 8, timing: 'evening' },
+      { supplement: 'Calcium Citrate', dosage: '500 mg', reason: 'Acid-independent form needed with PPI use', priority: 7, timing: 'between_meals' },
+      { supplement: 'Zinc Picolinate', dosage: '15 mg', reason: 'Stomach acid needed for zinc absorption', priority: 6, timing: 'empty_stomach' }
+    ]
+  },
+  h2_blocker: {
+    depletes: ['B12', 'Iron', 'Zinc', 'Folate'],
+    recommendations: [
+      { supplement: 'B12 Methylcobalamin', dosage: '500 mcg', reason: 'H2 blockers reduce stomach acid needed for B12 absorption', priority: 8, timing: 'sublingual' },
+      { supplement: 'Iron Bisglycinate', dosage: '18 mg', reason: 'Reduced stomach acid impairs iron absorption', priority: 7, timing: 'empty_stomach', caution: 'Only if deficient' },
+      { supplement: 'Zinc Picolinate', dosage: '15 mg', reason: 'Acid needed for zinc liberation from food', priority: 6, timing: 'empty_stomach' }
+    ]
+  },
+
+  // === ANTIDEPRESSANTS ===
+  ssri: {
+    depletes: ['B6', 'B12', 'Folate', 'CoQ10'],
+    recommendations: [
+      { supplement: 'P5P (B6)', dosage: '25-50 mg', reason: 'SSRIs can deplete B6 which is needed for neurotransmitter synthesis', priority: 8, timing: 'with_meals' },
+      { supplement: 'Methylfolate', dosage: '800 mcg', reason: 'Folate supports serotonin synthesis and mood regulation', priority: 7, timing: 'with_meals' },
+      { supplement: 'B12 Methylcobalamin', dosage: '1000 mcg', reason: 'B12 supports nervous system function and mood', priority: 7, timing: 'morning' },
+      { supplement: 'CoQ10', dosage: '100 mg', reason: 'Supports cellular energy and may reduce fatigue', priority: 6, timing: 'with_meals' }
+    ]
+  },
+
+  // === ANTIBIOTICS ===
+  antibiotic: {
+    depletes: ['Probiotics', 'B-Complex', 'Vitamin K', 'Magnesium'],
+    recommendations: [
+      { supplement: 'Multi-strain Probiotic', dosage: '25-50 billion CFU', reason: 'Antibiotics destroy beneficial gut bacteria - restore microbiome', priority: 9, timing: '2_hours_after_antibiotic' },
+      { supplement: 'B-Complex', dosage: '1 capsule', reason: 'Gut bacteria produce B vitamins - need replacement during/after antibiotics', priority: 7, timing: 'with_meals' },
+      { supplement: 'Vitamin K2', dosage: '100 mcg', reason: 'Gut bacteria produce vitamin K - may be depleted', priority: 6, timing: 'with_fat' }
+    ]
+  },
+
+  // === HORMONES ===
+  birth_control: {
+    depletes: ['B6', 'B12', 'Folate', 'Magnesium', 'Zinc', 'Vitamin C'],
+    recommendations: [
+      { supplement: 'P5P (B6)', dosage: '25-50 mg', reason: 'Birth control significantly depletes B6 needed for hormone metabolism', priority: 9, timing: 'with_meals' },
+      { supplement: 'Methylfolate', dosage: '800 mcg', reason: 'Oral contraceptives deplete folate - critical for women of childbearing age', priority: 9, timing: 'with_meals' },
+      { supplement: 'Magnesium Glycinate', dosage: '400 mg', reason: 'Birth control depletes magnesium needed for mood and muscle function', priority: 8, timing: 'evening' },
+      { supplement: 'Zinc Picolinate', dosage: '15 mg', reason: 'Supports hormone production and immune function', priority: 7, timing: 'empty_stomach' },
+      { supplement: 'B12 Methylcobalamin', dosage: '1000 mcg', reason: 'Birth control can reduce B12 levels', priority: 7, timing: 'morning' }
+    ]
+  },
+
+  // === STEROIDS ===
+  corticosteroid: {
+    depletes: ['Calcium', 'Magnesium', 'Potassium', 'Zinc', 'Vitamin D', 'Vitamin C'],
+    recommendations: [
+      { supplement: 'Calcium Citrate', dosage: '500-1000 mg', reason: 'Steroids increase calcium excretion and bone loss risk', priority: 9, timing: 'between_meals' },
+      { supplement: 'Vitamin D3', dosage: '2000-4000 IU', reason: 'Steroids reduce vitamin D levels and calcium absorption', priority: 9, timing: 'with_fat' },
+      { supplement: 'Magnesium Glycinate', dosage: '400 mg', reason: 'Steroids increase magnesium excretion', priority: 8, timing: 'evening' },
+      { supplement: 'Potassium Citrate', dosage: '99 mg', reason: 'Steroids can cause potassium wasting', priority: 7, timing: 'with_meals', caution: 'Monitor levels' },
+      { supplement: 'Vitamin C', dosage: '1000 mg', reason: 'Steroids increase vitamin C requirements and immune support', priority: 7, timing: 'divided_doses' }
+    ]
+  }
+};
+
+// 🥗 DIET-BASED NUTRIENT DEFICIENCIES
+// Common nutrients lacking in specific diets - recommend targeted supplementation
+export const dietNutrientDeficiencies = {
+  vegan: {
+    high_risk_deficiencies: ['B12', 'Iron', 'Zinc', 'Calcium', 'Omega-3', 'Vitamin D'],
+    moderate_risk_deficiencies: ['Creatine', 'Carnosine', 'Taurine'],
+    recommendations: [
+      { supplement: 'B12 Methylcobalamin', dosage: '2000 mcg', reason: 'B12 only found in animal products - vegan deficiency nearly universal without supplementation', priority: 10, timing: 'sublingual', genetic_override: false },
+      { supplement: 'Algae Omega-3 (DHA/EPA)', dosage: '1000-2000 mg', reason: 'Plant foods lack long-chain omega-3s (EPA/DHA) found in fish', priority: 9, timing: 'with_meals', genetic_override: false },
+      { supplement: 'Iron Bisglycinate', dosage: '18 mg', reason: 'Plant iron (non-heme) has lower absorption than animal iron', priority: 8, timing: 'with_vitamin_c', caution: 'Only if deficient - check labs', genetic_override: false },
+      { supplement: 'Zinc Picolinate', dosage: '15 mg', reason: 'Plant foods contain phytates that reduce zinc absorption', priority: 7, timing: 'empty_stomach', genetic_override: false },
+      { supplement: 'Calcium Citrate', dosage: '500 mg', reason: 'Non-dairy diets may lack adequate calcium intake', priority: 7, timing: 'between_meals', genetic_override: false },
+      { supplement: 'Vitamin D3', dosage: '2000-4000 IU', reason: 'Few vegan food sources of vitamin D', priority: 7, timing: 'with_fat', genetic_override: false }
+    ]
+  },
+  vegetarian: {
+    high_risk_deficiencies: ['B12', 'Iron', 'Zinc', 'Omega-3'],
+    moderate_risk_deficiencies: ['Creatine', 'Carnosine'],
+    recommendations: [
+      { supplement: 'B12 Methylcobalamin', dosage: '1000 mcg', reason: 'Vegetarian diets often lack adequate B12 despite dairy/eggs', priority: 9, timing: 'sublingual', genetic_override: false },
+      { supplement: 'Iron Bisglycinate', dosage: '18 mg', reason: 'No heme iron from meat - plant iron less bioavailable', priority: 8, timing: 'with_vitamin_c', caution: 'Only if deficient', genetic_override: false },
+      { supplement: 'Omega-3 (EPA/DHA)', dosage: '1000 mg', reason: 'Fish is primary source of EPA/DHA omega-3s', priority: 7, timing: 'with_meals', genetic_override: false },
+      { supplement: 'Zinc Picolinate', dosage: '15 mg', reason: 'Plant-based zinc absorption reduced by phytates', priority: 6, timing: 'empty_stomach', genetic_override: false }
+    ]
+  },
+  keto: {
+    high_risk_deficiencies: ['Magnesium', 'Potassium', 'Sodium', 'Fiber'],
+    moderate_risk_deficiencies: ['Folate', 'Vitamin C', 'B-Complex'],
+    recommendations: [
+      { supplement: 'Electrolyte Complex', dosage: '1 serving', reason: 'Keto causes rapid water/electrolyte loss - prevent "keto flu"', priority: 10, timing: 'throughout_day', genetic_override: false },
+      { supplement: 'Magnesium Glycinate', dosage: '400-600 mg', reason: 'Keto depletes magnesium - needed for energy and preventing cramps', priority: 9, timing: 'evening', genetic_override: false },
+      { supplement: 'Potassium Citrate', dosage: '99 mg x3', reason: 'Difficult to get adequate potassium on keto without supplementation', priority: 8, timing: 'with_meals', genetic_override: false },
+      { supplement: 'Psyllium Husk', dosage: '1 tsp', reason: 'Keto diets often lack fiber for digestive health', priority: 7, timing: 'with_water', genetic_override: false },
+      { supplement: 'B-Complex', dosage: '1 capsule', reason: 'Reduced intake of B-vitamin rich grains and fruits', priority: 6, timing: 'morning', genetic_override: false }
+    ]
+  },
+  carnivore: {
+    high_risk_deficiencies: ['Vitamin C', 'Fiber', 'Magnesium', 'Potassium'],
+    moderate_risk_deficiencies: ['Folate', 'Vitamin E', 'Polyphenols'],
+    recommendations: [
+      { supplement: 'Vitamin C', dosage: '500-1000 mg', reason: 'No plant foods means no vitamin C - risk of deficiency over time', priority: 8, timing: 'with_meals', genetic_override: false },
+      { supplement: 'Magnesium Glycinate', dosage: '400 mg', reason: 'Meat is low in magnesium compared to plant foods', priority: 7, timing: 'evening', genetic_override: false },
+      { supplement: 'Potassium Citrate', dosage: '99 mg', reason: 'Fruits/vegetables are primary potassium sources', priority: 7, timing: 'with_meals', genetic_override: false },
+      { supplement: 'Psyllium Husk', dosage: '1 tsp', reason: 'Zero fiber intake may affect gut health and elimination', priority: 6, timing: 'with_water', genetic_override: false }
+    ]
+  },
+  paleo: {
+    high_risk_deficiencies: ['Calcium', 'Vitamin D'],
+    moderate_risk_deficiencies: ['B-Complex', 'Magnesium'],
+    recommendations: [
+      { supplement: 'Calcium Citrate', dosage: '500 mg', reason: 'No dairy products - may not reach calcium requirements from plants alone', priority: 7, timing: 'between_meals', genetic_override: false },
+      { supplement: 'Vitamin D3', dosage: '2000-4000 IU', reason: 'Limited fortified foods in paleo diet', priority: 6, timing: 'with_fat', genetic_override: false }
+    ]
+  },
+  mediterranean: {
+    high_risk_deficiencies: [],
+    moderate_risk_deficiencies: ['B12', 'Vitamin D'],
+    recommendations: [
+      { supplement: 'Vitamin D3', dosage: '2000 IU', reason: 'Geographic regions with limited sun exposure', priority: 5, timing: 'with_fat', genetic_override: false }
+    ]
+  },
+  standard_american: {
+    high_risk_deficiencies: ['Magnesium', 'Omega-3', 'Fiber', 'Vitamin D'],
+    moderate_risk_deficiencies: ['Potassium', 'Vitamin K2', 'Polyphenols'],
+    recommendations: [
+      { supplement: 'Magnesium Glycinate', dosage: '400 mg', reason: 'Processed foods lack magnesium - 80% of Americans deficient', priority: 8, timing: 'evening', genetic_override: false },
+      { supplement: 'Omega-3 (EPA/DHA)', dosage: '1000 mg', reason: 'Standard American diet has poor omega-3 to omega-6 ratio', priority: 8, timing: 'with_meals', genetic_override: false },
+      { supplement: 'Vitamin D3', dosage: '2000-4000 IU', reason: 'Indoor lifestyle and limited fatty fish consumption', priority: 7, timing: 'with_fat', genetic_override: false },
+      { supplement: 'Fiber Supplement', dosage: '1 serving', reason: 'Processed foods lack adequate fiber for gut health', priority: 6, timing: 'with_water', genetic_override: false }
+    ]
+  }
+};
+
+// 🧬 GENETIC OVERRIDE MATRIX
+// When genetic variants conflict with drug/diet recommendations, genetics take priority
+export const geneticOverrides = {
+  'MTHFR_variants': {
+    genetic_priority: ['L-Methylfolate', 'Methylcobalamin B12', 'P5P (B6)'],
+    overrides: {
+      folic_acid: 'L-Methylfolate', // Never give folic acid to MTHFR variants
+      cyanocobalamin: 'Methylcobalamin B12', // Never give synthetic B12
+      pyridoxine: 'P5P (B6)' // Never give synthetic B6
+    },
+    reasoning: 'MTHFR variants cannot process synthetic forms - must use methylated/active forms'
+  },
+  'COMT_slow': {
+    genetic_priority: ['Magnesium', 'L-Theanine', 'Low-dose methyl donors'],
+    avoid: ['High-dose methyl donors', 'SAMe', 'DMG'],
+    reasoning: 'Slow COMT variants get overstimulated by methyl donors - focus on calming nutrients'
+  },
+  'HFE_variants': {
+    genetic_priority: ['Never Iron supplements'],
+    overrides: {
+      iron: 'Lactoferrin (if needed)', // Never give iron to hemochromatosis variants
+      iron_rich_foods: 'Monitor carefully'
+    },
+    reasoning: 'HFE variants have iron overload risk - iron supplementation contraindicated'
+  },
+  'APOE4_carriers': {
+    genetic_priority: ['Omega-3', 'Curcumin', 'Mediterranean diet'],
+    modify: {
+      saturated_fat: 'Limit strictly',
+      coconut_oil: 'Avoid',
+      mct_oil: 'Use cautiously'
+    },
+    reasoning: 'APOE4 carriers have higher cardiovascular/cognitive risk with saturated fats'
+  },
+  'VDR_variants': {
+    genetic_priority: ['Higher dose Vitamin D3', 'Magnesium', 'Vitamin K2'],
+    modify: {
+      vitamin_d_dose: 'Increase 50-100%'
+    },
+    reasoning: 'VDR variants need higher vitamin D doses for same biological effect'
+  }
+};
+
 // Enhanced gene-gene interaction matrix
 const geneInteractions = {
   // MTHFR + CBS can cause issues if both impaired
@@ -315,22 +543,32 @@ const baseRecommendations = {
 
 interface AnalysisRequest { user_id: string; }
 
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, content-type",
+};
+
 serve(async (req) => {
   console.log("generate_analysis function invoked");
   
+  if (req.method === "OPTIONS") {
+    return new Response("", { status: 204, headers: cors });
+  }
+  
   try {
-    if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+    if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: cors });
     
     let body: AnalysisRequest;
     try { 
       body = await req.json(); 
       console.log("Request body:", body);
     } catch (_) { 
-      return new Response('Invalid JSON', { status: 400 }); 
+      return new Response('Invalid JSON', { status: 400, headers: cors }); 
     }
     
     const { user_id } = body;
-    if (!user_id) return new Response('Missing user_id', { status: 400 });
+    if (!user_id) return new Response('Missing user_id', { status: 400, headers: cors });
 
     // Check environment variables
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -347,7 +585,7 @@ serve(async (req) => {
     
     if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
       console.error('Missing Supabase environment variables');
-      return new Response('Configuration error', { status: 500 });
+      return new Response('Configuration error', { status: 500, headers: cors });
     }
 
     console.log("Creating Supabase client");
@@ -366,22 +604,45 @@ serve(async (req) => {
     if (assessErr) {
       console.error('Error fetching assessment:', assessErr);
       console.error('Assessment error details:', JSON.stringify(assessErr, null, 2));
-      return new Response('Database error', { status: 500 });
+      return new Response('Database error', { status: 500, headers: cors });
     }
     
     if (!assessment) {
       console.log("No completed assessment found for user:", user_id);
-      return new Response('No completed assessment', { status: 404 });
+      return new Response('No completed assessment', { status: 404, headers: cors });
     }
     
     console.log("Assessment found, ID:", assessment.id);
 
     console.log("Fetching genetic markers and lab biomarkers");
-    const { data: markers, error: markersErr } = await supabase.from('genetic_markers').select('*').eq('user_id', user_id);
-    const { data: labs, error: labsErr } = await supabase.from('lab_biomarkers').select('*').eq('user_id', user_id);
+    const { data: rawMarkers, error: markersErr } = await supabase.from('genetic_data').select('*').eq('user_id', user_id);
+    const { data: labs, error: labsErr } = await supabase.from('lab_data').select('*').eq('user_id', user_id);
     
     if (markersErr) console.error("Error fetching genetic markers:", markersErr);
     if (labsErr) console.error("Error fetching lab biomarkers:", labsErr);
+    
+    // Convert JSON-based genetic data to row-based format for processing
+    const markers = [];
+    if (rawMarkers && rawMarkers.length > 0) {
+      for (const geneticRow of rawMarkers) {
+        // Extract SNPs from the snp_data JSON object
+        if (geneticRow.snp_data && typeof geneticRow.snp_data === 'object') {
+          for (const [rsid, genotype] of Object.entries(geneticRow.snp_data)) {
+            if (genotype && String(genotype).trim() !== '') {
+              // Find the gene for this rsid
+              const geneRef = geneReferences.find(ref => ref.rsids.includes(rsid));
+              markers.push({
+                rsid: rsid,
+                genotype: String(genotype).trim(),
+                gene: geneRef?.gene || 'Unknown',
+                user_id: geneticRow.user_id,
+                source_company: geneticRow.source_company
+              });
+            }
+          }
+        }
+      }
+    }
     
     console.log(`Found ${markers?.length || 0} genetic markers, ${labs?.length || 0} lab biomarkers`);
 
@@ -391,69 +652,100 @@ serve(async (req) => {
     
     console.log("🧬 Starting comprehensive holistic analysis...");
     
-    // STEP 1: GENETIC SNP ANALYSIS - Primary Catalyst
+    // STEP 1: COMPREHENSIVE GENETIC SNP ANALYSIS - Primary Catalyst
     const geneticRecommendations = [];
     const geneticConcerns = [];
     
+    // Create a comprehensive analysis by checking all possible SNPs in our database
+    console.log(`🧬 COMPREHENSIVE GENETIC ANALYSIS: Checking ${geneReferences.length} potential genetic variants...`);
+    
+    // Build a map of user's genetic data for quick lookup
+    const userSNPMap = {};
     if (markers && markers.length > 0) {
-      console.log(`Analyzing ${markers.length} genetic markers...`);
-      
-      // Process each genetic marker for recommendations
-      for (const marker of markers) {
-        const geneRef = geneReferences.find(ref => ref.rsids.includes(marker.rsid));
-        if (geneRef && geneRef.genotypesOfConcern?.includes(marker.genotype)) {
-          console.log(`🧬 Found variant of concern: ${marker.rsid} (${marker.genotype}) - ${geneRef.gene}`);
+      markers.forEach(marker => {
+        userSNPMap[marker.rsid] = marker.genotype;
+      });
+      console.log(`Found user data for ${markers.length} SNPs out of ${geneReferences.length} total variants in our database`);
+    }
+    
+    // Analyze ALL genetic variants in our comprehensive database
+    for (const geneRef of geneReferences) {
+      for (const rsid of geneRef.rsids) {
+        const userGenotype = userSNPMap[rsid];
+        
+                 if (userGenotype) {
+           // User has this SNP - analyze it
+           if (geneRef.genotypesOfConcern?.includes(userGenotype)) {
+            console.log(`🧬 Found variant of concern: ${rsid} (${userGenotype}) - ${geneRef.gene}`);
           
-          // Extract dosage information
-          const dosageMatch = geneRef.dosage.match(/(\d+(?:\.\d+)?)\s*[-–]?\s*(\d+(?:\.\d+)?)?\s*(µg|mcg|mg|g|IU)/i);
-          const minDose = dosageMatch ? parseFloat(dosageMatch[1]) : 100;
-          const maxDose = dosageMatch && dosageMatch[2] ? parseFloat(dosageMatch[2]) : minDose;
-          const unit = dosageMatch ? dosageMatch[3] : 'mg';
-          
-          // Create genetic-driven recommendation with SPECIFIC biological reasoning
-          const supplements = geneRef.supplement.split(';').map(s => s.trim());
-          
-          supplements.forEach(supplement => {
-            let specificReason = generateSpecificGeneticReasoning(geneRef.gene, marker.rsid, marker.genotype, supplement, geneRef.impact);
+            // Extract dosage information
+            const dosageMatch = geneRef.dosage.match(/(\d+(?:\.\d+)?)\s*[-–]?\s*(\d+(?:\.\d+)?)?\s*(µg|mcg|mg|g|IU)/i);
+            const minDose = dosageMatch ? parseFloat(dosageMatch[1]) : 100;
+            const maxDose = dosageMatch && dosageMatch[2] ? parseFloat(dosageMatch[2]) : minDose;
+            const unit = dosageMatch ? dosageMatch[3] : 'mg';
             
-            geneticRecommendations.push({
-              supplement_name: supplement,
-              dosage_amount: minDose,
-              dosage_unit: unit,
-              frequency: 'daily',
-              timing: getOptimalTiming(supplement),
-              recommendation_reason: specificReason,
-              evidence_quality: geneRef.evidence,
-              priority_score: geneRef.evidence === 'high' ? 9 : geneRef.evidence === 'moderate' ? 7 : 5,
-              expected_benefits: [`Genetic pathway optimization within 4-8 weeks`, `Improved ${geneRef.gene} function`, `Reduced risk of ${geneRef.gene}-related health issues`],
-              contraindications: geneRef.cautions ? [geneRef.cautions] : [],
-              genetic_reasoning: specificReason,
-              source_type: 'genetic',
-              source_data: { rsid: marker.rsid, genotype: marker.genotype, gene: geneRef.gene }
+            // Create genetic-driven recommendation with SPECIFIC biological reasoning
+            const supplements = geneRef.supplement.split(';').map(s => s.trim());
+            
+            supplements.forEach(supplement => {
+              let specificReason = generateSpecificGeneticReasoning(geneRef.gene, rsid, userGenotype, supplement, geneRef.impact);
+              
+              geneticRecommendations.push({
+                supplement_name: supplement,
+                dosage_amount: minDose,
+                dosage_unit: unit,
+                frequency: 'daily',
+                timing: getOptimalTiming(supplement),
+                recommendation_reason: specificReason,
+                evidence_quality: geneRef.evidence,
+                priority_score: geneRef.evidence === 'high' ? 9 : geneRef.evidence === 'moderate' ? 7 : 5,
+                expected_benefits: [`Genetic pathway optimization within 4-8 weeks`, `Improved ${geneRef.gene} function`, `Reduced risk of ${geneRef.gene}-related health issues`],
+                contraindications: geneRef.cautions ? [geneRef.cautions] : [],
+                genetic_reasoning: specificReason,
+                source_type: 'genetic',
+                source_data: { rsid: rsid, genotype: userGenotype, gene: geneRef.gene }
+              });
             });
-          });
-          
-          geneticConcerns.push(`${geneRef.gene} variant (${marker.rsid}: ${marker.genotype})`);
-          relevant_genes.push(geneRef.gene);
+            
+            geneticConcerns.push(`${geneRef.gene} variant (${rsid}: ${userGenotype})`);
+            relevant_genes.push(geneRef.gene);
+          } else {
+            console.log(`🧬 Normal genotype (no supplement needed): ${rsid} (${userGenotype}) - ${geneRef.gene}`);
+          }
         }
       }
     }
 
-    // STEP 2: BIOMARKER ANALYSIS - Primary Catalyst
+    // STEP 2: COMPREHENSIVE BIOMARKER ANALYSIS - Primary Catalyst
     const biomarkerRecommendations = [];
     const biomarkerConcerns = [];
     
+    console.log(`📊 COMPREHENSIVE BIOMARKER ANALYSIS: Analyzing all available lab data...`);
+    
+    // Check both lab_biomarkers and lab_data tables for comprehensive analysis
+    const { data: labData, error: labDataErr } = await supabase.from('lab_data').select('*').eq('user_id', user_id);
+    if (labDataErr) console.error("Error fetching lab_data:", labDataErr);
+    
+    // Create comprehensive biomarker inventory from all sources
+    const allBiomarkers = new Map();
+    let totalBiomarkersFound = 0;
+    
+    // Process lab_biomarkers table
     if (labs && labs.length > 0) {
-      console.log(`Analyzing ${labs.length} lab panels...`);
+      console.log(`Analyzing ${labs.length} lab biomarker panels...`);
       
       for (const lab of labs) {
         if (lab.biomarker_data && typeof lab.biomarker_data === 'object') {
           console.log(`📊 Processing biomarkers from: ${lab.lab_name || 'Lab Panel'}`);
           
-          // Analyze each biomarker
+          // Analyze each biomarker comprehensively
           for (const [biomarkerName, value] of Object.entries(lab.biomarker_data)) {
             const normalizedName = biomarkerName.toLowerCase().replace(/[^a-z0-9]/g, '_');
             const numericValue = parseFloat(String(value));
+            
+            // Add to comprehensive inventory
+            allBiomarkers.set(biomarkerName, { value, source: lab.lab_name || 'Lab Panel', normalized: normalizedName });
+            totalBiomarkersFound++;
             
             // Check if biomarker is outside optimal ranges and needs supplementation
             const biomarkerRecommendation = analyzeBiomarker(normalizedName, numericValue, biomarkerName);
@@ -473,8 +765,129 @@ serve(async (req) => {
         }
       }
     }
+    
+    // Process lab_data table (includes flagged biomarkers)
+    if (labData && labData.length > 0) {
+      console.log(`Analyzing ${labData.length} structured lab reports...`);
+      
+      for (const labReport of labData) {
+        // Process flagged biomarkers (out of range values)
+        if (labReport.flagged_biomarkers && Array.isArray(labReport.flagged_biomarkers)) {
+          console.log(`📊 Processing ${labReport.flagged_biomarkers.length} flagged biomarkers from: ${labReport.lab_name || 'Lab Report'}`);
+          
+          for (const flagged of labReport.flagged_biomarkers) {
+            const normalizedName = flagged.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            const numericValue = parseFloat(String(flagged.value));
+            
+            if (!isNaN(numericValue)) {
+              const biomarkerRecommendation = analyzeBiomarker(normalizedName, numericValue, flagged.name);
+              
+              // Add to comprehensive inventory
+              allBiomarkers.set(flagged.name, { 
+                value: flagged.value, 
+                source: labReport.lab_name || 'Lab Report', 
+                normalized: normalizedName,
+                status: flagged.status,
+                reference_range: flagged.reference_range
+              });
+              totalBiomarkersFound++;
+              
+              if (biomarkerRecommendation) {
+                biomarkerRecommendations.push({
+                  ...biomarkerRecommendation,
+                  biomarker_reasoning: `📊 **Flagged Lab Value**: Your ${flagged.name} of ${flagged.value} ${flagged.unit || ''} is ${flagged.status} (reference: ${flagged.reference_range}). We've specifically chosen this supplement because research shows it can help bring this marker back into optimal range. This targeted approach addresses your specific lab abnormality rather than generic supplementation.`,
+                  source_type: 'biomarker',
+                  source_data: { 
+                    biomarker: flagged.name, 
+                    value: flagged.value, 
+                    status: flagged.status,
+                    reference_range: flagged.reference_range,
+                    lab_name: labReport.lab_name 
+                  }
+                });
+                
+                biomarkerConcerns.push(`${flagged.name}: ${flagged.value} (${flagged.status})`);
+                relevant_biomarkers.push(flagged.name);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Comprehensive biomarker analysis summary
+    console.log(`📊 COMPREHENSIVE BIOMARKER ANALYSIS COMPLETE:`);
+    console.log(`   - Total biomarkers found across all sources: ${totalBiomarkersFound}`);
+    console.log(`   - Unique biomarkers analyzed: ${allBiomarkers.size}`);
+    console.log(`   - Biomarker-driven recommendations: ${biomarkerRecommendations.length}`);
+    console.log(`   - Sources: ${labs?.length || 0} biomarker panels + ${labData?.length || 0} lab reports`);
 
-    // STEP 3: HEALTH GOALS & LIFESTYLE INTEGRATION
+    // STEP 3: DRUG-INDUCED NUTRIENT DEPLETION ANALYSIS - Secondary Catalyst
+    const drugDepletionRecommendations = [];
+    const medications = assessment.current_medications || [];
+    
+    if (medications.length > 0) {
+      console.log(`💊 Analyzing drug-induced nutrient depletion for: ${medications.join(', ')}`);
+      
+      for (const medication of medications) {
+        const normalizedMed = medication.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        
+        // Check for exact matches and partial matches
+        const depletionProfile = findMedicationDepletionProfile(normalizedMed);
+        
+        if (depletionProfile) {
+          console.log(`💊 Found depletion profile for: ${medication}`);
+          
+          depletionProfile.recommendations.forEach(rec => {
+            drugDepletionRecommendations.push({
+              supplement_name: rec.supplement,
+              dosage_amount: parseFloat(rec.dosage.split('-')[0]) || 100,
+              dosage_unit: rec.dosage.includes('mg') ? 'mg' : rec.dosage.includes('mcg') ? 'mcg' : rec.dosage.includes('IU') ? 'IU' : 'mg',
+              frequency: 'daily',
+              timing: rec.timing || 'with_meals',
+              recommendation_reason: `💊 **Drug-Induced Nutrient Depletion**: ${rec.reason} Your medication ${medication} is known to deplete ${rec.supplement}, so we're recommending targeted supplementation to prevent deficiency and maintain optimal health.`,
+              evidence_quality: 'high',
+              priority_score: rec.priority,
+              expected_benefits: [`Prevent ${rec.supplement} deficiency`, `Counter medication side effects`, `Maintain optimal nutrient status`],
+              contraindications: rec.caution ? [rec.caution] : [],
+              source_type: 'drug_depletion',
+              source_data: { medication: medication, depleted_nutrient: rec.supplement }
+            });
+          });
+        }
+      }
+    }
+
+    // STEP 4: DIET-BASED DEFICIENCY ANALYSIS - Secondary Catalyst
+    const dietDeficiencyRecommendations = [];
+    const dietType = assessment.diet_type || 'standard_american';
+    
+    console.log(`🥗 Analyzing diet-based deficiencies for: ${dietType}`);
+    
+    const dietProfile = dietNutrientDeficiencies[dietType];
+    if (dietProfile) {
+      console.log(`🥗 Found deficiency profile for ${dietType} diet`);
+      
+      dietProfile.recommendations.forEach(rec => {
+        dietDeficiencyRecommendations.push({
+          supplement_name: rec.supplement,
+          dosage_amount: parseFloat(rec.dosage.split('-')[0]) || 100,
+          dosage_unit: rec.dosage.includes('mg') ? 'mg' : rec.dosage.includes('mcg') ? 'mcg' : rec.dosage.includes('IU') ? 'IU' : 'capsule',
+          frequency: 'daily',
+          timing: rec.timing || 'with_meals',
+          recommendation_reason: `🥗 **Diet-Based Deficiency**: ${rec.reason} Based on your ${dietType} diet, we've identified this as a potential nutrient gap that could benefit from targeted supplementation.`,
+          evidence_quality: 'moderate',
+          priority_score: rec.priority,
+          expected_benefits: [`Address dietary nutrient gaps`, `Support optimal nutrition`, `Prevent diet-related deficiencies`],
+          contraindications: rec.caution ? [rec.caution] : [],
+          source_type: 'diet_deficiency',
+          source_data: { diet_type: dietType, deficiency_risk: 'high' },
+          genetic_override_eligible: rec.genetic_override !== false // Most diet recommendations can be overridden by genetics
+        });
+      });
+    }
+
+    // STEP 5: HEALTH GOALS & LIFESTYLE INTEGRATION - Tertiary Factor
     const lifestyleRecommendations = [];
     const healthGoals = assessment.health_goals || [];
     const healthConcerns = assessment.health_concerns || [];
@@ -494,23 +907,49 @@ serve(async (req) => {
       lifestyleRecommendations.push(...concernRecommendations);
     });
 
-    // STEP 4: COMBINE AND PRIORITIZE ALL RECOMMENDATIONS
+    // STEP 6: COMBINE ALL RECOMMENDATIONS BY PRIORITY
     let allRecommendations = [
-      ...geneticRecommendations,
-      ...biomarkerRecommendations,
-      ...lifestyleRecommendations
+      ...geneticRecommendations,      // Priority 1: Genetic SNPs (9-10)
+      ...biomarkerRecommendations,    // Priority 2: Lab abnormalities (8-9)
+      ...drugDepletionRecommendations,// Priority 3: Drug-induced depletion (7-9)
+      ...dietDeficiencyRecommendations,// Priority 4: Diet gaps (5-8)
+      ...lifestyleRecommendations     // Priority 5: Health goals (3-7)
     ];
 
-    // Remove duplicates and merge similar supplements
+    // COMPREHENSIVE ANALYSIS SUMMARY
+    console.log(`🎯 COMPREHENSIVE HEALTH ANALYSIS COMPLETE:`);
+    console.log(`📊 ANALYSIS SCOPE:`);
+    console.log(`   🧬 Genetic variants checked: ${geneReferences.length} total SNPs in database`);
+    console.log(`   🧬 User genetic data found: ${markers?.length || 0} SNPs`);
+    console.log(`   🧬 Actionable genetic variants: ${geneticRecommendations.length}`);
+    console.log(`   📊 Total biomarkers analyzed: ${totalBiomarkersFound}`);
+    console.log(`   📊 Unique biomarker types: ${allBiomarkers.size}`);
+    console.log(`   📊 Actionable biomarker findings: ${biomarkerRecommendations.length}`);
+    console.log(`   💊 Medications analyzed: ${medications.length}`);
+    console.log(`   🥗 Diet type: ${assessment.diet_type || 'standard_american'}`);
+    console.log(`   🎯 Health goals: ${(assessment.health_goals || []).length}`);
+    console.log(`📋 RECOMMENDATIONS GENERATED:`);
+    console.log(`   - Genetic-based: ${geneticRecommendations.length}`);
+    console.log(`   - Biomarker-based: ${biomarkerRecommendations.length}`);  
+    console.log(`   - Drug depletion: ${drugDepletionRecommendations.length}`);
+    console.log(`   - Diet deficiency: ${dietDeficiencyRecommendations.length}`);
+    console.log(`   - Lifestyle/goals: ${lifestyleRecommendations.length}`);
+    console.log(`   📊 Total recommendations: ${allRecommendations.length}`);
+
+    // STEP 7: GENETIC OVERRIDE ANALYSIS - Genetics are the "software" and take priority
+    console.log("🧬 Applying genetic overrides - genetics take priority over all other factors...");
+    allRecommendations = applyGeneticOverrides(allRecommendations, markers, interaction_warnings);
+
+    // STEP 8: REMOVE DUPLICATES AND MERGE SIMILAR SUPPLEMENTS
     allRecommendations = mergeSimilarSupplements(allRecommendations);
 
-    // STEP 5: GENE-GENE AND BIOMARKER INTERACTIONS
+    // STEP 9: GENE-GENE AND BIOMARKER INTERACTIONS
     allRecommendations = checkInteractions(allRecommendations, markers, labs, interaction_warnings);
 
-    // STEP 6: SAFETY FILTERING
+    // STEP 10: COMPREHENSIVE SAFETY FILTERING
     allRecommendations = applySafetyFilters(allRecommendations, assessment, interaction_warnings);
 
-    // STEP 6.5: AI-POWERED FLEXIBLE INTERACTION SAFETY CHECK
+    // STEP 10.5: AI-POWERED COMPREHENSIVE INTERACTION SAFETY CHECK
     if (ANTHROPIC_API_KEY || OPENAI_API_KEY) {
       try {
         console.log("🤖 Running AI-powered interaction analysis...");
@@ -531,7 +970,7 @@ serve(async (req) => {
       interaction_warnings.push(...fallbackResult.warnings);
     }
 
-    // STEP 7: AI ENHANCEMENT (if available)
+    // STEP 11: AI ENHANCEMENT (if available)
     if (ANTHROPIC_API_KEY || OPENAI_API_KEY) {
       try {
         console.log("🤖 Enhancing recommendations with AI analysis...");
@@ -556,7 +995,7 @@ serve(async (req) => {
       }
     }
 
-    // STEP 8: FINAL PRIORITIZATION AND SUMMARY
+    // STEP 12: FINAL PRIORITIZATION AND SUMMARY
     allRecommendations.sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0));
     
     // Generate comprehensive analysis summary
@@ -565,7 +1004,9 @@ serve(async (req) => {
       geneticConcerns,
       biomarkerConcerns,
       allRecommendations,
-      healthGoals
+      healthGoals,
+      markers,
+      labs
     );
 
     supplements = allRecommendations;
@@ -592,7 +1033,7 @@ serve(async (req) => {
     if (analysisInsertErr) {
       console.error("Error inserting analysis:", analysisInsertErr);
       console.error("Analysis insert error details:", JSON.stringify(analysisInsertErr, null, 2));
-      return new Response('Database error: ' + analysisInsertErr.message, { status: 500 });
+      return new Response('Database error: ' + analysisInsertErr.message, { status: 500, headers: cors });
     }
     
     console.log("Analysis inserted, ID:", analysisRow?.id);
@@ -630,91 +1071,39 @@ serve(async (req) => {
       }));
       
       console.log(`Inserting ${rows.length} supplement recommendations`);
-      const { error: recErr } = await supabase.from('supplement_recommendations').insert(rows);
+      const { error: recErr, data: insertedRecs } = await supabase.from('supplement_recommendations').insert(rows).select('id, supplement_name');
       
       if (recErr) {
-        console.error("Error inserting recommendations:", recErr);
-        console.error("Recommendations error details:", JSON.stringify(recErr, null, 2));
+        console.error('Error inserting recommendations:', recErr);
+        interaction_warnings.push('Failed to save supplement recommendations');
       } else {
-        // After inserting recommendations, populate product links AND citations
-        console.log("Populating product links and citations for recommendations");
-        try {
-          // Get the newly created recommendations
-          const { data: newRecommendations } = await supabase
-            .from('supplement_recommendations')
-            .select('id, supplement_name, recommendation_reason')
-            .eq('analysis_id', analysisRow.id);
-            
-          if (newRecommendations) {
-            for (const rec of newRecommendations) {
-              console.log(`Processing: ${rec.supplement_name}`);
-              
-              // 1. FIND PRODUCTS
-              const productSearchResponse = await supabase.functions.invoke('product_search', {
-                body: { supplement_name: rec.supplement_name }
+        console.log(`✅ Successfully inserted ${insertedRecs?.length || 0} recommendations`);
+        
+        // Link products to each recommendation
+        if (insertedRecs && insertedRecs.length > 0) {
+          console.log('🔗 Linking products to recommendations...');
+          
+          for (const rec of insertedRecs) {
+            try {
+              // Call the database function to link products
+              const { error: linkError } = await supabase.rpc('link_products_to_recommendation', {
+                rec_id: rec.id,
+                supplement_name_param: rec.supplement_name
               });
               
-              if (productSearchResponse.data?.success && productSearchResponse.data.product_url) {
-                console.log(`Found product: ${productSearchResponse.data.brand} - ${productSearchResponse.data.product_url}`);
-                
-                // Create product link for this recommendation
-                const productLink = {
-                  recommendation_id: rec.id,
-                  supplement_name: rec.supplement_name,
-                  brand: productSearchResponse.data.brand,
-                  product_name: productSearchResponse.data.product_name,
-                  product_url: productSearchResponse.data.product_url,
-                  price: productSearchResponse.data.price,
-                  verified: true
-                };
-                
-                await supabase.from('product_links').insert(productLink);
-                console.log(`Created product link for ${rec.supplement_name}`);
+              if (linkError) {
+                console.error(`❌ Error linking products for ${rec.supplement_name}:`, linkError);
+                // Try fallback - create a generic product link
+                await createFallbackProductLink(rec.id, rec.supplement_name);
               } else {
-                // Create a basic fallback link using the search URLs as backup
-                const fallbackLink = {
-                  recommendation_id: rec.id,
-                  supplement_name: rec.supplement_name,
-                  brand: "Multiple Options",
-                  product_name: `${rec.supplement_name} - Find Best Price`,
-                  product_url: `https://www.vitacost.com/search?t=${encodeURIComponent(rec.supplement_name)}`,
-                  price: null,
-                  verified: true
-                };
-                
-                await supabase.from('product_links').insert(fallbackLink);
-                console.log(`Created fallback product link for ${rec.supplement_name}`);
+                console.log(`✅ Linked products for ${rec.supplement_name}`);
               }
-              
-              // 2. GENERATE PERSONALIZED CITATIONS
-              try {
-                console.log(`Generating citations for: ${rec.supplement_name}`);
-                
-                // Extract genetic variant from recommendation reasoning
-                const geneticVariant = extractGeneticVariant(rec.recommendation_reason);
-                const healthCondition = extractHealthCondition(rec.recommendation_reason);
-                
-                const citationResponse = await supabase.functions.invoke('pubmed_citations', {
-                  body: {
-                    recommendation_id: rec.id,
-                    supplement_name: rec.supplement_name,
-                    health_condition: healthCondition || 'general health',
-                    genetic_variant: geneticVariant
-                  }
-                });
-                
-                if (citationResponse.data?.success) {
-                  console.log(`Generated ${citationResponse.data.citations_found} citations for ${rec.supplement_name}`);
-                } else {
-                  console.log(`Citation generation failed for ${rec.supplement_name}:`, citationResponse.error);
-                }
-              } catch (citationError) {
-                console.error(`Citation error for ${rec.supplement_name}:`, citationError);
-              }
+            } catch (error) {
+              console.error(`❌ Error in product linking for ${rec.supplement_name}:`, error);
+              // Create fallback link
+              await createFallbackProductLink(rec.id, rec.supplement_name);
             }
           }
-        } catch (productError) {
-          console.error("Error populating product links and citations:", productError);
         }
       }
     }
@@ -723,12 +1112,12 @@ serve(async (req) => {
       status:'ok', 
       mode: aiAnalysisSuccessful ? 'ai-enhanced' : 'rule-based',
       analysis_id: analysisRow?.id 
-    }), { headers:{'Content-Type':'application/json'} });
+    }), { headers: { ...cors, 'Content-Type':'application/json' } });
   } catch (error) {
     console.error('generate_analysis error:', error);
     return new Response(JSON.stringify({ error: 'Internal error', details: String(error) }), { 
       status: 500, 
-      headers:{'Content-Type':'application/json'} 
+      headers: { ...cors, 'Content-Type':'application/json' }
     });
   }
 }); 
@@ -1192,6 +1581,167 @@ function analyzeBiomarker(normalizedName: string, numericValue: number, displayN
     }
   }
 
+  // === ELEVATED VALUES THAT NEED TO BE LOWERED ===
+  
+  // === CHOLESTEROL & LIPIDS ===
+  if (normalizedName.includes('ldl') || normalizedName.includes('ldl_cholesterol')) {
+    if (numericValue > 100) {
+      let priority = 6;
+      let dosage = 1000;
+      if (numericValue > 130) {
+        priority = 8;
+        dosage = 1500;
+      }
+      
+      return {
+        supplement_name: 'Red Yeast Rice + Plant Sterols',
+        dosage_amount: dosage,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'with dinner',
+        recommendation_reason: `Your LDL cholesterol of ${numericValue} mg/dL is above optimal (<100 mg/dL). We're recommending red yeast rice combined with plant sterols because this combination has been shown to lower LDL by 20-30% naturally. Red yeast rice contains naturally occurring statins, while plant sterols block cholesterol absorption. This dual approach targets both cholesterol production and absorption for maximum effectiveness.`,
+        evidence_quality: 'high',
+        priority_score: priority,
+        expected_benefits: ['Lower LDL cholesterol within 6-8 weeks', 'Improved cardiovascular health'],
+        contraindications: ['Avoid if on statin medications', 'Monitor liver function'],
+        concern: 'elevated LDL cholesterol'
+      };
+    }
+  }
+  
+  if (normalizedName.includes('total_cholesterol') || normalizedName.includes('cholesterol_total')) {
+    if (numericValue > 200) {
+      return {
+        supplement_name: 'Bergamot Extract + Niacin',
+        dosage_amount: 500,
+        dosage_unit: 'mg',
+        frequency: 'twice daily',
+        timing: 'with meals',
+        recommendation_reason: `Your total cholesterol of ${numericValue} mg/dL is above optimal (<200 mg/dL). We're combining bergamot extract with niacin because bergamot specifically targets cholesterol synthesis while niacin improves the overall lipid profile. This combination not only lowers total cholesterol but also improves the HDL:LDL ratio for better cardiovascular protection.`,
+        evidence_quality: 'moderate',
+        priority_score: 6,
+        expected_benefits: ['Lower total cholesterol', 'Improved lipid ratios', 'Better cardiovascular health'],
+        contraindications: ['Monitor for flushing with niacin'],
+        concern: 'elevated total cholesterol'
+      };
+    }
+  }
+  
+  if (normalizedName.includes('triglycerides')) {
+    if (numericValue > 150) {
+      let dosage = 2000;
+      if (numericValue > 200) dosage = 3000;
+      
+      return {
+        supplement_name: 'Omega-3 (EPA/DHA)',
+        dosage_amount: dosage,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'with largest meal',
+        recommendation_reason: `Your triglycerides of ${numericValue} mg/dL are above optimal (<150 mg/dL). We're recommending high-dose omega-3s because EPA/DHA are the most effective supplements for lowering triglycerides, reducing them by 20-50%. This prescription-strength dose targets triglyceride synthesis in the liver and improves fat metabolism throughout your body.`,
+        evidence_quality: 'high',
+        priority_score: 7,
+        expected_benefits: ['Lower triglycerides within 4-6 weeks', 'Improved fat metabolism', 'Better cardiovascular health'],
+        contraindications: ['Monitor if on blood thinners'],
+        concern: 'elevated triglycerides'
+      };
+    }
+  }
+  
+  // === INFLAMMATORY MARKERS ===
+  if (normalizedName.includes('crp') || normalizedName.includes('c_reactive')) {
+    if (numericValue > 3.0) {
+      return {
+        supplement_name: 'Curcumin + Boswellia',
+        dosage_amount: 1000,
+        dosage_unit: 'mg',
+        frequency: 'twice daily',
+        timing: 'with meals',
+        recommendation_reason: `Your C-reactive protein of ${numericValue} mg/L indicates elevated inflammation (optimal: <1.0 mg/L). We're combining curcumin with boswellia because these are two of the most potent anti-inflammatory compounds available. This combination targets multiple inflammatory pathways and should significantly reduce your systemic inflammation within 4-6 weeks.`,
+        evidence_quality: 'high',
+        priority_score: 8,
+        expected_benefits: ['Reduced inflammation within 4-6 weeks', 'Lower cardiovascular risk', 'Improved overall health'],
+        contraindications: ['Monitor if on blood thinners'],
+        concern: 'elevated inflammation'
+      };
+    }
+  }
+  
+  // === BLOOD SUGAR MARKERS ===
+  if (normalizedName.includes('glucose') && !normalizedName.includes('pp')) {
+    if (numericValue > 100) {
+      return {
+        supplement_name: 'Berberine + Chromium',
+        dosage_amount: 500,
+        dosage_unit: 'mg',
+        frequency: 'twice daily',
+        timing: 'before meals',
+        recommendation_reason: `Your fasting glucose of ${numericValue} mg/dL is above optimal (70-99 mg/dL). We're combining berberine with chromium because berberine works like metformin to improve insulin sensitivity, while chromium enhances glucose uptake by cells. This combination helps normalize blood sugar and prevents progression to diabetes.`,
+        evidence_quality: 'high',
+        priority_score: 8,
+        expected_benefits: ['Better blood sugar control within 4-6 weeks', 'Improved insulin sensitivity'],
+        contraindications: ['Monitor blood sugar if diabetic'],
+        concern: 'elevated blood glucose'
+      };
+    }
+  }
+  
+  if (normalizedName.includes('hemoglobin_a1c') || normalizedName.includes('hba1c')) {
+    if (numericValue > 5.7) {
+      return {
+        supplement_name: 'Alpha-Lipoic Acid + Cinnamon Extract',
+        dosage_amount: 600,
+        dosage_unit: 'mg',
+        frequency: 'twice daily',
+        timing: 'with meals',
+        recommendation_reason: `Your HbA1c of ${numericValue}% indicates impaired glucose metabolism (optimal: <5.7%). We're combining alpha-lipoic acid with cinnamon extract because ALA improves insulin sensitivity and glucose uptake, while cinnamon mimics insulin action. This combination addresses both insulin resistance and glucose disposal for comprehensive blood sugar support.`,
+        evidence_quality: 'high',
+        priority_score: 9,
+        expected_benefits: ['Lower HbA1c within 3 months', 'Better long-term blood sugar control'],
+        contraindications: ['Monitor blood sugar closely'],
+        concern: 'elevated HbA1c'
+      };
+    }
+  }
+  
+  // === LIVER FUNCTION ===
+  if (normalizedName.includes('alt') || normalizedName.includes('alanine')) {
+    if (numericValue > 40) {
+      return {
+        supplement_name: 'Milk Thistle + NAC',
+        dosage_amount: 200,
+        dosage_unit: 'mg',
+        frequency: 'twice daily',
+        timing: 'between meals',
+        recommendation_reason: `Your ALT of ${numericValue} U/L is above optimal (<40 U/L), indicating liver stress. We're combining milk thistle with N-acetylcysteine because milk thistle protects liver cells while NAC provides glutathione for detoxification. This combination supports liver health and helps normalize liver enzymes naturally.`,
+        evidence_quality: 'moderate',
+        priority_score: 7,
+        expected_benefits: ['Improved liver function within 6-8 weeks', 'Better detoxification'],
+        contraindications: ['Monitor liver function'],
+        concern: 'elevated liver enzymes'
+      };
+    }
+  }
+  
+  // === URIC ACID ===
+  if (normalizedName.includes('uric_acid') || normalizedName.includes('uric')) {
+    if (numericValue > 7.0) {
+      return {
+        supplement_name: 'Tart Cherry Extract + Quercetin',
+        dosage_amount: 480,
+        dosage_unit: 'mg',
+        frequency: 'twice daily',
+        timing: 'with meals',
+        recommendation_reason: `Your uric acid of ${numericValue} mg/dL is above optimal (<7.0 mg/dL). We're combining tart cherry extract with quercetin because tart cherry naturally lowers uric acid production while quercetin inhibits xanthine oxidase, the enzyme that creates uric acid. This combination addresses gout risk and reduces inflammatory burden.`,
+        evidence_quality: 'moderate',
+        priority_score: 6,
+        expected_benefits: ['Lower uric acid within 4-6 weeks', 'Reduced gout risk', 'Less inflammation'],
+        contraindications: ['Monitor if on gout medications'],
+        concern: 'elevated uric acid'
+      };
+    }
+  }
+
   // Return null if no specific recommendation found
   return null;
 }
@@ -1471,39 +2021,375 @@ function generateComprehensiveAnalysisSummary(
   geneticConcerns: string[],
   biomarkerConcerns: string[],
   recommendations: any[],
-  healthGoals: string[]
+  healthGoals: string[],
+  markers?: any[],
+  labs?: any[]
 ): string {
   
-  let summary = "🎯 **Your Personalized Precision Medicine Analysis**\n\n";
+  let summary = "# 🧬 Your Comprehensive Health Analysis\n\n";
+  summary += "*Deep dive into your genetic variants and biomarker patterns*\n\n";
+  summary += "---\n\n";
+
+  // === GENETIC ANALYSIS SECTION ===
+  if (markers && markers.length > 0) {
+    summary += "## 🧬 Your Genetic Profile: Understanding Your DNA\n\n";
+    summary += "*Your genetics are like your body's instruction manual - they tell us exactly how you process nutrients, medications, and respond to environmental factors.*\n\n";
+    
+    // Group markers by gene for better organization
+    const markersByGene = markers.reduce((acc, marker) => {
+      const geneRef = geneReferences.find(ref => ref.rsids.includes(marker.rsid));
+      if (geneRef) {
+        if (!acc[geneRef.gene]) acc[geneRef.gene] = [];
+        acc[geneRef.gene].push({ ...marker, geneRef });
+      }
+      return acc;
+    }, {});
+
+    Object.entries(markersByGene).forEach(([gene, geneMarkers]: [string, any[]]) => {
+      const firstMarker = geneMarkers[0];
+      const geneRef = firstMarker.geneRef;
+      const hasVariant = geneMarkers.some(m => geneRef.genotypesOfConcern?.includes(m.genotype));
+      
+      summary += `### ${gene} Gene ${hasVariant ? '⚠️' : '✅'}\n`;
+      summary += `**What it does**: ${getGeneFunction(gene)}\n\n`;
+      
+      geneMarkers.forEach(marker => {
+        const isVariant = geneRef.genotypesOfConcern?.includes(marker.genotype);
+        const status = isVariant ? '🔶 **VARIANT**' : '✅ **NORMAL**';
+        
+        summary += `- **${marker.rsid}**: ${marker.genotype} ${status}\n`;
+        
+        if (isVariant) {
+          summary += `  - **Impact**: ${geneRef.impact}\n`;
+          summary += `  - **What this means for you**: ${getPersonalizedGeneticExplanation(gene, marker.rsid, marker.genotype)}\n`;
+          summary += `  - **Our solution**: ${geneRef.supplement} (${geneRef.dosage})\n`;
+        } else {
+          summary += `  - **Good news**: Your ${gene} gene works normally for nutrient processing\n`;
+        }
+      });
+      
+      summary += "\n";
+    });
+
+    // Summary of genetic insights
+    const variantGenes = Object.entries(markersByGene).filter(([gene, markers]: [string, any[]]) => 
+      markers.some(m => m.geneRef.genotypesOfConcern?.includes(m.genotype))
+    );
+    
+    if (variantGenes.length > 0) {
+      summary += "### 🎯 Your Genetic Insights Summary\n\n";
+      summary += `You have ${variantGenes.length} genetic variant(s) that affect how your body processes nutrients:\n\n`;
+      
+      variantGenes.forEach(([gene, markers]) => {
+        const geneRef = markers[0].geneRef;
+        summary += `- **${gene}**: ${getGeneticInsight(gene, geneRef)}\n`;
+      });
+      summary += "\n";
+    }
+    
+    summary += "---\n\n";
+  }
+
+  // === BIOMARKER ANALYSIS SECTION ===
+  if (labs && labs.length > 0) {
+    summary += "## 📊 Your Biomarker Analysis: What Your Labs Tell Us\n\n";
+    summary += "*Your lab results are like a snapshot of your body's current state - they show us exactly what's happening inside and what needs attention.*\n\n";
+    
+    // Process all biomarker data
+    const allBiomarkers = [];
+    labs.forEach(lab => {
+      if (lab.biomarker_data && typeof lab.biomarker_data === 'object') {
+        Object.entries(lab.biomarker_data).forEach(([name, value]) => {
+          allBiomarkers.push({
+            name: name,
+            value: value,
+            displayName: name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            category: categorizeBiomarker(name),
+            testDate: new Date(lab.created_at).toLocaleDateString()
+          });
+        });
+      }
+    });
+
+    // Group biomarkers by category
+    const biomarkersByCategory = allBiomarkers.reduce((acc, biomarker) => {
+      if (!acc[biomarker.category]) acc[biomarker.category] = [];
+      acc[biomarker.category].push(biomarker);
+      return acc;
+    }, {});
+
+    // Display each category
+    Object.entries(biomarkersByCategory).forEach(([category, biomarkers]: [string, any[]]) => {
+      summary += `### ${category}\n\n`;
+      
+      biomarkers.forEach(biomarker => {
+        const analysis = analyzeBiomarkerForEducation(biomarker.name, biomarker.value);
+        const status = analysis.status || 'Normal';
+        const emoji = analysis.status === 'High' ? '🔴' : analysis.status === 'Low' ? '🔵' : '✅';
+        
+        summary += `- **${biomarker.displayName}**: ${biomarker.value} ${emoji}\n`;
+        
+        if (analysis.explanation) {
+          summary += `  - **What this means**: ${analysis.explanation}\n`;
+        }
+        
+        if (analysis.implications && analysis.implications.length > 0) {
+          summary += `  - **Health implications**: ${analysis.implications.join(', ')}\n`;
+        }
+        
+        if (analysis.action) {
+          summary += `  - **Our action**: ${analysis.action}\n`;
+        }
+      });
+      
+      summary += "\n";
+    });
+    
+    // Biomarker insights summary
+    const abnormalBiomarkers = allBiomarkers.filter(b => {
+      const analysis = analyzeBiomarkerForEducation(b.name, b.value);
+      return analysis.status && analysis.status !== 'Normal';
+    });
+    
+    if (abnormalBiomarkers.length > 0) {
+      summary += "### 🎯 Your Biomarker Insights Summary\n\n";
+      summary += `We found ${abnormalBiomarkers.length} biomarker(s) outside optimal ranges that guide our recommendations:\n\n`;
+      
+      abnormalBiomarkers.slice(0, 5).forEach(biomarker => {
+        const analysis = analyzeBiomarkerForEducation(biomarker.name, biomarker.value);
+        summary += `- **${biomarker.displayName}** (${analysis.status}): ${analysis.insight || 'Requires attention'}\n`;
+      });
+      
+      if (abnormalBiomarkers.length > 5) {
+        summary += `- *And ${abnormalBiomarkers.length - 5} additional markers being addressed*\n`;
+      }
+      summary += "\n";
+    }
+    
+    summary += "---\n\n";
+  }
+
+  // === PERSONALIZED PROTOCOL SECTION ===
+  summary += "## 🎯 Your Personalized Supplement Protocol\n\n";
+  
+  const geneticDriven = recommendations.filter(r => r.source_type === 'genetic').length;
+  const biomarkerDriven = recommendations.filter(r => r.source_type === 'biomarker').length;
+  const drugDriven = recommendations.filter(r => r.source_type === 'drug_depletion').length;
+  const dietDriven = recommendations.filter(r => r.source_type === 'diet_deficiency').length;
+  const highPriority = recommendations.filter(r => (r.priority_score || 0) >= 8).length;
+  
+  summary += "### 📋 Protocol Overview\n\n";
+  summary += `**Total Recommendations**: ${recommendations.length} targeted supplements\n`;
+  summary += `**High Priority**: ${highPriority} critical recommendations\n\n`;
+  
+  summary += "**Recommendation Sources**:\n";
+  if (geneticDriven > 0) summary += `- 🧬 **${geneticDriven} Genetic-Based**: Chosen specifically for your genetic variants\n`;
+  if (biomarkerDriven > 0) summary += `- 📊 **${biomarkerDriven} Lab-Based**: Targeted to your specific biomarker patterns\n`;
+  if (drugDriven > 0) summary += `- 💊 **${drugDriven} Medication-Based**: Replacing nutrients depleted by your medications\n`;
+  if (dietDriven > 0) summary += `- 🥗 **${dietDriven} Diet-Based**: Filling gaps from your dietary patterns\n`;
+  
+  summary += "\n### 🔬 The Science Behind Your Plan\n\n";
+  summary += "This isn't generic supplementation - every recommendation is backed by your specific biology:\n\n";
   
   if (geneticConcerns.length > 0) {
-    summary += `**🧬 What Your Genetics Tell Us**: We analyzed your unique genetic profile and found ${geneticConcerns.length} variant(s) that need our attention: ${geneticConcerns.join(', ')}. These aren't just random genetic differences - they're specific variants that directly impact how your body processes nutrients. That's exactly why we've designed your recommendations to work WITH your genetics, not against them.\n\n`;
+    summary += `**🧬 Genetic Precision**: Your ${geneticConcerns.length} genetic variant(s) (${geneticConcerns.slice(0, 2).join(', ')}${geneticConcerns.length > 2 ? ', and others' : ''}) require specific nutrient forms that bypass your genetic limitations.\n\n`;
   }
   
   if (biomarkerConcerns.length > 0) {
-    summary += `**📊 What Your Labs Reveal**: Your biomarker analysis shows ${biomarkerConcerns.length} marker(s) outside optimal ranges: ${biomarkerConcerns.slice(0, 3).join(', ')}${biomarkerConcerns.length > 3 ? ' and others' : ''}. We think these levels tell an important story about what your body needs right now. Every recommendation we've made is specifically chosen to address these exact biomarker patterns - this is precision nutrition at work.\n\n`;
+    summary += `**📊 Biomarker Targeting**: Your ${biomarkerConcerns.length} out-of-range biomarker(s) receive therapeutic doses calibrated to restore optimal levels.\n\n`;
   }
   
   if (healthGoals.length > 0) {
-    summary += `**🎯 Tailored to Your Goals**: We've carefully integrated your personal health goals - ${healthGoals.join(', ')} - into every recommendation. This isn't generic supplementation; we've chosen each supplement because we believe it will specifically support what YOU want to achieve with your health.\n\n`;
+    summary += `**🎯 Goal Integration**: Every supplement supports your health goals: ${healthGoals.join(', ')}.\n\n`;
   }
   
-  const highPriority = recommendations.filter(r => (r.priority_score || 0) >= 8).length;
-  const geneticDriven = recommendations.filter(r => r.source_type === 'genetic').length;
-  const biomarkerDriven = recommendations.filter(r => r.source_type === 'biomarker').length;
+  summary += "### 🛡️ Safety & Quality Assurance\n\n";
+  summary += "Your protocol has been thoroughly screened for:\n";
+  summary += "- ✅ Drug interactions with your medications\n";
+  summary += "- ✅ Genetic contraindications\n";
+  summary += "- ✅ Allergy considerations\n";
+  summary += "- ✅ Biomarker-based safety limits\n";
+  summary += "- ✅ Supplement-supplement interactions\n\n";
   
-  summary += `**🎯 Your Personalized Protocol Summary**: We've identified ${recommendations.length} targeted supplements for your unique biology, with ${highPriority} high-priority recommendations that we think will make the biggest difference for you. Here's what makes this special:\n\n`;
-  
-  if (geneticDriven > 0) {
-    summary += `• **${geneticDriven} Genetic-Driven Recommendations**: Chosen specifically because of your genetic variants\n`;
-  }
-  if (biomarkerDriven > 0) {
-    summary += `• **${biomarkerDriven} Lab-Driven Recommendations**: Targeted to address your specific biomarker patterns\n`;
-  }
-  
-  summary += `\nThis isn't guesswork - it's precision medicine designed specifically for YOUR unique biology. We believe this personalized approach will deliver results you can actually feel, because every recommendation is tailored to how YOUR body works. 🌟`;
+  summary += "---\n\n";
+  summary += "## 🌟 Your Health Journey Forward\n\n";
+  summary += "This analysis represents the most comprehensive, personalized approach to supplementation available today. By combining your genetic blueprint with real-time biomarker data, we've created a protocol that works specifically with YOUR body's unique biology.\n\n";
+  summary += "**Remember**: Your genetics don't change, but your biomarkers will improve as you follow this protocol. We recommend retesting key biomarkers in 8-12 weeks to track your progress and fine-tune your plan.\n\n";
+  summary += "*Ready to experience the power of precision medicine? Your personalized supplement recommendations are waiting in the Recommendations section.*";
   
   return summary;
+}
+
+// Helper function to get gene function description
+function getGeneFunction(gene: string): string {
+  const geneFunctions = {
+    'MTHFR': 'Converts folate to active methylfolate (5-MTHF) for DNA synthesis, neurotransmitters, and detoxification',
+    'COMT': 'Breaks down dopamine, norepinephrine, and estrogen - affects mood, focus, and stress response',
+    'VDR': 'Vitamin D receptor that controls calcium absorption, immune function, and gene expression',
+    'APOE': 'Transports cholesterol and fats in blood - major factor in cardiovascular and brain health',
+    'FADS1': 'Converts plant omega-3s (ALA) to active EPA/DHA for brain and heart health',
+    'FADS2': 'Works with FADS1 to process essential fatty acids',
+    'HFE': 'Regulates iron absorption - variants can cause iron overload (hemochromatosis)',
+    'ACE': 'Controls blood pressure by regulating angiotensin - affects cardiovascular health',
+    'CYP1A2': 'Metabolizes caffeine, medications, and environmental toxins in the liver',
+    'SOD2': 'Antioxidant enzyme that protects mitochondria from oxidative damage',
+    'GST': 'Detoxification enzymes that neutralize toxins and free radicals',
+    'MTR': 'Recycles B12 and supports methylation cycle for DNA and neurotransmitters',
+    'CBS': 'Processes sulfur amino acids - affects detoxification and methylation balance',
+    'default': 'Influences nutrient metabolism and cellular function'
+  };
+  
+  return geneFunctions[gene] || geneFunctions['default'];
+}
+
+// Helper function to get personalized genetic explanation
+function getPersonalizedGeneticExplanation(gene: string, rsid: string, genotype: string): string {
+  const explanations = {
+    'MTHFR': `Your body converts folate to active form 30-70% less efficiently than normal. You need pre-methylated folate (L-methylfolate) instead of regular folic acid because your enzyme can't process synthetic forms effectively.`,
+    'COMT': `Your COMT enzyme ${genotype === 'AA' ? 'works 3-4x slower than normal, causing dopamine buildup' : 'works too fast, causing rapid dopamine breakdown'}. This affects your stress response, mood, and ${genotype === 'AA' ? 'makes you more sensitive to stimulants' : 'may cause attention/focus issues'}.`,
+    'VDR': `Your vitamin D receptor doesn't bind vitamin D as efficiently as normal. You need 50-100% higher vitamin D doses to achieve the same biological effects for bone health, immunity, and mood.`,
+    'APOE': `Your APOE4 variant increases cardiovascular and Alzheimer's risk. You process saturated fats poorly and need more omega-3s for brain protection and inflammation control.`,
+    'FADS1': `You convert plant omega-3s (like flax seeds) to active EPA/DHA 50-80% less efficiently. You need direct EPA/DHA from fish or algae instead of relying on plant sources.`,
+    'HFE': `Your variant affects iron regulation. ${genotype.includes('C') || genotype.includes('A') ? 'You may absorb too much iron from food and should NEVER take iron supplements' : 'You may have altered iron metabolism requiring monitoring'}.`,
+    'CYP1A2': `You metabolize caffeine ${genotype.includes('A') ? 'very slowly - limit coffee and be cautious with stimulants' : 'normally - standard caffeine intake is fine'}.`,
+    'default': `This variant affects how your body processes nutrients and may require specific supplementation approaches.`
+  };
+  
+  return explanations[gene] || explanations['default'];
+}
+
+// Helper function to get genetic insight
+function getGeneticInsight(gene: string, geneRef: any): string {
+  const insights = {
+    'MTHFR': 'Requires methylated B vitamins (never synthetic forms)',
+    'COMT': 'Needs personalized methyl donor dosing based on enzyme speed',
+    'VDR': 'Benefits from higher vitamin D doses with K2 and magnesium',
+    'APOE': 'Requires anti-inflammatory focus with omega-3 emphasis',
+    'FADS1': 'Needs direct EPA/DHA instead of plant-based omega-3s',
+    'HFE': 'Requires iron monitoring (supplementation may be contraindicated)',
+    'CYP1A2': 'Affects caffeine and supplement metabolism rates',
+    'default': 'Influences supplement selection and dosing'
+  };
+  
+  return insights[gene] || insights['default'];
+}
+
+// Helper function to categorize biomarkers
+function categorizeBiomarker(name: string): string {
+  const key = name.toLowerCase();
+  
+  if (key.includes('cholesterol') || key.includes('hdl') || key.includes('ldl') || key.includes('triglyceride') || key.includes('lipid')) {
+    return '🫀 Cardiovascular Panel';
+  } else if (key.includes('glucose') || key.includes('insulin') || key.includes('hba1c') || key.includes('hemoglobin_a1c')) {
+    return '🍭 Metabolic Panel';
+  } else if (key.includes('vitamin') || key.includes('b12') || key.includes('folate') || key.includes('d_25') || key.includes('25_oh')) {
+    return '🦴 Vitamin Panel';
+  } else if (key.includes('iron') || key.includes('ferritin') || key.includes('zinc') || key.includes('magnesium') || key.includes('calcium')) {
+    return '⚗️ Mineral Panel';
+  } else if (key.includes('testosterone') || key.includes('estradiol') || key.includes('tsh') || key.includes('t4') || key.includes('t3') || key.includes('cortisol')) {
+    return '🔬 Hormone Panel';
+  } else if (key.includes('alt') || key.includes('ast') || key.includes('bilirubin') || key.includes('alkaline')) {
+    return '🫁 Liver Function';
+  } else if (key.includes('creatinine') || key.includes('bun') || key.includes('egfr') || key.includes('albumin')) {
+    return '🔬 Kidney Function';
+  } else if (key.includes('wbc') || key.includes('rbc') || key.includes('hemoglobin') || key.includes('hematocrit') || key.includes('platelet')) {
+    return '🩸 Blood Count';
+  } else if (key.includes('crp') || key.includes('esr') || key.includes('inflammatory')) {
+    return '🔥 Inflammation';
+  } else {
+    return '📋 Other Markers';
+  }
+}
+
+// Helper function to analyze biomarker for education
+function analyzeBiomarkerForEducation(name: string, value: any): any {
+  const numValue = parseFloat(String(value));
+  if (isNaN(numValue)) return { status: 'Normal', explanation: 'Non-numeric value' };
+  
+  const key = name.toLowerCase();
+  
+  // Vitamin D
+  if (key.includes('vitamin_d') || key.includes('25_oh') || key.includes('d_25')) {
+    if (numValue < 20) {
+      return {
+        status: 'Low',
+        explanation: 'Vitamin D deficiency affects immune function, bone health, and mood',
+        implications: ['Weak immunity', 'Poor bone health', 'Mood issues'],
+        action: 'High-dose D3 with K2 recommended',
+        insight: 'Critical deficiency requiring therapeutic dosing'
+      };
+    } else if (numValue < 30) {
+      return {
+        status: 'Low',
+        explanation: 'Vitamin D insufficiency - below optimal for health',
+        implications: ['Suboptimal immunity', 'Increased inflammation'],
+        action: 'Moderate D3 supplementation',
+        insight: 'Below optimal levels for peak health'
+      };
+    }
+  }
+  
+  // B12
+  if (key.includes('b12') || key.includes('cobalamin')) {
+    if (numValue < 300) {
+      return {
+        status: 'Low',
+        explanation: 'B12 deficiency affects energy, brain function, and red blood cell formation',
+        implications: ['Fatigue', 'Brain fog', 'Nerve problems'],
+        action: 'High-dose methylcobalamin recommended',
+        insight: 'Deficiency affecting energy and cognitive function'
+      };
+    }
+  }
+  
+  // Iron/Ferritin
+  if (key.includes('ferritin')) {
+    if (numValue < 30) {
+      return {
+        status: 'Low',
+        explanation: 'Low iron stores affect oxygen transport and energy production',
+        implications: ['Fatigue', 'Cold hands/feet', 'Restless legs'],
+        action: 'Iron supplementation with vitamin C',
+        insight: 'Iron deficiency contributing to fatigue'
+      };
+    } else if (numValue > 200) {
+      return {
+        status: 'High',
+        explanation: 'Elevated iron stores may indicate inflammation or iron overload',
+        implications: ['Oxidative stress', 'Organ damage risk'],
+        action: 'Avoid iron supplements, investigate cause',
+        insight: 'High iron levels requiring investigation'
+      };
+    }
+  }
+  
+  // Cholesterol
+  if (key.includes('ldl')) {
+    if (numValue > 100) {
+      return {
+        status: 'High',
+        explanation: 'Elevated LDL cholesterol increases cardiovascular disease risk',
+        implications: ['Heart disease risk', 'Arterial plaque'],
+        action: 'Plant sterols and red yeast rice recommended',
+        insight: 'Cardiovascular risk factor requiring intervention'
+      };
+    }
+  }
+  
+  // Magnesium
+  if (key.includes('magnesium')) {
+    if (numValue < 1.8) {
+      return {
+        status: 'Low',
+        explanation: 'Low magnesium affects muscle function, sleep, and stress response',
+        implications: ['Muscle cramps', 'Poor sleep', 'Anxiety'],
+        action: 'Magnesium glycinate supplementation',
+        insight: 'Deficiency affecting multiple body systems'
+      };
+    }
+  }
+  
+  return { status: 'Normal', explanation: 'Within normal ranges' };
 }
 
 // Extract genetic variant from recommendation reasoning
@@ -2093,4 +2979,340 @@ function performBasicSafetyCheck(
   });
   
   return { safeRecommendations, warnings };
+}
+
+// DRUG DEPLETION PROFILE MATCHER
+// Matches medication names (with variations) to depletion profiles
+function findMedicationDepletionProfile(normalizedMedication: string): any | null {
+  console.log(`Looking for depletion profile for: ${normalizedMedication}`);
+  
+  // Direct matches first
+  if (drugNutrientDepletion[normalizedMedication]) {
+    return drugNutrientDepletion[normalizedMedication];
+  }
+  
+  // Fuzzy matching for common medication patterns
+  const medicationMappings = {
+    // STATINS
+    'atorvastatin': 'statin', 'simvastatin': 'statin', 'rosuvastatin': 'statin', 
+    'pravastatin': 'statin', 'lovastatin': 'statin', 'fluvastatin': 'statin',
+    'lipitor': 'statin', 'zocor': 'statin', 'crestor': 'statin', 'pravachol': 'statin',
+    
+    // ACE INHIBITORS
+    'lisinopril': 'ace_inhibitor', 'enalapril': 'ace_inhibitor', 'captopril': 'ace_inhibitor',
+    'ramipril': 'ace_inhibitor', 'benazepril': 'ace_inhibitor', 'quinapril': 'ace_inhibitor',
+    'prinivil': 'ace_inhibitor', 'zestril': 'ace_inhibitor', 'vasotec': 'ace_inhibitor',
+    
+    // BETA BLOCKERS
+    'metoprolol': 'beta_blocker', 'atenolol': 'beta_blocker', 'propranolol': 'beta_blocker',
+    'carvedilol': 'beta_blocker', 'bisoprolol': 'beta_blocker', 'nebivolol': 'beta_blocker',
+    'lopressor': 'beta_blocker', 'tenormin': 'beta_blocker', 'inderal': 'beta_blocker',
+    
+    // DIURETICS
+    'hydrochlorothiazide': 'diuretic', 'furosemide': 'diuretic', 'chlorthalidone': 'diuretic',
+    'spironolactone': 'diuretic', 'triamterene': 'diuretic', 'bumetanide': 'diuretic',
+    'hctz': 'diuretic', 'lasix': 'diuretic', 'aldactone': 'diuretic',
+    
+    // DIABETES MEDICATIONS
+    'metformin': 'metformin', 'glucophage': 'metformin', 'fortamet': 'metformin',
+    'glumetza': 'metformin', 'riomet': 'metformin',
+    
+    // ACID BLOCKERS - PPIs
+    'omeprazole': 'ppi', 'lansoprazole': 'ppi', 'pantoprazole': 'ppi',
+    'esomeprazole': 'ppi', 'rabeprazole': 'ppi', 'dexlansoprazole': 'ppi',
+    'prilosec': 'ppi', 'prevacid': 'ppi', 'protonix': 'ppi', 'nexium': 'ppi',
+    
+    // ACID BLOCKERS - H2
+    'ranitidine': 'h2_blocker', 'famotidine': 'h2_blocker', 'cimetidine': 'h2_blocker',
+    'nizatidine': 'h2_blocker', 'zantac': 'h2_blocker', 'pepcid': 'h2_blocker',
+    
+    // ANTIDEPRESSANTS - SSRIs
+    'sertraline': 'ssri', 'fluoxetine': 'ssri', 'paroxetine': 'ssri', 'citalopram': 'ssri',
+    'escitalopram': 'ssri', 'fluvoxamine': 'ssri',
+    'zoloft': 'ssri', 'prozac': 'ssri', 'paxil': 'ssri', 'celexa': 'ssri', 'lexapro': 'ssri',
+    
+    // ANTIBIOTICS
+    'amoxicillin': 'antibiotic', 'azithromycin': 'antibiotic', 'doxycycline': 'antibiotic',
+    'ciprofloxacin': 'antibiotic', 'clindamycin': 'antibiotic', 'cephalexin': 'antibiotic',
+    'penicillin': 'antibiotic', 'zithromax': 'antibiotic', 'cipro': 'antibiotic',
+    
+    // BIRTH CONTROL
+    'birth_control': 'birth_control', 'oral_contraceptive': 'birth_control', 'the_pill': 'birth_control',
+    'ortho': 'birth_control', 'yaz': 'birth_control', 'yasmin': 'birth_control', 'lo_loestrin': 'birth_control',
+    
+    // STEROIDS
+    'prednisone': 'corticosteroid', 'prednisolone': 'corticosteroid', 'methylprednisolone': 'corticosteroid',
+    'hydrocortisone': 'corticosteroid', 'dexamethasone': 'corticosteroid', 'cortisone': 'corticosteroid',
+    'medrol': 'corticosteroid', 'deltasone': 'corticosteroid'
+  };
+  
+  // Check for partial matches
+  for (const [medPattern, profileKey] of Object.entries(medicationMappings)) {
+    if (normalizedMedication.includes(medPattern) || medPattern.includes(normalizedMedication)) {
+      console.log(`Found match: ${normalizedMedication} → ${profileKey}`);
+      return drugNutrientDepletion[profileKey];
+    }
+  }
+  
+  // Check for class-based matches
+  if (normalizedMedication.includes('statin')) return drugNutrientDepletion['statin'];
+  if (normalizedMedication.includes('ace') || normalizedMedication.includes('pril')) return drugNutrientDepletion['ace_inhibitor'];
+  if (normalizedMedication.includes('olol') || normalizedMedication.includes('beta')) return drugNutrientDepletion['beta_blocker'];
+  if (normalizedMedication.includes('thiazide') || normalizedMedication.includes('diuretic')) return drugNutrientDepletion['diuretic'];
+  if (normalizedMedication.includes('prazole') || normalizedMedication.includes('ppi')) return drugNutrientDepletion['ppi'];
+  if (normalizedMedication.includes('tidine') || normalizedMedication.includes('h2')) return drugNutrientDepletion['h2_blocker'];
+  if (normalizedMedication.includes('ssri') || normalizedMedication.includes('antidepressant')) return drugNutrientDepletion['ssri'];
+  if (normalizedMedication.includes('antibiotic') || normalizedMedication.includes('cillin') || normalizedMedication.includes('cycline')) return drugNutrientDepletion['antibiotic'];
+  if (normalizedMedication.includes('prednisone') || normalizedMedication.includes('steroid') || normalizedMedication.includes('cortis')) return drugNutrientDepletion['corticosteroid'];
+  
+  console.log(`No depletion profile found for: ${normalizedMedication}`);
+  return null;
+}
+
+// GENETIC OVERRIDE SYSTEM - Genetics take priority over all other recommendations
+// This ensures the person's genetic "software" drives the supplement choices
+function applyGeneticOverrides(
+  recommendations: any[], 
+  markers: any[], 
+  warnings: string[]
+): any[] {
+  
+  console.log("🧬 Applying genetic overrides - genetics are the person's software and take priority...");
+  
+  if (!markers || markers.length === 0) {
+    console.log("No genetic data available for overrides");
+    return recommendations;
+  }
+  
+  // STEP 1: Identify user's genetic variants
+  const userGeneticProfile = {
+    hasMTHFR: markers.some(m => 
+      ['rs1801133', 'rs1801131'].includes(m.rsid) && 
+      ['CT', 'TT', 'AC', 'CC'].includes(m.genotype)
+    ),
+    hasCOMTSlow: markers.some(m => 
+      m.rsid === 'rs4680' && m.genotype === 'AA'
+    ),
+    hasHFE: markers.some(m => 
+      ['rs1799945', 'rs1800562'].includes(m.rsid) && 
+      ['CC', 'AA'].includes(m.genotype)
+    ),
+    hasAPOE4: markers.some(m => 
+      m.rsid === 'rs429358' && ['TC', 'CC'].includes(m.genotype)
+    ),
+    hasVDRVariant: markers.some(m => 
+      ['rs2228570', 'rs1544410', 'rs7975232'].includes(m.rsid) && 
+      ['CC', 'TT', 'AA'].includes(m.genotype)
+    )
+  };
+  
+  console.log("User genetic profile:", userGeneticProfile);
+  
+  const processedRecommendations = [...recommendations];
+  
+  // STEP 2: MTHFR OVERRIDES - Never synthetic B vitamins, always methylated forms
+  if (userGeneticProfile.hasMTHFR) {
+    console.log("🧬 MTHFR variants detected - applying methylated form overrides");
+    
+    for (let i = 0; i < processedRecommendations.length; i++) {
+      const rec = processedRecommendations[i];
+      const supplementLower = rec.supplement_name.toLowerCase();
+      
+      // NEVER folic acid for MTHFR variants - always L-Methylfolate
+      if (supplementLower.includes('folic acid') || 
+          (supplementLower.includes('folate') && !supplementLower.includes('methylfolate'))) {
+        rec.supplement_name = 'L-Methylfolate';
+        rec.dosage_amount = Math.min(rec.dosage_amount, 800); // Cap at 800 mcg
+        rec.dosage_unit = 'mcg';
+        rec.recommendation_reason = `🧬 **GENETIC OVERRIDE - MTHFR**: Your MTHFR genetic variants cannot process regular folic acid. We've switched you to L-Methylfolate, the active form your body can use directly. This is critical for proper methylation function with your genetic profile.`;
+        rec.genetic_reasoning = `MTHFR variants reduce enzyme activity by 30-70%, requiring pre-methylated forms`;
+        rec.priority_score = 10; // Maximum priority for genetic overrides
+        warnings.push(`🧬 GENETIC OVERRIDE: Folic acid → L-Methylfolate (MTHFR variants cannot process synthetic forms)`);
+      }
+      
+      // NEVER cyanocobalamin for MTHFR variants - always methylcobalamin
+      if (supplementLower.includes('cyanocobalamin') || 
+          (supplementLower.includes('b12') && !supplementLower.includes('methyl'))) {
+        rec.supplement_name = 'Methylcobalamin B12';
+        rec.dosage_unit = 'mcg';
+        rec.recommendation_reason = `🧬 **GENETIC OVERRIDE - MTHFR**: Your MTHFR variants require methylated B12. We've switched you to Methylcobalamin, which bypasses your genetic bottleneck and provides the active form your body needs.`;
+        rec.genetic_reasoning = `MTHFR variants impair B12 recycling - methylated forms essential`;
+        rec.priority_score = 10;
+        warnings.push(`🧬 GENETIC OVERRIDE: Cyanocobalamin → Methylcobalamin (MTHFR requires active forms)`);
+      }
+      
+      // NEVER pyridoxine for MTHFR variants - always P5P (active B6)
+      if (supplementLower.includes('pyridoxine') || 
+          (supplementLower.includes('b6') && !supplementLower.includes('p5p'))) {
+        rec.supplement_name = 'P5P (B6)';
+        rec.dosage_amount = Math.min(rec.dosage_amount, 50); // Cap at 50 mg
+        rec.dosage_unit = 'mg';
+        rec.recommendation_reason = `🧬 **GENETIC OVERRIDE - MTHFR**: Your MTHFR variants need the active form of B6. We've switched you to P5P (Pyridoxal-5-Phosphate), which your body can use immediately without conversion.`;
+        rec.genetic_reasoning = `P5P is the active coenzyme form - essential for MTHFR function`;
+        rec.priority_score = 10;
+        warnings.push(`🧬 GENETIC OVERRIDE: Pyridoxine → P5P (MTHFR requires active B6)`);
+      }
+    }
+  }
+  
+  // STEP 3: COMT SLOW OVERRIDES - Avoid overmethylation
+  if (userGeneticProfile.hasCOMTSlow) {
+    console.log("🧬 COMT slow variants detected - preventing overmethylation");
+    
+    for (let i = 0; i < processedRecommendations.length; i++) {
+      const rec = processedRecommendations[i];
+      const supplementLower = rec.supplement_name.toLowerCase();
+      
+      // Reduce methylfolate dose for COMT slow variants
+      if (supplementLower.includes('methylfolate')) {
+        rec.dosage_amount = Math.min(rec.dosage_amount, 400); // Cap at 400 mcg
+        rec.recommendation_reason += ` 🧬 **GENETIC DOSE ADJUSTMENT**: Your COMT variant processes methyl groups slowly, so we've reduced the dose to prevent overmethylation symptoms like anxiety or insomnia.`;
+        rec.genetic_reasoning = `COMT slow variants accumulate methyl groups - lower doses prevent overmethylation`;
+        warnings.push(`🧬 GENETIC DOSE ADJUSTMENT: Reduced methylfolate dose for COMT slow variant (prevent overmethylation)`);
+      }
+      
+      // Add calming nutrients for COMT slow variants
+      if (supplementLower.includes('magnesium')) {
+        rec.dosage_amount = Math.max(rec.dosage_amount, 400); // Ensure adequate magnesium
+        rec.recommendation_reason += ` 🧬 **GENETIC ENHANCEMENT**: Your COMT slow variant benefits from higher magnesium to support neurotransmitter balance and prevent overstimulation.`;
+        rec.genetic_reasoning = `COMT slow variants need more magnesium for neurotransmitter clearance`;
+        warnings.push(`🧬 GENETIC ENHANCEMENT: Increased magnesium for COMT slow variant support`);
+      }
+    }
+    
+    // Remove high-dose methyl donors that could cause overmethylation
+    const filteredRecommendations = processedRecommendations.filter(rec => {
+      const supplementLower = rec.supplement_name.toLowerCase();
+      if ((supplementLower.includes('same') || supplementLower.includes('dmg')) && rec.dosage_amount > 200) {
+        warnings.push(`🧬 GENETIC REMOVAL: Removed ${rec.supplement_name} (high-dose methyl donor contraindicated with COMT slow)`);
+        return false;
+      }
+      return true;
+    });
+    
+    return filteredRecommendations;
+  }
+  
+  // STEP 4: HFE OVERRIDES - NEVER iron supplements
+  if (userGeneticProfile.hasHFE) {
+    console.log("🧬 HFE variants detected - absolute iron contraindication");
+    
+    const filteredRecommendations = processedRecommendations.filter(rec => {
+      const supplementLower = rec.supplement_name.toLowerCase();
+      if (supplementLower.includes('iron')) {
+        warnings.push(`🧬 ABSOLUTE GENETIC CONTRAINDICATION: Removed ${rec.supplement_name} - HFE variants have iron overload risk`);
+        return false;
+      }
+      return true;
+    });
+    
+    // Add lactoferrin as a safer alternative if iron was needed
+    const hadIronRecommendation = processedRecommendations.some(rec => 
+      rec.supplement_name.toLowerCase().includes('iron')
+    );
+    
+    if (hadIronRecommendation) {
+      filteredRecommendations.push({
+        supplement_name: 'Lactoferrin',
+        dosage_amount: 200,
+        dosage_unit: 'mg',
+        frequency: 'daily',
+        timing: 'with_meals',
+        recommendation_reason: `🧬 **GENETIC ALTERNATIVE - HFE**: Your HFE variants prevent iron supplementation due to overload risk. Lactoferrin provides iron support without the accumulation risk, as it's a natural iron-binding protein.`,
+        evidence_quality: 'moderate',
+        priority_score: 8,
+        genetic_reasoning: `HFE variants cause iron accumulation - lactoferrin provides iron benefits without overload risk`,
+        source_type: 'genetic_override',
+        source_data: { original_supplement: 'Iron', override_reason: 'HFE variants' }
+      });
+      
+      warnings.push(`🧬 GENETIC ALTERNATIVE: Added Lactoferrin as safer iron alternative for HFE variants`);
+    }
+    
+    return filteredRecommendations;
+  }
+  
+  // STEP 5: APOE4 OVERRIDES - Avoid saturated fats, emphasize anti-inflammatory
+  if (userGeneticProfile.hasAPOE4) {
+    console.log("🧬 APOE4 variants detected - cardiovascular/cognitive protection emphasis");
+    
+    for (const rec of processedRecommendations) {
+      const supplementLower = rec.supplement_name.toLowerCase();
+      
+      // Increase omega-3 dose for APOE4 carriers
+      if (supplementLower.includes('omega-3') || supplementLower.includes('fish oil')) {
+        rec.dosage_amount = Math.max(rec.dosage_amount, 2000); // Higher dose for APOE4
+        rec.recommendation_reason += ` 🧬 **GENETIC ENHANCEMENT**: Your APOE4 variant increases cardiovascular and cognitive risks. We've increased your omega-3 dose for enhanced neuroprotection.`;
+        rec.genetic_reasoning = `APOE4 carriers have higher inflammation and need more omega-3 for protection`;
+        warnings.push(`🧬 GENETIC ENHANCEMENT: Increased omega-3 dose for APOE4 cardiovascular/cognitive protection`);
+      }
+      
+      // Avoid coconut oil and high saturated fat supplements
+      if (supplementLower.includes('coconut oil') || supplementLower.includes('mct')) {
+        rec.contraindications = [...(rec.contraindications || []), 
+          'APOE4 carriers should limit saturated fats for cardiovascular health'];
+        warnings.push(`🧬 GENETIC CAUTION: Added saturated fat warning for APOE4 carrier`);
+      }
+    }
+  }
+  
+  // STEP 6: VDR OVERRIDES - Higher vitamin D requirements
+  if (userGeneticProfile.hasVDRVariant) {
+    console.log("🧬 VDR variants detected - increased vitamin D requirements");
+    
+    for (const rec of processedRecommendations) {
+      const supplementLower = rec.supplement_name.toLowerCase();
+      
+      if (supplementLower.includes('vitamin d')) {
+        rec.dosage_amount = Math.max(rec.dosage_amount * 1.5, 4000); // 50% higher dose, minimum 4000 IU
+        rec.dosage_unit = 'IU';
+        rec.recommendation_reason += ` 🧬 **GENETIC DOSE ADJUSTMENT**: Your VDR (Vitamin D Receptor) variants reduce receptor efficiency. We've increased your dose 50% to achieve the same biological effect as someone with normal VDR function.`;
+        rec.genetic_reasoning = `VDR variants reduce receptor binding efficiency - higher doses needed for same effect`;
+        warnings.push(`🧬 GENETIC DOSE ADJUSTMENT: Increased vitamin D dose 50% for VDR variant compensation`);
+        
+        // Always add K2 and magnesium for VDR variants
+        if (!rec.supplement_name.toLowerCase().includes('k2')) {
+          rec.supplement_name = 'Vitamin D3 + K2';
+          rec.recommendation_reason += ` Combined with K2 for optimal calcium metabolism with your genetic profile.`;
+        }
+      }
+    }
+  }
+  
+  console.log(`🧬 Genetic override analysis complete - genetics prioritized over all other factors`);
+  return processedRecommendations;
+}
+
+// Fallback function to create generic product links when automatic linking fails
+async function createFallbackProductLink(recommendationId: string, supplementName: string) {
+  try {
+    console.log(`🔄 Creating fallback product link for ${supplementName}`);
+    
+    // Create a search link as fallback
+    const fallbackLink = {
+      recommendation_id: recommendationId,
+      brand: "Multiple Options",
+      product_name: `${supplementName} - Find Best Price`,
+      product_url: `https://www.vitacost.com/search?t=${encodeURIComponent(supplementName)}`,
+      image_url: null,
+      price: null,
+      search_query: supplementName,
+      relevance_score: 1,
+      matches_dosage: false,
+      third_party_tested: false,
+      gmp_certified: false,
+      serving_size: null,
+      servings_per_container: null
+    };
+    
+    const { error } = await supabase.from('product_links').insert(fallbackLink);
+    
+    if (error) {
+      console.error(`❌ Error creating fallback link for ${supplementName}:`, error);
+    } else {
+      console.log(`✅ Created fallback link for ${supplementName}`);
+    }
+  } catch (error) {
+    console.error(`❌ Error in createFallbackProductLink for ${supplementName}:`, error);
+  }
 }

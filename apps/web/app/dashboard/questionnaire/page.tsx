@@ -336,12 +336,12 @@ export default function QuestionnairePage() {
         type: 'genetic' | 'lab_results',
       ) => {
         const filePath = `${user.id}/${assessmentInsert.id}/${type}/${Date.now()}_${file.name}`;
-        const { error: storageError } = await supabase.storage.from('uploads').upload(filePath, file, {
+        const { error: storageError } = await supabase.storage.from('user-uploads').upload(filePath, file, {
           upsert: false,
         });
         if (storageError) throw storageError;
 
-        const { data: uploadRecord, error: dbError } = await supabase.from('uploaded_files').insert({
+        const { data: uploadRecord, error: dbError } = await supabase.from('user_uploads').insert({
           user_id: user.id,
           assessment_id: assessmentInsert.id,
           file_type: type,
@@ -349,22 +349,34 @@ export default function QuestionnairePage() {
           file_size: file.size,
           mime_type: file.type,
           storage_path: filePath,
-          processing_status: 'pending',
+          status: 'pending',
         }).select().single();
         if (dbError) throw dbError;
 
         // Trigger processing automatically
         try {
-          const response = await fetch('/api/supabase/functions/parse_upload', {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('User not authenticated');
+
+          const response = await fetch('/api/parse-health-data', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
             },
-            body: JSON.stringify({ file_id: uploadRecord.id }),
+            body: JSON.stringify({ 
+              file_id: uploadRecord.id, 
+              user_id: user.id 
+            }),
           });
           
-          if (!response.ok) {
-            console.warn('Failed to trigger file processing:', await response.text());
+          const uploadResponse = await response.json();
+          const uploadError = response.ok ? null : uploadResponse;
+          
+          if (uploadError) {
+            console.warn('Failed to trigger file processing:', uploadError);
+          } else {
+            console.log('File processing started successfully:', uploadResponse);
           }
         } catch (error) {
           console.warn('Error triggering file processing:', error);
@@ -403,9 +415,27 @@ export default function QuestionnairePage() {
         setTimeout(() => setProcessingStep(step), delay);
       });
       
-      // Auto-redirect to recommendations after 3 seconds
-      setTimeout(() => {
-        router.push('/dashboard/recommendations');
+      // Generate analysis and then redirect to recommendations
+      setTimeout(async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            console.log('Generating analysis for user:', user.id);
+            const analysisResponse = await fetch('/api/generate-analysis', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+              },
+              body: JSON.stringify({ user_id: user.id }),
+            });
+            console.log('Analysis generation completed');
+          }
+        } catch (error) {
+          console.warn('Error generating analysis:', error);
+        } finally {
+          router.push('/dashboard/recommendations');
+        }
       }, 3000);
 
     } catch (err) {
@@ -446,10 +476,10 @@ export default function QuestionnairePage() {
             {/* Progress Steps */}
             <div className="space-y-4 mb-8">
               {[
-                { label: 'Processing your responses', completed: processingStep >= 0 },
-                { label: 'Analyzing genetic data', completed: processingStep >= 1 },
-                { label: 'Generating recommendations', completed: processingStep >= 2 },
-                { label: 'Creating your plan', completed: processingStep >= 3 }
+                { label: 'Saving your assessment', completed: processingStep >= 0 },
+                { label: 'Processing uploaded files', completed: processingStep >= 1 },
+                { label: 'Analyzing your data', completed: processingStep >= 2 },
+                { label: 'Generating recommendations', completed: processingStep >= 3 }
               ].map((step, index) => (
                 <div key={index} className="flex items-center justify-center gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-500 ${

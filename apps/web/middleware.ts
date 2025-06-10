@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createMiddlewareSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
 const PROTECTED_PATHS = ['/dashboard', '/api/chat'];
 
@@ -10,7 +10,7 @@ export async function middleware(req: NextRequest) {
   if (!isProtected) return NextResponse.next();
 
   const res = NextResponse.next();
-  const supabase = createMiddlewareSupabaseClient({ req, res });
+  const supabase = createMiddlewareClient({ req, res });
   const {
     data: { user },
   } = await supabase.auth.getUser();

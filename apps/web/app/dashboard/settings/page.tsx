@@ -90,24 +90,34 @@ export default function SettingsPage() {
       for (const file of files) {
         const path = `${user.id}/${Date.now()}_${file.name}`;
         const guessedType = 'genetic';
-        const { error: upErr } = await supabase.storage.from('uploads').upload(path, file);
+        const { error: upErr } = await supabase.storage.from('user-uploads').upload(path, file);
         if (upErr) throw upErr;
         // create db row so parser can find it
         const { data: fileRow, error: insErr } = await supabase
-          .from('uploaded_files')
+          .from('user_uploads')
           .insert({
             user_id: user.id,
             storage_path: path,
             file_name: file.name,
             file_type: guessedType,
-            processing_status: 'pending'
+            status: 'pending'
           })
           .select()
           .single();
         if (insErr) throw insErr;
 
         try {
-          await supabase.functions.invoke('parse_upload', { body: { file_id: fileRow.id, file_type: guessedType } });
+          const response = await fetch('/api/parse-health-data', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            },
+            body: JSON.stringify({ 
+              file_id: fileRow.id, 
+              user_id: user.id 
+            }),
+          });
         } catch (_) {}
       }
       alert('Files uploaded and processing started. Refresh later to see results.');

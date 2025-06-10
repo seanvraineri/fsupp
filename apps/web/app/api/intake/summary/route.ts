@@ -2,13 +2,26 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
+// Add CORS headers to all responses
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders() });
+}
+
 export async function GET() {
   const supabase = createRouteHandlerClient({ cookies });
 
   // Require authenticated user
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) {
-    return NextResponse.json({ error: 'unauth' }, { status: 401 });
+    return NextResponse.json({ error: 'unauth' }, { status: 401, headers: corsHeaders() });
   }
 
   // Start of the current ISO week (Monday 00:00)
@@ -37,5 +50,5 @@ export async function GET() {
     return sum + 7; // default once daily
   }, 0);
 
-  return NextResponse.json({ taken: taken ?? 0, expected });
+  return NextResponse.json({ taken: taken ?? 0, expected }, { headers: corsHeaders() });
 } 
